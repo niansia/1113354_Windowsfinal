@@ -1,0 +1,566 @@
+/* ===================== Cosmic Explorer v2 UI ===================== */
+
+/* ---- Categorised menu ---- */
+.cosmos-menu {
+  position: absolute;
+  z-index: 3;
+  left: 28px;
+  top: 132px;
+  bottom: 188px;
+  display: flex;
+  gap: 10px;
+}
+
+.cosmos-menu-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.cat-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 60px;
+  padding: 9px 4px;
+  border: 1px solid rgba(128, 200, 255, 0.18);
+  border-radius: 13px;
+  background: rgba(16, 26, 52, 0.7);
+  color: rgba(215, 232, 255, 0.72);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.cat-tab:hover,
+.cat-tab.active {
+  border-color: rgba(127, 251, 241, 0.7);
+  color: #ffffff;
+  background: rgba(34, 66, 104, 0.92);
+  box-shadow: 0 0 20px rgba(91, 237, 255, 0.2);
+}
+
+.cat-glyph {
+  font-size: 18px;
+}
+
+.cat-name {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.cosmos-menu-list {
+  display: flex;
+  flex-direction: column;
+  width: 224px;
+  padding: 12px;
+  border: 1px solid rgba(130, 206, 255, 0.16);
+  border-radius: 18px;
+  background: rgba(7, 13, 31, 0.66);
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+}
+
+.cosmos-menu-list-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  color: #7ffbf1;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.cosmos-menu-list-head span {
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: rgba(127, 251, 241, 0.14);
+  color: #bffff8;
+}
+
+.cosmos-menu-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.body-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: rgba(20, 33, 60, 0.55);
+  color: #e8f2ff;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.16s ease;
+}
+
+.body-item:hover {
+  background: rgba(33, 58, 96, 0.8);
+}
+
+.body-item.active {
+  border-color: rgba(127, 251, 241, 0.7);
+  background: rgba(34, 73, 113, 0.95);
+  box-shadow: 0 0 20px rgba(91, 237, 255, 0.18);
+}
+
+.body-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+  flex: 0 0 auto;
+}
+
+.body-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.body-item-text b {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.body-item-text small {
+  color: rgba(200, 220, 250, 0.55);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Info card ---- */
+.info-card {
+  position: absolute;
+  z-index: 3;
+  right: 28px;
+  top: 28px;
+  width: 364px;
+  max-height: 52vh;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px;
+  border: 1px solid rgba(130, 206, 255, 0.18);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(9, 16, 38, 0.85), rgba(8, 8, 27, 0.66));
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.4), inset 0 0 34px rgba(59, 103, 255, 0.06);
+  backdrop-filter: blur(18px);
+}
+
+.info-card-head {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.info-card-glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid;
+  border-radius: 14px;
+  font-size: 26px;
+  box-shadow: 0 0 24px rgba(91, 237, 255, 0.18);
+}
+
+.info-card-title h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.info-card-title p {
+  margin: 2px 0 6px;
+  color: rgba(206, 226, 255, 0.6);
+  font-size: 13px;
+}
+
+.info-card-type {
+  display: inline-block;
+  padding: 2px 9px;
+  border: 1px solid;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.info-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 14px 0 12px;
+}
+
+.info-tab {
+  flex: 1;
+  padding: 7px 4px;
+  border: 1px solid rgba(128, 200, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(20, 33, 60, 0.6);
+  color: rgba(214, 231, 255, 0.72);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.info-tab:hover,
+.info-tab.active {
+  border-color: rgba(127, 251, 241, 0.7);
+  color: #ffffff;
+  background: rgba(34, 66, 104, 0.92);
+}
+
+.info-body {
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+.info-desc {
+  margin: 0 0 12px;
+  color: rgba(226, 238, 255, 0.86);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.info-field {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 8px;
+}
+
+.info-field dt {
+  margin: 0;
+  color: #7ffbf1;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.info-field dd {
+  margin: 0;
+  color: #eaf2ff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.info-fact {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.info-fact span {
+  color: #7ffbf1;
+  font-weight: 900;
+}
+
+.info-fact p {
+  margin: 0;
+  color: rgba(220, 234, 255, 0.82);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.info-fun {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.info-fun li {
+  color: rgba(224, 236, 255, 0.86);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.info-tags {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.info-tags span {
+  padding: 2px 9px;
+  border-radius: 10px;
+  background: rgba(127, 251, 241, 0.12);
+  color: #bffff8;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.info-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-sources p {
+  margin: 0 0 4px;
+  color: rgba(204, 222, 250, 0.6);
+  font-size: 12px;
+}
+
+.info-sources a {
+  color: #8fd1ff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.info-sources a:hover {
+  color: #bffff8;
+  text-decoration: underline;
+}
+
+/* ---- NASA APOD panel ---- */
+.apod-panel {
+  position: absolute;
+  z-index: 3;
+  right: 28px;
+  bottom: 104px;
+  width: 364px;
+  padding: 16px 18px;
+  border: 1px solid rgba(130, 206, 255, 0.18);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(9, 16, 38, 0.85), rgba(8, 8, 27, 0.66));
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(18px);
+}
+
+.apod-panel .panel-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 15px;
+}
+
+.apod-badge {
+  padding: 2px 9px;
+  border-radius: 10px;
+  font-size: 10.5px;
+  font-weight: 800;
+  background: rgba(127, 251, 241, 0.14);
+  color: #bffff8;
+}
+
+.apod-badge.fallback {
+  background: rgba(255, 173, 96, 0.16);
+  color: #ffce8a;
+}
+
+.apod-badge.loading {
+  background: rgba(255, 255, 255, 0.1);
+  color: #d8e7ff;
+}
+
+.apod-image {
+  width: 100%;
+  height: 132px;
+  margin: 10px 0;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid rgba(128, 200, 255, 0.2);
+}
+
+.apod-image-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 8px;
+  color: rgba(143, 209, 255, 0.4);
+  background: radial-gradient(circle at 50% 40%, rgba(60, 110, 200, 0.25), transparent 70%);
+}
+
+.apod-title {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.apod-text {
+  margin: 6px 0 0;
+  color: rgba(214, 230, 255, 0.66);
+  font-size: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.apod-meta {
+  margin-top: 8px;
+  color: rgba(190, 210, 240, 0.5);
+  font-size: 11px;
+}
+
+/* ---- Control strip ---- */
+.control-strip {
+  position: absolute;
+  z-index: 3;
+  left: 28px;
+  bottom: 88px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(130, 206, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(7, 13, 31, 0.72);
+  backdrop-filter: blur(16px);
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-row.buttons {
+  flex-wrap: wrap;
+  max-width: 300px;
+}
+
+.gesture-pill {
+  padding: 3px 11px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(216, 231, 255, 0.7);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.gesture-pill.on {
+  background: rgba(91, 237, 255, 0.18);
+  color: #bffff8;
+}
+
+.gesture-label {
+  color: #ff6bb7;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.control-strip select,
+.control-strip button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(128, 200, 255, 0.22);
+  border-radius: 9px;
+  color: #ecf6ff;
+  background: rgba(25, 39, 72, 0.84);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.control-strip button:hover {
+  border-color: rgba(127, 251, 241, 0.66);
+  background: rgba(39, 73, 113, 0.92);
+}
+
+@media (max-width: 1280px) {
+  .info-card,
+  .apod-panel {
+    width: 300px;
+  }
+}
+
+@media (max-width: 1040px) {
+  .apod-panel {
+    display: none;
+  }
+  .cosmos-menu {
+    bottom: 200px;
+  }
+}
+
+/* ---- Earth Explore region panel ---- */
+.earth-region-panel {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 92px;
+  transform: translateX(-50%);
+  width: min(440px, calc(100vw - 720px));
+  min-width: 300px;
+  padding: 14px 20px;
+  text-align: center;
+  border: 1px solid rgba(127, 251, 241, 0.35);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(8, 22, 30, 0.9), rgba(6, 12, 26, 0.78));
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45), 0 0 30px rgba(91, 237, 255, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.erp-eyebrow {
+  color: #7ffbf1;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.earth-region-panel h3 {
+  margin: 4px 0 0;
+  font-size: 26px;
+  font-weight: 900;
+  color: #ffffff;
+}
+
+.erp-en {
+  margin: 0;
+  color: rgba(206, 226, 255, 0.6);
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.erp-blurb {
+  margin: 8px 0 0;
+  color: rgba(224, 238, 255, 0.85);
+  font-size: 13px;
+}
+
+.erp-flora {
+  margin-top: 8px;
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 12px;
+  background: rgba(80, 230, 130, 0.14);
+  color: #9af5b8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.erp-hint {
+  margin-top: 8px;
+  color: rgba(160, 200, 240, 0.55);
+  font-size: 11px;
+}

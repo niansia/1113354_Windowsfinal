@@ -39,6 +39,7 @@ namespace WindowsFormsApp1
         private int windowOffset;
         private string currentLanguage = "zh-TW";
         private Process cosmicServerProcess;
+        private int cameraAppWindowCount = 0;
         private const bool UseViteDevServer = false;
         private const bool RunNativeCameraSmokeTest = false;
 
@@ -1219,7 +1220,7 @@ namespace WindowsFormsApp1
                 return;
             }
 
-            OpenWebAppWindow(L("CosmicGesture"), "http://127.0.0.1:8765/?host=fusionos", accent3);
+            OpenWebAppWindow(L("CosmicGesture"), "http://127.0.0.1:8765/?host=fusionos", accent3, ownsCamera: true);
         }
 
         private async Task<bool> WaitForCosmicServerAsync()
@@ -1438,7 +1439,7 @@ namespace WindowsFormsApp1
             CreateTaskButtonForWindow(title, win);
         }
 
-        private async void OpenWebAppWindow(string title, string url, Color color)
+        private async void OpenWebAppWindow(string title, string url, Color color, bool ownsCamera = false)
         {
             windowOffset = (windowOffset + 28) % 168;
             int x = leftRail == null ? 24 : leftRail.Right + 16;
@@ -1461,6 +1462,19 @@ namespace WindowsFormsApp1
             win.BringToFront();
             startMenu.BringToFront();
             taskbar.BringToFront();
+
+            // Hand the shared webcam over to this app: release it from the desktop
+            // carousel now, and give it back when this window closes.
+            if (ownsCamera)
+            {
+                cameraAppWindowCount++;
+                SetCarouselCamera(false);
+                win.Disposed += delegate
+                {
+                    cameraAppWindowCount = Math.Max(0, cameraAppWindowCount - 1);
+                    if (cameraAppWindowCount == 0) SetCarouselCamera(true);
+                };
+            }
 
             var header = new Panel
             {
@@ -1621,6 +1635,21 @@ namespace WindowsFormsApp1
             };
             button.FlatAppearance.BorderSize = 0;
             return button;
+        }
+
+        // Tells the desktop carousel WebView to release or resume the shared webcam
+        // so that a camera-using app window (e.g. Cosmic Gesture) can acquire it.
+        private void SetCarouselCamera(bool active)
+        {
+            try
+            {
+                if (carouselWebView != null && carouselWebView.CoreWebView2 != null)
+                {
+                    carouselWebView.CoreWebView2.PostWebMessageAsString(active ? "FUSION_CAMERA_RESUME" : "FUSION_CAMERA_RELEASE");
+                    Debug.WriteLine("[FusionOS Camera] carousel " + (active ? "RESUME" : "RELEASE"));
+                }
+            }
+            catch { }
         }
 
         private void CloseWindow(Control win)

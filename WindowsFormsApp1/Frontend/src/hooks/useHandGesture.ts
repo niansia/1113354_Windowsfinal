@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import type { GestureType, ActivateType, StrokePhase, TapPhase, HandSide } from '../types';
 
-export type GestureStatus = 
+export type { GestureType, ActivateType, StrokePhase, TapPhase, HandSide };
+
+export type GestureStatus =
   | 'INIT'
   | 'CHECKING_MEDIA_DEVICES'
   | 'STREAM_ACQUIRED'
@@ -9,8 +12,8 @@ export type GestureStatus =
   | 'MEDIAPIPE_RUNNING'
   | 'CAMERA_ONLY_MODE'
   | 'NO_HAND_IN_FRAME'
-  | 'HAND_TRACKING' 
-  | 'PINCH_CONTROL' 
+  | 'HAND_TRACKING'
+  | 'PINCH_CONTROL'
   | 'FAST_SWIPE'
   | 'PALM_CONTROL'
   | 'INDEX_SWIPE'
@@ -19,9 +22,6 @@ export type GestureStatus =
   | 'DOUBLE_PINCH'
   | 'FALLBACK_MOUSE_MODE'
   | 'ERROR';
-
-export type GestureType = 'PALM_SWIPE' | 'INDEX_SWIPE' | 'NONE';
-export type ActivateType = 'DOUBLE_PINCH' | 'INDEX_TAP' | 'NONE';
 
 export interface GestureData {
   status: GestureStatus;
@@ -39,6 +39,15 @@ export interface GestureData {
   isControlling: boolean;
   confidence: number;
   isFallback: boolean;
+  // Stroke recognizer surface
+  strokePhase: StrokePhase;
+  handSide: HandSide;
+  candidateX: number;
+  anchorX: number;
+  dxFromAnchor: number;
+  velocityX: number;
+  lastDirection: 'left' | 'right' | null;
+  lastFireDirection: 'left' | 'right' | null;
   errorMessage?: string;
   debug: {
     hasMediaDevices: boolean;
@@ -78,6 +87,19 @@ export interface GestureData {
     activateId: number;
     lastGestureAt: number;
     reason: string;
+    // stroke recognizer debug
+    handSide: HandSide;
+    gestureType: GestureType;
+    strokePhase: StrokePhase;
+    candidateX: number;
+    anchorX: number;
+    dxFromAnchor: number;
+    lastDir: 'left' | 'right' | null;
+    lastFireDir: 'left' | 'right' | null;
+    timeSinceFire: number;
+    returnDirIgnored: 'left' | 'right' | null;
+    tapPhase: TapPhase;
+    isFist: boolean;
     errorName?: string;
     errorMessage?: string;
     trackInfo?: string;
@@ -88,12 +110,32 @@ export interface GestureData {
   };
 }
 
-type PalmFrame = {
-  x: number;
-  t: number;
-  reliable: boolean;
-  openPalm: boolean;
-};
+type StrokeFrame = { x: number; t: number };
+
+// ---- Stroke recognizer tuning (left/right symmetric, hand-agnostic) ----
+const minimumRefireMs = 260;        // min gap between two fires
+const oppositeReturnIgnoreMs = 480; // window where opposite (return) motion is ignored
+const stillnessThreshold = 0.0025;  // |instVx| below this counts as "still"
+const stillnessMs = 140;            // stillness must hold this long to reset
+const minStrokeDistance = 0.045;    // finger/palm displacement to fire
+const minStrokeVelocity = 0.00028;  // finger/palm windowed velocity to fire
+const genericStrokeDistance = 0.09; // higher bar for generic-hand fallback
+const genericStrokeVelocity = 0.0005;
+const velocityWindowMs = 160;       // window for windowed velocity calc
+const resetLostFrames = 8;
+const activateCooldownMs = 900;
+const activateSafeGapMs = 400;      // no activate within this of a fire
+const activateSwipeGuardMs = 450;   // no activate within this of a swipe fire
+
+// ---- Fist activate ----
+const fistHoldMs = 280;
+
+// ---- Index double-tap activate ----
+const tapDownThresholdY = 0.025;
+const tapReleaseThresholdY = 0.015;
+const tapMaxIntervalMs = 480;
+const tapMinIntervalMs = 100;
+const tapHorizVxGuard = 0.006;      // skip tap when hand moving horizontally fast
 
 const INITIAL_DEBUG: GestureData['debug'] = {
   hasMediaDevices: false,
@@ -128,6 +170,18 @@ const INITIAL_DEBUG: GestureData['debug'] = {
   activateId: 0,
   lastGestureAt: 0,
   reason: 'INIT',
+  handSide: 'Unknown',
+  gestureType: 'NONE',
+  strokePhase: 'IDLE',
+  candidateX: 0.5,
+  anchorX: 0.5,
+  dxFromAnchor: 0,
+  lastDir: null,
+  lastFireDir: null,
+  timeSinceFire: 0,
+  returnDirIgnored: null,
+  tapPhase: 'IDLE',
+  isFist: false,
   origin: typeof window !== 'undefined' ? window.location.origin : '',
   href: typeof window !== 'undefined' ? window.location.href : '',
   mediapipeStatus: 'NOT_STARTED',
@@ -155,9 +209,17 @@ export const useHandGesture = (
     isControlling: false,
     confidence: 0,
     isFallback: false,
+    strokePhase: 'IDLE',
+    handSide: 'Unknown',
+    candidateX: 0.5,
+    anchorX: 0.5,
+    dxFromAnchor: 0,
+    velocityX: 0,
+    lastDirection: null,
+    lastFireDirection: null,
     debug: INITIAL_DEBUG
   });
-  
+
   const handsRef = useRef<any>(null);
   const cameraRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -170,36 +232,55 @@ export const useHandGesture = (
   const resultCountRef = useRef(0);
   const lastResultTimeRef = useRef(0);
 
-  // Smoothing and tracking refs
+  // Smoothing / continuous control
   const smoothedHandX = useRef(0.5);
   const lastHandX = useRef(0.5);
-  const velocityX = useRef(0);
   const lastGestureTime = useRef(0);
   const pinchStartHandX = useRef<number | null>(null);
   const swipeIdCounter = useRef(0);
   const activateIdCounter = useRef(0);
 
-  // Gesture State Refs
-  const isGestureArmed = useRef(true);
-  const gestureLockStartTime = useRef(0);
-  
   // Double Pinch Tracking
   const pinchDownRef = useRef(false);
   const lastPinchDownTime = useRef(0);
   const pinchCountRef = useRef(0);
+  const lastActivateTimeRef = useRef(0);
 
-  // History and Latching
-  const palmHistory = useRef<PalmFrame[]>([]);
-  const indexHistory = useRef<PalmFrame[]>([]);
+  // Palm latch + hand-lost tracking
   const lastPalmDetectTime = useRef(0);
   const lostFrameCount = useRef(0);
+
+  // ---- Stroke recognizer state ----
+  const strokePhaseRef = useRef<StrokePhase>('IDLE');
+  const strokeHistory = useRef<StrokeFrame[]>([]);
+  const anchorXRef = useRef(0.5);
+  const lastExtremeXRef = useRef(0.5);
+  const lastCandidateXRef = useRef(0.5);
+  const smoothedCandidateXRef = useRef(0.5);
+  const lastDirectionRef = useRef<'left' | 'right' | null>(null);
+  const lastFireDirectionRef = useRef<'left' | 'right' | null>(null);
+  const lastFireTimeRef = useRef(0);
+  const lastFireXRef = useRef(0.5);
+  const lastConsumedHistoryTimeRef = useRef(0);
+  const stillSinceRef = useRef(0);
+  const returnSeenRef = useRef(false);
+  const returnDirIgnoredRef = useRef<'left' | 'right' | null>(null);
+
+  // ---- Fist activate state ----
+  const fistSinceRef = useRef(0);
+  const fistFiredRef = useRef(false);
+
+  // ---- Index double-tap activate state ----
+  const tapPhaseRef = useRef<TapPhase>('IDLE');
+  const tapBaselineYRef = useRef(0.5);
+  const firstTapTimeRef = useRef(0);
 
   const updateDebug = useCallback((updates: Partial<GestureData['debug']> | { status: GestureStatus, reason: string }) => {
     setGestureData(prev => {
       const newStatus = (updates as any).status || prev.status;
       const newDebug = { ...prev.debug, ...updates };
       if ((updates as any).status) setStatus(newStatus);
-      
+
       return {
         ...prev,
         status: newStatus,
@@ -212,6 +293,16 @@ export const useHandGesture = (
     return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
   };
 
+  // Reset the whole stroke recognizer (used on hand lost / pinch).
+  const resetStroke = (phase: StrokePhase = 'IDLE') => {
+    strokePhaseRef.current = phase;
+    strokeHistory.current = [];
+    lastDirectionRef.current = null;
+    stillSinceRef.current = 0;
+    returnSeenRef.current = false;
+    returnDirIgnoredRef.current = null;
+  };
+
   const onResults = useCallback((results: any) => {
     resultCountRef.current++;
     lastResultTimeRef.current = Date.now();
@@ -222,8 +313,8 @@ export const useHandGesture = (
     let nextHandX = lastHandX.current;
     let nextDeltaX = 0;
     let nextSwipe: 'left' | 'right' | null = null;
-    let nextSwipeId = gestureData.swipeId;
-    let nextActivateId = gestureData.activateId;
+    let nextSwipeId = swipeIdCounter.current;
+    let nextActivateId = activateIdCounter.current;
     let nextGestureType: GestureType = 'NONE';
     let nextActivateType: ActivateType = 'NONE';
     let nextSwipeVelocity = 0;
@@ -235,6 +326,34 @@ export const useHandGesture = (
     let normalizedPinchValue: number | null = null;
     let fingerStates = { index: false, middle: false, ring: false, pinky: false };
     let currentLandmarks = null;
+    let handSide: HandSide = 'Unknown';
+
+    let candidateType: GestureType = 'NONE';
+    let candidateX = lastCandidateXRef.current;
+    let dxFromAnchor = 0;
+    let instVx = 0;
+    let isFistFlag = false;
+
+    // Emit a single activate event (shared by all activate gestures).
+    const emitActivate = (type: ActivateType, reason: string) => {
+      nextActivateType = type;
+      activateIdCounter.current += 1;
+      nextActivateId = activateIdCounter.current;
+      lastActivateTimeRef.current = now;
+      lastGestureTime.current = now + 400;
+      debugReason = reason;
+    };
+    // Strict gate (fist / double pinch): only when stroke machine is idle.
+    const canActivateNow = () =>
+      (strokePhaseRef.current === 'IDLE' || strokePhaseRef.current === 'READY_FOR_NEXT') &&
+      now - lastFireTimeRef.current > activateSwipeGuardMs &&
+      now - lastActivateTimeRef.current > activateCooldownMs;
+    // Relaxed gate (index double-tap): index pointing forces TRACKING, so allow it
+    // as long as we are not mid-swipe (FIRED/RETURNING) and not right after a fire.
+    const canActivateTap = () =>
+      strokePhaseRef.current !== 'FIRED' && strokePhaseRef.current !== 'RETURNING' &&
+      now - lastFireTimeRef.current > activateSwipeGuardMs &&
+      now - lastActivateTimeRef.current > activateCooldownMs;
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
       isHandPresent = true;
@@ -242,7 +361,11 @@ export const useHandGesture = (
       const landmarks = results.multiHandLandmarks[0];
       currentLandmarks = landmarks;
       currentConfidence = results.multiHandWorldLandmarks?.[0]?.[0]?.score || 0.8;
-      
+
+      // Handedness is FOR DISPLAY ONLY. Never used to gate gestures.
+      const rawSide = results.multiHandedness?.[0]?.label;
+      handSide = rawSide === 'Left' ? 'Left' : rawSide === 'Right' ? 'Right' : 'Unknown';
+
       const thumbTip = landmarks[4];
       const indexTip = landmarks[8];
       const indexPip = landmarks[6];
@@ -256,187 +379,304 @@ export const useHandGesture = (
       const palmMid = landmarks[9];
 
       const palmCenterLandmarks = [landmarks[0], landmarks[5], landmarks[9], landmarks[13], landmarks[17]];
-      const currentPalmX = palmCenterLandmarks.reduce((sum, l) => sum + l.x, 0) / 5;
+      const palmCenterX = palmCenterLandmarks.reduce((sum, l) => sum + l.x, 0) / 5;
 
-      // Finger Detection
-      fingerStates = {
-        index: indexTip.y < indexPip.y,
-        middle: middleTip.y < middlePip.y,
-        ring: ringTip.y < ringPip.y,
-        pinky: pinkyTip.y < pinkyPip.y
-      };
-      const extendedCount = Object.values(fingerStates).filter(v => v).length;
-      
-      // Open Palm: Index + Middle + Ring or Pinky
+      // Finger extension (tip above pip => extended).
+      const indexExt = indexTip.y < indexPip.y;
+      const middleExt = middleTip.y < middlePip.y;
+      const ringExt = ringTip.y < ringPip.y;
+      const pinkyExt = pinkyTip.y < pinkyPip.y;
+      fingerStates = { index: indexExt, middle: middleExt, ring: ringExt, pinky: pinkyExt };
+      const extendedCount = [indexExt, middleExt, ringExt, pinkyExt].filter(Boolean).length;
+      const foldedOfMRP = [middleExt, ringExt, pinkyExt].filter(e => !e).length;
+
       isOpenPalm = extendedCount >= 3;
-      
-      // Index Pointing: Index extended, Middle, Ring, Pinky folded (at least 2 of 3)
-      const otherThreeFolded = (!fingerStates.middle && !fingerStates.ring) || 
-                               (!fingerStates.middle && !fingerStates.pinky) ||
-                               (!fingerStates.ring && !fingerStates.pinky);
-      isIndexPointing = fingerStates.index && otherThreeFolded;
-      
+      isIndexPointing = indexExt && foldedOfMRP >= 2;
       if (isOpenPalm) lastPalmDetectTime.current = now;
-
       const isLatchedPalm = isOpenPalm || (now - lastPalmDetectTime.current < 400);
 
-      // Continuous Control Smoothing
-      smoothedHandX.current = smoothedHandX.current * 0.55 + currentPalmX * 0.45;
+      // ----- Fist detection (tip below pip => curled) -----
+      const indexCurl = indexTip.y > indexPip.y;
+      const middleCurl = middleTip.y > middlePip.y;
+      const ringCurl = ringTip.y > ringPip.y;
+      const pinkyCurl = pinkyTip.y > pinkyPip.y;
+      const curledCount = [indexCurl, middleCurl, ringCurl, pinkyCurl].filter(Boolean).length;
+      const isFist = curledCount >= 3;
+      isFistFlag = isFist;
+      // Must fully release the fist before it can fire again.
+      if (!isFist) { fistSinceRef.current = 0; fistFiredRef.current = false; }
+
+      // ----- Candidate selection by priority -----
+      // A. Index finger swipe
+      if (indexExt && foldedOfMRP >= 2) {
+        candidateType = 'INDEX_SWIPE';
+        candidateX = indexTip.x;
+      // B. Two finger swipe (index + middle, ring/pinky at least one folded)
+      } else if (indexExt && middleExt && (!ringExt || !pinkyExt)) {
+        candidateType = 'TWO_FINGER_SWIPE';
+        candidateX = (indexTip.x + middleTip.x) / 2;
+      // C. Open palm swipe (>=3 extended)
+      } else if (extendedCount >= 3) {
+        candidateType = 'PALM_SWIPE';
+        candidateX = palmCenterX;
+      // D. Generic hand fallback (any hand present)
+      } else {
+        candidateType = 'GENERIC_HAND_SWIPE';
+        candidateX = palmCenterX;
+      }
+
+      // Continuous palm control smoothing (used for pinch drag visuals).
+      smoothedHandX.current = smoothedHandX.current * 0.55 + palmCenterX * 0.45;
       nextHandX = smoothedHandX.current;
 
-      // History Buffers
-      palmHistory.current.push({ x: currentPalmX, t: now, reliable: true, openPalm: isOpenPalm });
-      if (palmHistory.current.length > 25) palmHistory.current.shift();
-      
-      if (isIndexPointing) {
-        indexHistory.current.push({ x: indexTip.x, t: now, reliable: true, openPalm: false });
-      } else {
-        // Clear history if not pointing to avoid stale movements
-        if (indexHistory.current.length > 0) indexHistory.current.shift();
-      }
-      if (indexHistory.current.length > 20) indexHistory.current.shift();
-
-      // 1. Double Pinch Activation
+      // ----- Pinch + double pinch -----
       const palmSize = calculateDistance(palmBase, palmMid);
       const pinchDist = calculateDistance(thumbTip, indexTip);
       normalizedPinchValue = pinchDist / (palmSize || 0.1);
-
-      const IS_PINCH_DOWN = normalizedPinchValue < 0.38;
-      const IS_PINCH_UP = normalizedPinchValue > 0.52;
+      // A fist also makes thumb/index close; exclude it from pinch.
+      const IS_PINCH_DOWN = !isFist && normalizedPinchValue < 0.38;
+      const IS_PINCH_UP = isFist || normalizedPinchValue > 0.52;
 
       if (IS_PINCH_DOWN && !pinchDownRef.current) {
-        // Pinch Start (Initial Down)
         pinchDownRef.current = true;
         const timeSinceLastPinch = now - lastPinchDownTime.current;
-        
         if (timeSinceLastPinch < 450 && timeSinceLastPinch > 100) {
-           pinchCountRef.current += 1;
+          pinchCountRef.current += 1;
         } else {
-           pinchCountRef.current = 1;
+          pinchCountRef.current = 1;
         }
         lastPinchDownTime.current = now;
-        
-        if (pinchCountRef.current >= 2) {
-          nextActivateType = 'DOUBLE_PINCH';
-          activateIdCounter.current += 1;
-          nextActivateId = activateIdCounter.current;
-          debugReason = 'DOUBLE_PINCH_ACTIVATED';
-          pinchCountRef.current = 0; // Reset
-          
-          // Cooldown for activate
-          lastGestureTime.current = now + 400; 
+
+        // Activate only in a safe stroke state, away from a recent fire.
+        const phaseSafe = strokePhaseRef.current === 'IDLE' || strokePhaseRef.current === 'READY_FOR_NEXT';
+        const farFromFire = now - lastFireTimeRef.current > activateSafeGapMs;
+        const cooldownOk = now - lastActivateTimeRef.current > activateCooldownMs;
+        if (pinchCountRef.current >= 2 && phaseSafe && farFromFire && cooldownOk) {
+          emitActivate('DOUBLE_PINCH_ACTIVATE', 'DOUBLE_PINCH_ACTIVATE_SELECTED_APP');
+          pinchCountRef.current = 0;
+        } else if (pinchCountRef.current >= 2) {
+          // Detected but blocked by stroke state -> swallow.
+          pinchCountRef.current = 0;
         }
       } else if (IS_PINCH_UP) {
         pinchDownRef.current = false;
       }
 
-      // 2. Pinch Drag Control (Continuous)
-      nextIsPinching = IS_PINCH_DOWN || (gestureData.isPinching && !IS_PINCH_UP);
+      nextIsPinching = !isFist && (IS_PINCH_DOWN || (gestureData.isPinching && !IS_PINCH_UP));
 
-      if (nextIsPinching) {
+      if (isFist) {
+        // ----- Fist activate: open the currently centered app on hold -----
+        candidateType = 'NONE';
+        resetStroke('IDLE');
+        tapPhaseRef.current = 'IDLE';
+        if (fistSinceRef.current === 0) fistSinceRef.current = now;
+        if (!fistFiredRef.current && now - fistSinceRef.current >= fistHoldMs && canActivateNow()) {
+          emitActivate('FIST_ACTIVATE', 'FIST_ACTIVATE_SELECTED_APP');
+          fistFiredRef.current = true;
+        } else if (!fistFiredRef.current) {
+          debugReason = 'FIST_HOLDING';
+        } else {
+          debugReason = 'FIST_HELD';
+        }
+      } else if (nextIsPinching) {
+        // Pinch drag control: stroke recognizer paused & reset.
         nextStatus = 'PINCH_CONTROL';
         if (pinchStartHandX.current === null) pinchStartHandX.current = nextHandX;
         nextDeltaX = -(nextHandX - pinchStartHandX.current) * 2200;
+        resetStroke('IDLE');
+        tapPhaseRef.current = 'IDLE';
+        candidateType = 'NONE';
       } else {
         pinchStartHandX.current = null;
-        
-        // 3. Swipe Detection with Arming/Locking
-        const currentVxRaw = (nextHandX - lastHandX.current) / 16; 
-        
-        // Re-arm conditions
-        if (!isGestureArmed.current) {
-          const timeSinceLock = now - gestureLockStartTime.current;
-          const isStable = Math.abs(currentVxRaw) < 0.0004;
-          const isCenter = Math.abs(nextHandX - 0.5) < 0.15;
-          const isReleased = !isLatchedPalm && !isIndexPointing;
-          
-          if (timeSinceLock > 600 || isStable || isCenter || isReleased) {
-            isGestureArmed.current = true;
-            debugReason = 'GESTURE_REARMED';
+
+        // ===================== STROKE RECOGNIZER =====================
+        // Light smoothing of the candidate position to tame MediaPipe jitter.
+        smoothedCandidateXRef.current = smoothedCandidateXRef.current * 0.4 + candidateX * 0.6;
+        const sx = smoothedCandidateXRef.current;
+
+        instVx = sx - lastCandidateXRef.current;
+        const isStill = Math.abs(instVx) < stillnessThreshold;
+        const instDir: 'left' | 'right' | null =
+          instVx > stillnessThreshold ? 'right' : instVx < -stillnessThreshold ? 'left' : null;
+
+        // Stillness window.
+        if (isStill) {
+          if (stillSinceRef.current === 0) stillSinceRef.current = now;
+        } else {
+          stillSinceRef.current = 0;
+        }
+
+        // History (used for windowed velocity + single-consume guard).
+        strokeHistory.current.push({ x: sx, t: now });
+        if (strokeHistory.current.length > 40) strokeHistory.current.shift();
+
+        const isGeneric = candidateType === 'GENERIC_HAND_SWIPE';
+        const fireDist = isGeneric ? genericStrokeDistance : minStrokeDistance;
+        const fireVel = isGeneric ? genericStrokeVelocity : minStrokeVelocity;
+
+        const phase = strokePhaseRef.current;
+
+        if (phase === 'IDLE' || phase === 'READY_FOR_NEXT') {
+          // Establish a fresh local baseline; a new stroke measures from here.
+          anchorXRef.current = sx;
+          lastExtremeXRef.current = sx;
+          strokePhaseRef.current = 'TRACKING';
+          debugReason = phase === 'READY_FOR_NEXT' ? 'READY_FOR_NEXT_STROKE' : 'STROKE_TRACKING';
+        } else if (phase === 'TRACKING') {
+          dxFromAnchor = sx - anchorXRef.current;
+
+          // Windowed velocity over fresh (un-consumed) frames only.
+          const fresh = strokeHistory.current.filter(f => f.t > lastConsumedHistoryTimeRef.current);
+          let windowVx = 0;
+          if (fresh.length >= 2) {
+            const latest = fresh[fresh.length - 1];
+            const earliest = fresh.find(f => latest.t - f.t < velocityWindowMs) || fresh[0];
+            const dt = latest.t - earliest.t || 1;
+            windowVx = (latest.x - earliest.x) / dt;
+          }
+
+          const dist = Math.abs(dxFromAnchor);
+          const passDist = dist > fireDist;
+          const passVel = Math.abs(windowVx) > fireVel && dist > fireDist * 0.5;
+          const refireOk = now - lastFireTimeRef.current > minimumRefireMs;
+
+          if ((passDist || passVel) && refireOk) {
+            const dir: 'left' | 'right' = dxFromAnchor < 0 ? 'left' : 'right';
+            nextSwipe = dir;
+            nextGestureType = candidateType;
+            nextSwipeVelocity = windowVx;
+            swipeIdCounter.current += 1;
+            nextSwipeId = swipeIdCounter.current;
+            nextStatus = candidateType === 'INDEX_SWIPE' ? 'INDEX_SWIPE' : 'FAST_SWIPE';
+
+            lastFireDirectionRef.current = dir;
+            lastFireTimeRef.current = now;
+            lastFireXRef.current = sx;
+            // Single-consume guard: nothing up to here can re-trigger.
+            lastConsumedHistoryTimeRef.current = now;
+            lastGestureTime.current = now;
+            returnSeenRef.current = false;
+            returnDirIgnoredRef.current = null;
+
+            strokePhaseRef.current = 'FIRED';
+            debugReason = dir === 'left' ? 'STROKE_FIRED_LEFT' : 'STROKE_FIRED_RIGHT';
           } else {
-            nextStatus = 'SWIPE_LOCKED';
-            debugReason = 'WAITING_FOR_RESET';
+            // Re-baseline on long stillness (drift correction) so the next real
+            // stroke measures from where the hand actually rests.
+            if (isStill && stillSinceRef.current !== 0 && now - stillSinceRef.current > stillnessMs) {
+              anchorXRef.current = sx;
+            }
+            debugReason = 'STROKE_TRACKING';
+          }
+        } else if (phase === 'FIRED') {
+          // One frame of FIRED, then move to RETURNING.
+          nextStatus = 'SWIPE_LOCKED';
+          strokePhaseRef.current = 'RETURNING';
+          debugReason = lastFireDirectionRef.current === 'left' ? 'STROKE_FIRED_LEFT' : 'STROKE_FIRED_RIGHT';
+        } else if (phase === 'RETURNING') {
+          nextStatus = 'SWIPE_LOCKED';
+          dxFromAnchor = sx - anchorXRef.current;
+          const reverseDir = lastFireDirectionRef.current === 'left' ? 'right' : 'left';
+
+          // Opposite (return) motion inside the ignore window -> swallow, follow baseline.
+          if (now - lastFireTimeRef.current < oppositeReturnIgnoreMs && instDir === reverseDir) {
+            returnSeenRef.current = true;
+            returnDirIgnoredRef.current = instDir;
+            anchorXRef.current = sx; // baseline follows the hand back
+            debugReason = 'RETURN_MOTION_IGNORED';
+          } else {
+            debugReason = 'STROKE_TRACKING';
+          }
+
+          // ----- Exit conditions (reset WITHOUT leaving frame) -----
+          const stillReset = isStill && stillSinceRef.current !== 0 &&
+            now - stillSinceRef.current > stillnessMs && now - lastFireTimeRef.current > minimumRefireMs;
+          // A genuine NEW stroke after a return: we saw the return, now the hand
+          // moves again in the fired direction.
+          const reversalReset = returnSeenRef.current && instDir === lastFireDirectionRef.current &&
+            now - lastFireTimeRef.current > minimumRefireMs;
+          const windowElapsed = now - lastFireTimeRef.current > oppositeReturnIgnoreMs && isStill;
+
+          if (stillReset || reversalReset || windowElapsed) {
+            anchorXRef.current = sx;
+            lastExtremeXRef.current = sx;
+            returnDirIgnoredRef.current = null;
+            returnSeenRef.current = false;
+            strokePhaseRef.current = 'READY_FOR_NEXT';
+            debugReason = reversalReset
+              ? 'RESET_BY_DIRECTION_REVERSAL'
+              : 'RESET_BY_STILLNESS';
           }
         }
 
-        // Only trigger if armed and enough time has passed since last gesture
-        if (isGestureArmed.current && now - lastGestureTime.current > 450) {
-          // A. Palm Swipe
-          if (isLatchedPalm) {
-            const history = palmHistory.current;
-            const windowMs = 350;
-            const earliest = history.find(f => now - f.t < windowMs);
-            const latest = history[history.length - 1];
-            if (earliest && earliest !== latest) {
-              const dx = latest.x - earliest.x;
-              const dt = latest.t - earliest.t;
-              const vx = dx / dt;
-              
-              // Palm Swipe Thresholds
-              if (Math.abs(dx) > 0.06 || Math.abs(vx) > 0.00038) {
-                nextSwipe = dx > 0 ? 'right' : 'left';
-                nextStatus = 'FAST_SWIPE';
-                nextGestureType = 'PALM_SWIPE';
-                nextSwipeVelocity = vx;
-                swipeIdCounter.current += 1;
-                nextSwipeId = swipeIdCounter.current;
-                
-                lastGestureTime.current = now;
-                isGestureArmed.current = false;
-                gestureLockStartTime.current = now;
-                debugReason = 'PALM_SWIPE_TRIGGERED';
+        if (instDir) lastDirectionRef.current = instDir;
+        lastCandidateXRef.current = sx;
+
+        // ----- Index double-tap activate (runs while index pointing) -----
+        if (candidateType === 'INDEX_SWIPE') {
+          const idxY = indexTip.y;
+          const horizFast = Math.abs(instVx) > tapHorizVxGuard;
+          const tp = tapPhaseRef.current;
+          const dyDown = idxY - tapBaselineYRef.current;
+
+          if (tp === 'IDLE') {
+            // Track resting position while the finger is up.
+            tapBaselineYRef.current = tapBaselineYRef.current * 0.8 + idxY * 0.2;
+            if (!horizFast && dyDown > tapDownThresholdY) {
+              tapPhaseRef.current = 'TAP_DOWN_1';
+            }
+          } else if (tp === 'TAP_DOWN_1') {
+            if (dyDown < tapReleaseThresholdY) {
+              tapPhaseRef.current = 'WAIT_SECOND_TAP';
+              firstTapTimeRef.current = now;
+            }
+          } else if (tp === 'WAIT_SECOND_TAP') {
+            if (now - firstTapTimeRef.current > tapMaxIntervalMs) {
+              tapPhaseRef.current = 'IDLE';
+            } else if (now - firstTapTimeRef.current > tapMinIntervalMs && !horizFast && dyDown > tapDownThresholdY) {
+              tapPhaseRef.current = 'TAP_DOWN_2';
+            }
+          } else if (tp === 'TAP_DOWN_2') {
+            if (dyDown < tapReleaseThresholdY) {
+              // Second tap released -> double tap complete.
+              if (canActivateTap()) {
+                emitActivate('INDEX_DOUBLE_TAP_ACTIVATE', 'INDEX_DOUBLE_TAP_ACTIVATE_SELECTED_APP');
               }
+              tapPhaseRef.current = 'IDLE';
+            } else if (now - firstTapTimeRef.current > tapMaxIntervalMs * 2) {
+              tapPhaseRef.current = 'IDLE';
             }
           }
-          
-          // B. Index Swipe
-          if (nextStatus === 'MEDIAPIPE_RUNNING' && isIndexPointing) {
-            const history = indexHistory.current;
-            const windowMs = 300;
-            const earliest = history.find(f => now - f.t < windowMs);
-            const latest = history[history.length - 1];
-            if (earliest && earliest !== latest) {
-              const dx = latest.x - earliest.x;
-              const dt = latest.t - earliest.t;
-              const vx = dx / dt;
-              
-              // Index Swipe Thresholds
-              if (Math.abs(dx) > 0.045 || Math.abs(vx) > 0.0003) {
-                nextSwipe = dx > 0 ? 'right' : 'left';
-                nextStatus = 'INDEX_SWIPE';
-                nextGestureType = 'INDEX_SWIPE';
-                nextSwipeVelocity = vx;
-                swipeIdCounter.current += 1;
-                nextSwipeId = swipeIdCounter.current;
-                
-                lastGestureTime.current = now;
-                isGestureArmed.current = false;
-                gestureLockStartTime.current = now;
-                debugReason = 'INDEX_SWIPE_TRIGGERED';
-              }
-            }
-          }
+        } else {
+          tapPhaseRef.current = 'IDLE';
         }
 
+        // Idle visual for palm control when nothing fired.
         if (nextStatus === 'MEDIAPIPE_RUNNING' && isLatchedPalm) {
           nextStatus = 'PALM_CONTROL';
         }
       }
       lastHandX.current = nextHandX;
     } else {
-      // Hand Lost
+      // Hand lost
       lostFrameCount.current += 1;
-      if (lostFrameCount.current > 8) {
+      if (lostFrameCount.current > resetLostFrames) {
         nextStatus = 'NO_HAND_IN_FRAME';
         pinchStartHandX.current = null;
-        isGestureArmed.current = true; // Re-arm on hand exit
         pinchCountRef.current = 0;
-        debugReason = 'HAND_LOST';
+        resetStroke('IDLE');
+        fistSinceRef.current = 0;
+        fistFiredRef.current = false;
+        tapPhaseRef.current = 'IDLE';
+        debugReason = 'RESET_BY_HAND_LOST';
       } else {
         nextStatus = status === 'NO_HAND_IN_FRAME' ? 'NO_HAND_IN_FRAME' : status;
         nextIsPinching = gestureData.isPinching;
       }
     }
+
+    const phaseNow = strokePhaseRef.current;
+    const isLocked = phaseNow === 'FIRED' || phaseNow === 'RETURNING';
 
     setGestureData(prev => ({
       ...prev,
@@ -450,8 +690,17 @@ export const useHandGesture = (
       swipeId: nextSwipeId,
       swipeVelocity: nextSwipeVelocity,
       activateId: nextActivateId,
-      isGestureLocked: !isGestureArmed.current,
+      isGestureLocked: isLocked,
+      isControlling: nextIsPinching || phaseNow === 'TRACKING',
       confidence: currentConfidence,
+      strokePhase: phaseNow,
+      handSide,
+      candidateX,
+      anchorX: anchorXRef.current,
+      dxFromAnchor,
+      velocityX: instVx,
+      lastDirection: lastDirectionRef.current,
+      lastFireDirection: lastFireDirectionRef.current,
       debug: {
         ...prev.debug,
         cameraStreamActive: !!streamRef.current?.active,
@@ -469,8 +718,8 @@ export const useHandGesture = (
         palmLatched: (now - lastPalmDetectTime.current < 400),
         extendedFingers: fingerStates,
         palmX: isHandPresent ? nextHandX : null,
-        dx: Number((nextHandX - lastHandX.current).toFixed(4)),
-        vx: Number(velocityX.current.toFixed(5)),
+        dx: Number(dxFromAnchor.toFixed(4)),
+        vx: Number(instVx.toFixed(5)),
         pinchNormalized: normalizedPinchValue,
         pinchDown: pinchDownRef.current,
         pinchCount: pinchCountRef.current,
@@ -478,11 +727,23 @@ export const useHandGesture = (
         swipeId: nextSwipeId,
         activateId: nextActivateId,
         lastGestureAt: lastGestureTime.current,
-        reason: debugReason
+        reason: debugReason,
+        handSide,
+        gestureType: candidateType,
+        strokePhase: phaseNow,
+        candidateX: Number(candidateX.toFixed(4)),
+        anchorX: Number(anchorXRef.current.toFixed(4)),
+        dxFromAnchor: Number(dxFromAnchor.toFixed(4)),
+        lastDir: lastDirectionRef.current,
+        lastFireDir: lastFireDirectionRef.current,
+        timeSinceFire: lastFireTimeRef.current ? now - lastFireTimeRef.current : 0,
+        returnDirIgnored: returnDirIgnoredRef.current,
+        tapPhase: tapPhaseRef.current,
+        isFist: isFistFlag
       }
     }));
     setStatus(nextStatus);
-  }, [gestureData.isPinching, gestureData.swipeId, gestureData.activateId, status, videoRef]);
+  }, [gestureData.isPinching, status, videoRef]);
 
   const stopCamera = useCallback(() => {
     if (cameraRef.current) { try { cameraRef.current.stop(); } catch (e) {} cameraRef.current = null; }
@@ -558,6 +819,29 @@ export const useHandGesture = (
     autoStart();
     return () => { cancelled = true; stopCamera(); };
   }, []);
+
+  // The webcam is a single shared device. When the FusionOS host opens a
+  // camera-using app (e.g. Cosmic Gesture) it posts FUSION_CAMERA_RELEASE so the
+  // desktop stops grabbing the camera; FUSION_CAMERA_RESUME re-acquires it when
+  // that app window closes. Without this the app gets "Could not start video source".
+  useEffect(() => {
+    const webview = (window as any).chrome?.webview;
+    if (!webview || typeof webview.addEventListener !== 'function') return;
+    const handler = (event: any) => {
+      const data = typeof event?.data === 'string' ? event.data : '';
+      if (data === 'FUSION_CAMERA_RELEASE') {
+        stopCamera();
+        updateDebug({ status: 'CAMERA_ONLY_MODE', reason: 'CAMERA_RELEASED_FOR_APP' });
+      } else if (data === 'FUSION_CAMERA_RESUME') {
+        updateDebug({ reason: 'CAMERA_RESUME_REQUESTED' });
+        startCamera();
+      }
+    };
+    webview.addEventListener('message', handler);
+    return () => {
+      try { webview.removeEventListener('message', handler); } catch (e) {}
+    };
+  }, [startCamera, stopCamera, updateDebug]);
 
   return { status, gestureData, startCamera };
 };

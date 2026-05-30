@@ -95,7 +95,9 @@ export type GestureEvent =
   | { type: "closedFist"; confidence: number }
   | { type: "orbit"; velocityX: number; velocityY: number }
   | { type: "number"; value: NumberGestureValue; confidence: number }
-  | { type: "pointer"; pointer: GesturePointer };
+  | { type: "pointer"; pointer: GesturePointer }
+  | { type: "swipe"; dir: "left" | "right" }
+  | { type: "tilt"; dir: "up" | "down" };
 
 export interface GestureDebugState {
   enabled: boolean;

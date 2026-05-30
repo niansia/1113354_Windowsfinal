@@ -6,11 +6,13 @@ interface CameraPreviewProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
   gestureData: GestureData;
+  queueDepth?: number;
   onManualStart: () => void;
 }
 
-export const CameraPreview: React.FC<CameraPreviewProps> = ({ status, videoRef, canvasRef, gestureData, onManualStart }) => {
+export const CameraPreview: React.FC<CameraPreviewProps> = ({ status, videoRef, canvasRef, gestureData, queueDepth = 0, onManualStart }) => {
   const debug = gestureData.debug;
+  const upper = (v: string | null | undefined) => (v || 'NONE').toString().toUpperCase();
 
   // Mount/Unmount logging
   useEffect(() => {
@@ -152,22 +154,39 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({ status, videoRef, 
           <div className="col-span-2 text-[8px] opacity-60 truncate">ORIGIN: {debug?.origin}</div>
           <div>STATUS: <span style={{ color: '#ff003c' }}>{status}</span></div>
           <div>REASON: <span style={{ color: '#00f2ff' }}>{debug?.reason}</span></div>
-          
+
           <div className="col-span-2 h-[1px] bg-white/10 my-1"></div>
-          
+
           <div>HAND: {debug?.hasHand ? 'YES' : 'NO'} ({debug?.handCount})</div>
+          <div>HAND SIDE: <span style={{ color: '#9aa' }}>{upper(debug?.handSide)}</span></div>
+          <div>GESTURE TYPE: <span style={{ color: '#ffd500' }}>{upper((debug?.gestureType || 'NONE').replace('_SWIPE', ''))}</span></div>
+          <div>STROKE PHASE: <span style={{ color: '#ffd500' }}>{upper(debug?.strokePhase)}</span></div>
+          <div>STROKE DIR: <span style={{ color: '#00f2ff' }}>{upper(debug?.swipeDirection)}</span></div>
+          <div>LAST FIRED DIR: <span style={{ color: '#00f2ff' }}>{upper(debug?.lastFireDir)}</span></div>
+          <div>RETURN IGNORED: <span style={{ color: '#ff8800' }}>{upper(debug?.returnDirIgnored)}</span></div>
+          <div>LOCKED: {gestureData.isGestureLocked ? 'YES' : 'NO'}</div>
+
+          <div className="col-span-2 h-[1px] bg-white/10 my-1"></div>
+
+          <div>CANDIDATE X: {debug?.candidateX?.toFixed(3)}</div>
+          <div>ANCHOR X: {debug?.anchorX?.toFixed(3)}</div>
+          <div>DX FROM ANCHOR: {debug?.dxFromAnchor?.toFixed(3)}</div>
+          <div>VX: {debug?.vx?.toFixed(4)}</div>
+          <div>TIME SINCE FIRE: {debug?.timeSinceFire}ms</div>
+          <div>QUEUE: {queueDepth}</div>
+
+          <div className="col-span-2 h-[1px] bg-white/10 my-1"></div>
+
           <div>OPEN PALM: {debug?.openPalm ? 'YES' : 'NO'}</div>
-          <div>INDEX POINT: {debug?.indexPointing ? 'YES' : 'NO'}</div>
           <div>PINCH DOWN: {debug?.pinchDown ? 'YES' : 'NO'}</div>
           <div>PINCH VAL: {debug?.pinchNormalized?.toFixed(2) || 'N/A'}</div>
           <div>PINCH COUNT: {debug?.pinchCount}</div>
-          
-          <div className="col-span-2 h-[1px] bg-white/10 my-1"></div>
-          
           <div>SWIPE ID: {debug?.swipeId}</div>
           <div>ACTIVATE ID: {debug?.activateId}</div>
-          <div>LOCKED: {gestureData.isGestureLocked ? 'YES' : 'NO'}</div>
-          <div>CONFIDENCE: {gestureData.confidence.toFixed(2)}</div>
+          <div>FIST: <span style={{ color: debug?.isFist ? '#0f0' : '#888' }}>{debug?.isFist ? 'YES' : 'NO'}</span></div>
+          <div>TAP PHASE: <span style={{ color: '#ffd500' }}>{upper(debug?.tapPhase)}</span></div>
+          <div className="col-span-2">ACTIVATE TYPE: <span style={{ color: '#00f2ff' }}>{upper(gestureData.activateType)}</span></div>
+          <div className="col-span-2">CONFIDENCE: {gestureData.confidence.toFixed(2)}</div>
           
           {debug?.errorName && (
             <div className="col-span-2 mt-1 p-1 bg-red-900/40 border border-red-500/50 rounded text-[8px] text-red-200">

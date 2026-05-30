@@ -31,6 +31,7 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
   const numberVotesRef = useRef<Array<NumberGestureValue | 0>>([]);
   const numberStableRef = useRef<{ value: NumberGestureValue | 0; since: number }>({ value: 0, since: 0 });
   const cooldownUntilRef = useRef(0);
+  const swipeCooldownRef = useRef(0);
   const frameTimesRef = useRef<number[]>([]);
   const [debug, setDebug] = useState<GestureDebugState>({
     enabled,
@@ -155,6 +156,16 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
         if (Math.abs(vx) > 0.00042) {
           onGesture({ type: "orbit", velocityX: vx * 155, velocityY: vy * 82 });
         }
+        // Decisive flicks => discrete navigation (object / category), with cooldown.
+        if (now > swipeCooldownRef.current) {
+          if (Math.abs(vx) > 0.0062 && Math.abs(vx) > Math.abs(vy) * 1.4) {
+            swipeCooldownRef.current = now + 720;
+            onGesture({ type: "swipe", dir: vx < 0 ? "left" : "right" });
+          } else if (Math.abs(vy) > 0.0062 && Math.abs(vy) > Math.abs(vx) * 1.4) {
+            swipeCooldownRef.current = now + 720;
+            onGesture({ type: "tilt", dir: vy < 0 ? "up" : "down" });
+          }
+        }
       }
       prevPointerRef.current = { x: pointer.x, y: pointer.y, t: now };
 
@@ -179,15 +190,13 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
         fistSinceRef.current = null;
       }
 
-      const numberGesture = classifySingleHandNumberGesture(hand, state);
-      updateNumberVotes(numberGesture?.value ?? 0, numberGesture?.confidence ?? 0, now);
       updateFps(now);
 
       setDebug({
         enabled,
         active: true,
-        label: numberGesture ? `辨識：${numberGesture.value}` : open ? "張掌" : fist ? "握拳" : "追蹤中",
-        confidence: numberGesture?.confidence ?? (open || fist ? 0.78 : 0.5),
+        label: open ? "張掌" : fist ? "握拳" : "追蹤中",
+        confidence: open || fist ? 0.78 : 0.5,
         fingerStates: [
           state.thumb ? "T" : "-",
           state.index ? "I" : "-",

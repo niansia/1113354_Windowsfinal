@@ -63,9 +63,9 @@ select {
 }
 
 .hud-title {
-  top: 30px;
-  left: 34px;
-  max-width: 560px;
+  top: 24px;
+  left: 30px;
+  max-width: 420px;
   pointer-events: none;
 }
 
@@ -79,10 +79,10 @@ select {
 }
 
 .hud-title h1 {
-  margin: 8px 0 4px;
+  margin: 6px 0 4px;
   color: #ffffff;
-  font-size: clamp(54px, 6vh, 86px);
-  line-height: 0.96;
+  font-size: clamp(38px, 4.4vh, 58px);
+  line-height: 0.98;
   font-weight: 800;
   text-shadow: 0 0 24px rgba(143, 209, 255, 0.35);
 }

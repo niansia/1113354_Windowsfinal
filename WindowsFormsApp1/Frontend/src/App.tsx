@@ -3,9 +3,29 @@ import { useHandGesture } from './hooks/useHandGesture';
 import { GestureAppCarousel } from './components/GestureAppCarousel';
 import { CameraPreview } from './components/CameraPreview';
 
+// Production UI is clean. Enable the camera preview + debug HUD only by running
+// `localStorage.setItem('fusionGestureDebug','1')` then reloading.
+// Disable with `localStorage.removeItem('fusionGestureDebug')`.
+const DEBUG_GESTURE_UI =
+  typeof window !== 'undefined' &&
+  window.localStorage &&
+  window.localStorage.getItem('fusionGestureDebug') === '1';
+
+// Hidden video keeps the camera stream feeding MediaPipe when the preview is off.
+const HIDDEN_VIDEO_STYLE: React.CSSProperties = {
+  position: 'fixed',
+  width: 1,
+  height: 1,
+  opacity: 0,
+  pointerEvents: 'none',
+  left: -9999,
+  top: -9999
+};
+
 export default function App() {
   const [activeAppIndex, setActiveAppIndex] = useState(0);
-  
+  const [queueDepth, setQueueDepth] = useState(0);
+
   // Create refs here to share between hook and component
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -51,20 +71,30 @@ export default function App() {
 
   return (
     <div className="w-screen h-screen bg-transparent flex flex-col relative overflow-hidden">
-      {/* DEFINITIVE BUILD MARKER */}
-      <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[100000] bg-cyan-600 text-white text-[10px] font-black px-4 py-1 rounded-full shadow-xl pointer-events-none select-none animate-pulse border border-white/20">
-        BUILD MODE ACTIVE - DIST VERSION (v{Date.now().toString().slice(-4)})
-      </div>
+      {/* DEFINITIVE BUILD MARKER (debug only) */}
+      {DEBUG_GESTURE_UI && (
+        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-[100000] bg-cyan-600 text-white text-[10px] font-black px-4 py-1 rounded-full shadow-xl pointer-events-none select-none animate-pulse border border-white/20">
+          BUILD MODE ACTIVE - DIST VERSION (v{Date.now().toString().slice(-4)})
+        </div>
+      )}
+
+      {/* Hidden video for MediaPipe when the debug preview is not rendered.
+          Camera stream stays alive; only the preview UI is hidden. */}
+      {!DEBUG_GESTURE_UI && (
+        <video ref={videoRef} autoPlay playsInline muted style={HIDDEN_VIDEO_STYLE} />
+      )}
 
       {/* Central Stage */}
       <div className="flex-1 relative">
-        <GestureAppCarousel 
-          onIndexChange={setActiveAppIndex} 
+        <GestureAppCarousel
+          onIndexChange={setActiveAppIndex}
+          onQueueChange={setQueueDepth}
           gestureData={gestureData}
         />
       </div>
       
-      {/* HUD Status Hint - Non-interactive text only */}
+      {/* HUD Status Hint - Non-interactive text only (debug only) */}
+      {DEBUG_GESTURE_UI && (
       <div className="absolute bottom-6 left-10 flex items-center gap-4 pointer-events-none select-none">
         <div className={`
           w-2.5 h-2.5 rounded-full shadow-[0_0_15px_rgba(34,211,238,0.5)]
@@ -79,18 +109,22 @@ export default function App() {
           </span>
         </div>
       </div>
+      )}
 
-      {/* DETAILED DIAGNOSTIC OVERLAY - Unconditional Render */}
-      <CameraPreview 
-        status={status} 
-        videoRef={videoRef} 
-        canvasRef={canvasRef} 
-        gestureData={gestureData} 
-        onManualStart={startCamera}
-      />
+      {/* DETAILED DIAGNOSTIC OVERLAY - debug only */}
+      {DEBUG_GESTURE_UI && (
+        <CameraPreview
+          status={status}
+          videoRef={videoRef}
+          canvasRef={canvasRef}
+          gestureData={gestureData}
+          queueDepth={queueDepth}
+          onManualStart={startCamera}
+        />
+      )}
 
-      {/* Non-interactive Debug HUD - Detailed Diagnostic */}
-      {gestureData.debug && (
+      {/* Non-interactive Debug HUD - Detailed Diagnostic (debug only) */}
+      {DEBUG_GESTURE_UI && gestureData.debug && (
         <div className="absolute bottom-24 right-10 flex flex-col items-end gap-1 pointer-events-none select-none opacity-80 font-mono text-[8px] text-fusion-accent bg-black/60 p-4 rounded-xl border border-white/5 backdrop-blur-sm">
           <div className="flex gap-4"><span>ORIGIN:</span><span className="text-white">{gestureData.debug.origin}</span></div>
           <div className="flex gap-4"><span>HREF:</span><span className="text-white">{gestureData.debug.href}</span></div>

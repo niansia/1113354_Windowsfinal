@@ -1,7 +1,33 @@
-export type AppId = 
-  | 'pc' | 'dir' | 'piano' | 'cosmic' | 'user' 
-  | 'add' | 'dev' | 'tool' | 'db' | 'web' 
+export type AppId =
+  | 'pc' | 'dir' | 'piano' | 'cosmic' | 'user'
+  | 'add' | 'dev' | 'tool' | 'db' | 'web'
   | 'game' | 'cmd' | 'set';
+
+// ---- Gesture recognizer shared type unions ----
+export type GestureType =
+  | 'INDEX_SWIPE'
+  | 'TWO_FINGER_SWIPE'
+  | 'PALM_SWIPE'
+  | 'GENERIC_HAND_SWIPE'
+  | 'NONE';
+
+export type ActivateType =
+  | 'DOUBLE_PINCH_ACTIVATE'
+  | 'FIST_ACTIVATE'
+  | 'INDEX_DOUBLE_TAP_ACTIVATE'
+  | 'NONE';
+
+export type StrokePhase = 'IDLE' | 'TRACKING' | 'FIRED' | 'RETURNING' | 'READY_FOR_NEXT';
+
+export type TapPhase =
+  | 'IDLE'
+  | 'TAP_DOWN_1'
+  | 'TAP_UP_1'
+  | 'WAIT_SECOND_TAP'
+  | 'TAP_DOWN_2'
+  | 'ACTIVATED';
+
+export type HandSide = 'Left' | 'Right' | 'Unknown';
 
 export interface AppConfig {
   id: AppId;
