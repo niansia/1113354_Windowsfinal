@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML-IN-CANVAS LAB</title>
+    <style>
+        :root {
+            --bg: #020617;
+            --card-bg: rgba(15, 23, 42, 0.7);
+            --border: rgba(34, 211, 238, 0.3);
+            --accent: #22d3ee;
+            --accent-secondary: #c026d3;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+            --mono: 'JetBrains Mono', 'Fira Code', monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .header {
+            padding: 60px 40px 20px 40px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .header h1 {
+            font-size: 48px;
+            font-weight: 900;
+            margin: 0;
+            letter-spacing: -0.02em;
+            color: var(--accent);
+        }
+
+        .header p {
+            font-size: 18px;
+            color: var(--muted);
+            margin-top: 8px;
+            font-family: var(--mono);
+        }
+
+        .tags {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tag {
+            padding: 4px 12px;
+            font-size: 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--accent);
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: var(--accent);
+            border-left: 4px solid var(--accent-secondary);
+            padding-left: 16px;
+            margin-bottom: 24px;
+        }
+
+        .demo-card {
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            padding: 30px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            margin-bottom: 60px;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+        }
+
+        #liquid-canvas {
+            height: 120px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        #webgl-canvas-container {
+            background: #000;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            height: 400px;
+        }
+
+        .pipeline {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 40px 0;
+            padding: 20px;
+            background: rgba(34, 211, 238, 0.05);
+            border-radius: 100px;
+            border: 1px solid rgba(34, 211, 238, 0.1);
+        }
+
+        .pipeline-node {
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #0f172a;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            box-shadow: 0 0 15px rgba(34, 211, 238, 0.2);
+            transition: all 0.3s;
+        }
+
+        .pipeline-node:hover {
+            box-shadow: 0 0 25px var(--accent);
+            transform: scale(1.05);
+        }
+
+        .pipeline-arrow {
+            width: 30px;
+            height: 2px;
+            background: linear-gradient(to right, var(--accent), transparent);
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--muted);
+            font-size: 12px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            font-family: var(--mono);
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div>
+            <h1>HTML-IN-CANVAS LAB</h1>
+            <p>WebGPU copyElementImage / Canvas Paint / WebGL Texture Bridge</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Fallback Simulation Mode</span>
+            <span class="tag">DOM Snapshot</span>
+            <span class="tag">Canvas Paint</span>
+            <span class="tag">WebGL Texture</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Liquid Slider -->
+        <section>
+            <h2 class="section-title">線上示範（原始碼）使用 WebGPU copyElementImage API 在果凍滑桿下方繪製 div。</h2>
+            <div class="demo-card">
+                <div class="slider-label">
+                    <span style="color: var(--accent)">Liquid-Glass-V1</span>
+                    <span id="slider-val" style="color: var(--muted)">85% Displacement</span>
+                </div>
+                <canvas id="liquid-canvas" width="800" height="120"></canvas>
+            </div>
+        </section>
+
+        <!-- Pipeline -->
+        <div class="pipeline">
+            <div class="pipeline-node" id="node-html">HTML Node</div>
+            <div class="pipeline-arrow"></div>
+            <div class="pipeline-node" id="node-snapshot">Snapshot</div>
+            <div class="pipeline-arrow"></div>
+            <div class="pipeline-node" id="node-paint">Canvas Paint</div>
+            <div class="pipeline-arrow"></div>
+            <div class="pipeline-node" id="node-texture">WebGL Texture</div>
+            <div class="pipeline-arrow"></div>
+            <div class="pipeline-node" id="node-surface">3D Surface</div>
+        </div>
+
+        <!-- WebGL Cube -->
+        <section>
+            <h2 class="section-title">使用 WebGL API 在 3D 立方體上繪製 HTML 的即時演示（原始碼）。texElementImage2D</h2>
+            <div id="webgl-canvas-container">
+                <canvas id="webgl-canvas" width="800" height="400"></canvas>
+            </div>
+        </section>
+
+        <footer>
+            <p>© 2026 FUSION LABS - 實驗性渲染技術展示 (繁體中文版)</p>
+            <p>System Status: [STABLE] | Rendering: [HYBRID_CANVAS]</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- Liquid Slider Logic ---
+        const liquidCanvas = document.getElementById('liquid-canvas');
+        const lctx = liquidCanvas.getContext('2d');
+        const sliderValText = document.getElementById('slider-val');
+
+        let val = 85;
+        let blobPos = 85;
+        let velocity = 0;
+        let targetPos = 85;
+        let isDragging = false;
+
+        liquidCanvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            updateVal(e);
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) updateVal(e);
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        function updateVal(e) {
+            const rect = liquidCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left - 50;
+            const width = rect.width - 100;
+            val = Math.max(0, Math.min(100, (x / width) * 100));
+            targetPos = val;
+            sliderValText.innerText = `${Math.round(val)}% Displacement`;
+        }
+
+        function renderLiquid() {
+            const w = liquidCanvas.width;
+            const h = liquidCanvas.height;
+            lctx.clearRect(0, 0, w, h);
+
+            // Physics
+            const k = 0.15;
+            const d = 0.8;
+            const diff = targetPos - blobPos;
+            velocity += diff * k;
+            velocity *= d;
+            blobPos += velocity;
+
+            const centerX = (blobPos / 100) * (w - 100) + 50;
+            const centerY = h / 2;
+
+            // Background Capsule
+            lctx.beginPath();
+            lctx.roundRect(40, centerY - 30, w - 80, 60, 30);
+            lctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+            lctx.fill();
+            lctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            lctx.lineWidth = 2;
+            lctx.stroke();
+
+            // Blob
+            const stretch = Math.abs(velocity) * 2;
+            const bw = 80 + stretch;
+            const bh = 60 - stretch * 0.5;
+
+            const grad = lctx.createLinearGradient(centerX - bw/2, 0, centerX + bw/2, 0);
+            grad.addColorStop(0, '#1e293b');
+            grad.addColorStop(0.5, '#fbbf24');
+            grad.addColorStop(1, '#ffffff');
+
+            lctx.save();
+            lctx.shadowBlur = 20;
+            lctx.shadowColor = 'rgba(251, 191, 36, 0.4)';
+            lctx.beginPath();
+            lctx.ellipse(centerX, centerY, bw/2, bh/2, 0, 0, Math.PI * 2);
+            lctx.fillStyle = grad;
+            lctx.fill();
+            lctx.restore();
+
+            // Text with Refraction Effect
+            const pText = `${Math.round(val)} %`;
+            lctx.font = 'bold 16px monospace';
+            lctx.textAlign = 'right';
+            const tx = w - 60;
+            const ty = centerY + 6;
+            
+            // Base Text
+            lctx.fillStyle = 'rgba(255,255,255,0.15)';
+            lctx.fillText(pText, tx, ty);
+
+            // Refracted Overlay if Blob is near
+            const dist = Math.abs(centerX - tx);
+            if (dist < 100) {
+                lctx.save();
+                lctx.globalCompositeOperation = 'overlay';
+                lctx.fillStyle = '#22d3ee';
+                // Slight offset to simulate refraction
+                const offset = (centerX - tx) * 0.05;
+                lctx.fillText(pText, tx + offset, ty);
+                lctx.restore();
+                
+                // Highlight the pipeline node
+                document.getElementById('node-paint').classList.add('active-node');
+            } else {
+                document.getElementById('node-paint').classList.remove('active-node');
+            }
+
+            requestAnimationFrame(renderLiquid);
+        }
+
+        // --- WebGL Cube Simulation Logic ---
+        const webglCanvas = document.getElementById('webgl-canvas');
+        const wctx = webglCanvas.getContext('2d');
+
+        function drawFace(label) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const c = canvas.getContext('2d');
+            c.fillStyle = 'white';
+            c.fillRect(0, 0, 256, 256);
+            c.fillStyle = '#1e293b';
+            c.font = 'bold 20px sans-serif';
+            c.fillText(label, 20, 50);
+            c.fillStyle = '#64748b';
+            c.font = '14px sans-serif';
+            c.fillText('HTML Source Node...', 20, 85);
+            c.fillText('Rendered to Texture', 20, 110);
+            c.fillStyle = '#10b981';
+            c.beginPath(); c.roundRect(20, 130, 100, 30, 5); c.fill();
+            c.fillStyle = '#e2e8f0';
+            c.fillRect(150, 50, 80, 80);
+            c.strokeStyle = '#3b82f6';
+            c.lineWidth = 4;
+            c.strokeRect(5, 5, 246, 246);
+            return canvas;
+        }
+
+        const faces = ['主頁面', '內容區', '設定檔', '資源庫', '日誌區', '雲端'].map(drawFace);
+        let angle = 0;
+
+        function renderCube() {
+            const w = webglCanvas.width;
+            const h = webglCanvas.height;
+            wctx.fillStyle = '#000';
+            wctx.fillRect(0, 0, w, h);
+
+            angle += 0.01;
+            const cx = w/2, cy = h/2, size = 110;
+
+            const points = [
+                [-1,-1,-1], [1,-1,-1], [1,1,-1], [-1,1,-1],
+                [-1,-1,1], [1,-1,1], [1,1,1], [-1,1,1]
+            ];
+
+            const projected = points.map(p => {
+                let x = p[0], y = p[1], z = p[2];
+                // Rotate Y
+                let tx = x * Math.cos(angle) - z * Math.sin(angle);
+                let tz = x * Math.sin(angle) + z * Math.cos(angle);
+                x = tx; z = tz;
+                // Rotate X
+                let ty = y * Math.cos(angle*0.6) - z * Math.sin(angle*0.6);
+                tz = y * Math.sin(angle*0.6) + z * Math.cos(angle*0.6);
+                y = ty; z = tz;
+
+                const factor = 450 / (z + 4);
+                return [x * size * factor + cx, y * size * factor + cy, z];
+            });
+
+            const faceIndices = [
+                [0,1,2,3,0], [4,5,6,7,1], [0,1,5,4,2],
+                [2,3,7,6,3], [0,3,7,4,4], [1,2,6,5,5]
+            ];
+
+            // Sort faces by depth
+            const sortedFaces = faceIndices.map(f => {
+                const avgZ = (projected[f[0]][2] + projected[f[1]][2] + projected[f[2]][2] + projected[f[3]][2]) / 4;
+                return { f, avgZ };
+            }).sort((a, b) => b.avgZ - a.avgZ);
+
+            sortedFaces.forEach(sf => {
+                const f = sf.f;
+                wctx.save();
+                wctx.beginPath();
+                wctx.moveTo(projected[f[0]][0], projected[f[0]][1]);
+                wctx.lineTo(projected[f[1]][0], projected[f[1]][1]);
+                wctx.lineTo(projected[f[2]][0], projected[f[2]][1]);
+                wctx.lineTo(projected[f[3]][0], projected[f[3]][1]);
+                wctx.closePath();
+                wctx.clip();
+                wctx.drawImage(faces[f[4]], projected[f[0]][0] - 100, projected[f[0]][1] - 100, 400, 400);
+                wctx.strokeStyle = '#22d3ee';
+                wctx.lineWidth = 1;
+                wctx.stroke();
+                wctx.restore();
+            });
+
+            requestAnimationFrame(renderCube);
+        }
+
+        renderLiquid();
+        renderCube();
+
+        // Interaction for pipeline
+        webglCanvas.addEventListener('mouseenter', () => {
+            document.getElementById('node-texture').style.boxShadow = '0 0 25px #22d3ee';
+            document.getElementById('node-surface').style.boxShadow = '0 0 25px #22d3ee';
+        });
+        webglCanvas.addEventListener('mouseleave', () => {
+            document.getElementById('node-texture').style.boxShadow = '';
+            document.getElementById('node-surface').style.boxShadow = '';
+        });
+
+    </script>
+</body>
+</html>
