@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, Group, Points } from "three";
+import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, Group, Points, PointsMaterial } from "three";
 import { useFrame } from "@react-three/fiber";
 import type { RuntimeControlsRef } from "../types";
 
@@ -15,6 +15,7 @@ export function CosmicBackdrop({ controlsRef, density = 1 }: CosmicBackdropProps
   const parallaxRef = useRef<Group>(null);
   const dustRef = useRef<Points>(null);
   const bandRef = useRef<Group>(null);
+  const brightRef = useRef<Points>(null);
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
@@ -28,16 +29,27 @@ export function CosmicBackdrop({ controlsRef, density = 1 }: CosmicBackdropProps
     }
     if (dustRef.current) dustRef.current.rotation.y = t * 0.012;
     if (bandRef.current) bandRef.current.rotation.z = t * 0.004;
+    // subtle twinkle on the bright-star layer
+    if (brightRef.current) {
+      const mat = brightRef.current.material as PointsMaterial;
+      mat.opacity = 0.75 + Math.sin(t * 2.2) * 0.18;
+    }
   });
 
-  const stars = useMemo(() => buildStarField(Math.floor(11000 * density)), [density]);
-  const band = useMemo(() => buildGalaxyBand(Math.floor(7000 * density)), [density]);
-  const dust = useMemo(() => buildDust(Math.floor(2600 * density)), [density]);
+  const stars = useMemo(() => buildStarField(Math.floor(12000 * density)), [density]);
+  const band = useMemo(() => buildGalaxyBand(Math.floor(8000 * density)), [density]);
+  const dust = useMemo(() => buildDust(Math.floor(2800 * density)), [density]);
+  const bright = useMemo(() => buildBrightStars(Math.floor(360 * density)), [density]);
 
   return (
     <group ref={parallaxRef}>
       <points geometry={stars} frustumCulled={false}>
         <pointsMaterial size={0.05} vertexColors transparent opacity={0.82} depthWrite={false} blending={AdditiveBlending} sizeAttenuation />
+      </points>
+
+      {/* brighter, twinkling foreground stars (different magnitudes/colours) */}
+      <points ref={brightRef} geometry={bright} frustumCulled={false}>
+        <pointsMaterial size={0.16} vertexColors transparent opacity={0.85} depthWrite={false} blending={AdditiveBlending} sizeAttenuation />
       </points>
 
       <group ref={bandRef} rotation={[0.55, 0.3, 0.2]}>
@@ -81,6 +93,28 @@ function buildStarField(count: number): BufferGeometry {
     const pick = rand();
     const color = new Color(pick > 0.82 ? "#ff7bd8" : pick > 0.6 ? "#ffd9a0" : pick > 0.4 ? "#8dfff8" : "#d7e8ff");
     color.multiplyScalar(0.35 + rand() * 0.85);
+    colors[i * 3] = color.r;
+    colors[i * 3 + 1] = color.g;
+    colors[i * 3 + 2] = color.b;
+  }
+  return makeGeometry(positions, colors);
+}
+
+function buildBrightStars(count: number): BufferGeometry {
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const rand = mulberry32(424242);
+  // star colours by temperature: blue-white, white, yellow, orange, red
+  const palette = ["#cfe0ff", "#ffffff", "#fff3c0", "#ffd9a0", "#ff9a6a"];
+  for (let i = 0; i < count; i += 1) {
+    const radius = 40 + rand() * 78;
+    const theta = rand() * Math.PI * 2;
+    const phi = Math.acos(rand() * 2 - 1);
+    positions[i * 3] = Math.sin(phi) * Math.cos(theta) * radius;
+    positions[i * 3 + 1] = Math.cos(phi) * radius * 0.72;
+    positions[i * 3 + 2] = Math.sin(phi) * Math.sin(theta) * radius;
+    const color = new Color(palette[Math.floor(rand() * palette.length)]);
+    color.multiplyScalar(0.7 + rand() * 0.6);
     colors[i * 3] = color.r;
     colors[i * 3 + 1] = color.g;
     colors[i * 3 + 2] = color.b;

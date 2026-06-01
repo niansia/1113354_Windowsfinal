@@ -12,7 +12,8 @@ export type CatalogCategory =
   | "nebula"
   | "galaxy"
   | "blackhole"
-  | "cluster";
+  | "cluster"
+  | "messier";
 
 // How the 3D layer should render the entry.
 //  - "solar": handled by the existing particle SolarSystemScene via bodyId.
@@ -75,7 +76,8 @@ export const CATEGORIES: CategoryMeta[] = [
   { id: "nebula", name: "星雲", englishName: "Nebulae", glyph: "❄" },
   { id: "galaxy", name: "星系", englishName: "Galaxies", glyph: "✺" },
   { id: "blackhole", name: "黑洞", englishName: "Black Holes", glyph: "●" },
-  { id: "cluster", name: "星團", englishName: "Clusters", glyph: "✸" }
+  { id: "cluster", name: "星團", englishName: "Clusters", glyph: "✸" },
+  { id: "messier", name: "梅西耶", englishName: "Messier", glyph: "M" }
 ];
 
 const NASA_PLANETS: SourceLink = { label: "NASA Planetary Fact Sheet", url: "https://nssdc.gsfc.nasa.gov/planetary/factsheet/" };
@@ -139,7 +141,79 @@ export const catalog: CatalogEntry[] = [
   deep("m87", "M87*", "Messier 87 Black Hole", "blackhole", "超大質量黑洞", "blackhole", "約 5,500 萬光年", "事件視界 ~380 億 km", "約 65 億太陽質量", "吸積盤極高溫", "—", "—", "室女座 M87 星系", "M87* 是人類拍下的第一張黑洞照片(2019)，位於巨橢圓星系 M87 的中心，並噴出壯觀的相對論性噴流。", ["2019 年第一張黑洞影像的主角", "噴流長達數千光年"], ["它的質量是人馬座 A* 的上千倍"], ["黑洞", "M87", "第一張黑洞照片"], [{ label: "NASA EHT M87", url: "https://science.nasa.gov/universe/black-holes/" }], ["#ffcaa0", "#ff7a4a", "#a23aff"], "#ffcaa0", 9222),
 
   // ---------------- Clusters ----------------
-  deep("pleiades", "昴宿星團 (M45)", "Pleiades", "cluster", "疏散星團", "cluster", "約 444 光年", "約 17 光年跨度", "約 800 太陽質量", "藍白色高溫恆星", "—", "—", "金牛座", "昴宿星團(七姊妹)是夜空中最亮的疏散星團，由年輕的藍白色恆星與周圍的反射星雲組成。", ["肉眼通常可見 6–7 顆亮星", "成員恆星僅約一億歲，相當年輕"], ["許多文化都以它作為季節與神話的象徵"], ["星團", "疏散星團", "金牛座"], [{ label: "NASA / Pleiades", url: "https://science.nasa.gov/" }], ["#cfe4ff", "#9ec2ff", "#ffffff"], "#cfe4ff", 9333)
+  deep("pleiades", "昴宿星團 (M45)", "Pleiades", "cluster", "疏散星團", "cluster", "約 444 光年", "約 17 光年跨度", "約 800 太陽質量", "藍白色高溫恆星", "—", "—", "金牛座", "昴宿星團(七姊妹)是夜空中最亮的疏散星團，由年輕的藍白色恆星與周圍的反射星雲組成。", ["肉眼通常可見 6–7 顆亮星", "成員恆星僅約一億歲，相當年輕"], ["許多文化都以它作為季節與神話的象徵"], ["星團", "疏散星團", "金牛座"], [{ label: "NASA / Pleiades", url: "https://science.nasa.gov/" }], ["#cfe4ff", "#9ec2ff", "#ffffff"], "#cfe4ff", 9333),
+
+  // ===================== Extended catalog =====================
+  // -- Dwarf planets --
+  q({ id: "haumea", name: "妊神星", englishName: "Haumea", category: "dwarf", subtype: "矮行星 (古柏帶)", render: "rocky", distance: "43.1 AU", radius: "約 816 km(長軸)", system: "古柏帶", description: "妊神星是一顆高速自轉、外形呈橢球狀的矮行星，擁有環與兩顆衛星。", facts: ["自轉僅約 4 小時，是太陽系自轉最快的大天體之一"], funFacts: ["快速自轉把它拉成橄欖球形狀"], tags: ["矮行星", "古柏帶"], palette: ["#e7e2d6", "#b9b0a0", "#807463"], accent: "#e7e2d6" }),
+  q({ id: "makemake", name: "鳥神星", englishName: "Makemake", category: "dwarf", subtype: "矮行星 (古柏帶)", render: "rocky", distance: "45.8 AU", radius: "約 715 km", system: "古柏帶", description: "鳥神星是古柏帶中第二亮的矮行星，表面覆蓋甲烷與乙烷冰。", facts: ["以復活節島的造物神命名"], funFacts: ["表面可能是紅褐色的甲烷霜"], tags: ["矮行星", "古柏帶"], palette: ["#e3c9a8", "#b58f63", "#6e4f33"], accent: "#e3c9a8" }),
+
+  // -- Moons --
+  q({ id: "io", name: "木衛一", englishName: "Io", category: "moon", subtype: "火山衛星", render: "rocky", distance: "421,700 km(距木星)", radius: "1,821.6 km", system: "木星系統", description: "埃歐是太陽系火山活動最劇烈的天體，表面遍布硫磺火山。", facts: ["有數百座活火山，噴發高達數百公里"], funFacts: ["木星潮汐把它的內部不斷揉捏加熱"], tags: ["衛星", "木星", "火山"], palette: ["#ffe08a", "#e0a23a", "#8a4a1a"], accent: "#ffe08a" }),
+  q({ id: "ganymede", name: "木衛三", englishName: "Ganymede", category: "moon", subtype: "最大衛星", render: "rocky", distance: "1,070,400 km(距木星)", radius: "2,634.1 km", system: "木星系統", description: "蓋尼米德是太陽系最大的衛星，比水星還大，並擁有自己的磁場。", facts: ["唯一擁有磁場的衛星", "冰殼下可能有鹹水海洋"], funFacts: ["比行星水星還要大"], tags: ["衛星", "木星", "最大"], palette: ["#cdbfa8", "#9a8e7a", "#5e5544"], accent: "#cdbfa8" }),
+  q({ id: "callisto", name: "木衛四", englishName: "Callisto", category: "moon", subtype: "撞擊衛星", render: "rocky", distance: "1,882,700 km(距木星)", radius: "2,410.3 km", system: "木星系統", description: "卡利斯多是太陽系撞擊坑最密集的天體之一，表面非常古老。", facts: ["幾乎沒有地質活動，保留古老地貌"], funFacts: ["是探索木星系統的理想基地候選"], tags: ["衛星", "木星"], palette: ["#b9b2a4", "#857d6e", "#4d4639"], accent: "#b9b2a4" }),
+  q({ id: "enceladus", name: "土衛二", englishName: "Enceladus", category: "moon", subtype: "冰噴泉衛星", render: "rocky", distance: "238,000 km(距土星)", radius: "252.1 km", system: "土星系統", description: "恩克拉多斯從南極裂縫噴出水冰羽流，地下海洋是尋找生命的熱點。", facts: ["南極虎紋裂縫噴發水冰", "羽流為土星 E 環補給物質"], funFacts: ["卡西尼號曾直接飛穿它的噴泉"], tags: ["衛星", "土星", "海洋世界"], palette: ["#eaf6ff", "#bcd6e8", "#7f9bb3"], accent: "#eaf6ff" }),
+  q({ id: "triton", name: "海衛一", englishName: "Triton", category: "moon", subtype: "逆行衛星", render: "rocky", distance: "354,800 km(距海王星)", radius: "1,353.4 km", system: "海王星系統", description: "崔頓以逆行軌道繞海王星，表面有氮冰火山與噴泉，可能是被捕獲的古柏帶天體。", facts: ["逆行軌道暗示它是被捕獲的", "有活躍的氮間歇泉"], funFacts: ["未來可能因軌道衰減被海王星撕裂"], tags: ["衛星", "海王星", "逆行"], palette: ["#ffd9c0", "#d0a890", "#8a6450"], accent: "#ffd9c0" }),
+
+  // -- Stars --
+  q({ id: "vega", name: "織女星", englishName: "Vega", category: "star", subtype: "A 型主序星", render: "star", distance: "25 光年", temperature: "約 9,600°C", system: "天琴座", description: "織女星是夏季大三角的成員，曾是天文校準星等的標準，周圍有碎屑盤。", facts: ["視星等接近 0，是校準基準"], funFacts: ["約 12,000 年後將成為北極星"], tags: ["恆星", "天琴座"], palette: ["#dff0ff", "#a9d4ff", "#6fa8ff"], accent: "#cfe6ff", spectralType: "A0V" }),
+  q({ id: "rigel", name: "參宿七", englishName: "Rigel", category: "star", subtype: "藍超巨星", render: "star", distance: "約 860 光年", temperature: "約 12,100°C", system: "獵戶座", description: "參宿七是獵戶座最亮的藍白色超巨星，光度是太陽的數萬倍。", facts: ["光度約太陽的 12 萬倍"], funFacts: ["是獵戶的左腳"], tags: ["恆星", "獵戶座", "超巨星"], palette: ["#dbe8ff", "#9fc0ff", "#6f93ff"], accent: "#cfe0ff", spectralType: "B8 Ia" }),
+  q({ id: "polaris", name: "北極星", englishName: "Polaris", category: "star", subtype: "造父變星", render: "star", distance: "約 433 光年", temperature: "約 6,000°C", system: "小熊座", description: "北極星位於天球北極附近，是航海與定向的重要指標，本身是一組三合星。", facts: ["幾乎不隨地球自轉移動"], funFacts: ["數千年前的北極星其實是別顆星"], tags: ["恆星", "小熊座", "導航"], palette: ["#fff4d8", "#ffe3a8", "#e6c074"], accent: "#ffe3a8", spectralType: "F7 Ib" }),
+  q({ id: "alpha-centauri", name: "南門二", englishName: "Alpha Centauri", category: "star", subtype: "三合星系統", render: "star", distance: "4.37 光年", temperature: "約 5,800°C", system: "半人馬座", description: "南門二是離太陽最近的恆星系統，由 A、B 兩顆類太陽星與比鄰星組成。", facts: ["最近的恆星系統，含三顆星"], funFacts: ["是星際探測計畫的首選目標"], tags: ["恆星", "半人馬座", "最近"], palette: ["#fff1d0", "#ffd9a0", "#e0a86a"], accent: "#ffe3b0", spectralType: "G2V + K1V" }),
+  q({ id: "barnard", name: "巴納德星", englishName: "Barnard's Star", category: "star", subtype: "紅矮星", render: "star", distance: "5.96 光年", temperature: "約 2,900°C", system: "蛇夫座", description: "巴納德星是夜空中自行運動最快的恆星，是距離我們第二近的恆星系統。", facts: ["自行運動全天最快"], funFacts: ["約一萬年後會比比鄰星更近"], tags: ["恆星", "紅矮星"], palette: ["#ff9a6a", "#e0663a", "#9c3a20"], accent: "#ffb38a", spectralType: "M4V" }),
+  q({ id: "arcturus", name: "大角星", englishName: "Arcturus", category: "star", subtype: "紅巨星", render: "star", distance: "36.7 光年", temperature: "約 4,300°C", system: "牧夫座", description: "大角星是北半球夜空最亮的恆星之一，一顆年老的橘紅色巨星。", facts: ["北天最亮的恆星之一"], funFacts: ["1933 年世博會曾用它的光開幕"], tags: ["恆星", "牧夫座", "紅巨星"], palette: ["#ffd9a0", "#ff9a5a", "#c0552a"], accent: "#ffc88a", spectralType: "K0 III" }),
+  q({ id: "antares", name: "心宿二", englishName: "Antares", category: "star", subtype: "紅超巨星", render: "star", distance: "約 550 光年", temperature: "約 3,400°C", system: "天蠍座", description: "心宿二是天蠍座的心臟，一顆巨大的紅超巨星，名字意為「火星的對手」。", facts: ["直徑約太陽的 700 倍"], funFacts: ["顏色與亮度常被誤認為火星"], tags: ["恆星", "天蠍座", "超巨星"], palette: ["#ff8a6a", "#e0563a", "#9c2e1c"], accent: "#ff9a7a", spectralType: "M1.5 Iab" }),
+  q({ id: "aldebaran", name: "畢宿五", englishName: "Aldebaran", category: "star", subtype: "紅巨星", render: "star", distance: "65 光年", temperature: "約 3,900°C", system: "金牛座", description: "畢宿五是金牛座的橘紅色巨星，宛如金牛的眼睛，是冬季亮星之一。", facts: ["看似在畢宿星團中，其實在更近處"], funFacts: ["先鋒 10 號正朝它的方向飛去"], tags: ["恆星", "金牛座"], palette: ["#ffcaa0", "#ff8a5a", "#b85a2a"], accent: "#ffb890", spectralType: "K5 III" }),
+
+  // -- Constellations --
+  q({ id: "ursa-minor", name: "小熊座", englishName: "Ursa Minor", category: "constellation", subtype: "拱極星座", render: "constellation", system: "小熊座", description: "小熊座尾端是北極星，整個星座宛如小北斗，是定位北方的關鍵。", facts: ["尾端為北極星"], funFacts: ["俗稱小北斗"], tags: ["星座", "拱極", "導航"], palette: ["#cfe0ff", "#9ab8ff", "#ffffff"], accent: "#cfe0ff" }),
+  q({ id: "lyra", name: "天琴座", englishName: "Lyra", category: "constellation", subtype: "夏季星座", render: "constellation", system: "天琴座", description: "天琴座以亮星織女星與環狀星雲 M57 聞名，是夏季大三角的一角。", facts: ["主星為織女星"], funFacts: ["內含著名的環狀星雲"], tags: ["星座", "夏季"], palette: ["#cfe6ff", "#9fc0ff", "#ffffff"], accent: "#cfe6ff" }),
+  q({ id: "cygnus", name: "天鵝座", englishName: "Cygnus", category: "constellation", subtype: "夏季星座", render: "constellation", system: "天鵝座", description: "天鵝座又稱北十字，沿著銀河延展，含天津四與黑洞 Cygnus X-1。", facts: ["主星天津四是夏季大三角之一"], funFacts: ["又名北十字"], tags: ["星座", "銀河"], palette: ["#cfe0ff", "#9ab8ff", "#ffffff"], accent: "#cfe0ff" }),
+  q({ id: "cassiopeia", name: "仙后座", englishName: "Cassiopeia", category: "constellation", subtype: "拱極星座", render: "constellation", system: "仙后座", description: "仙后座的五顆亮星排成 W 形，是北天容易辨認的拱極星座。", facts: ["W 或 M 形排列"], funFacts: ["可用來反向尋找北極星"], tags: ["星座", "拱極"], palette: ["#ffe0e0", "#ffb0c0", "#ffffff"], accent: "#ffd0d8" }),
+  q({ id: "andromeda-con", name: "仙女座", englishName: "Andromeda", category: "constellation", subtype: "秋季星座", render: "constellation", system: "仙女座", description: "仙女座是秋季星座，內含肉眼可見的仙女座星系 M31。", facts: ["含最近的大型螺旋星系"], funFacts: ["神話中被鎖在岩石上的公主"], tags: ["星座", "秋季"], palette: ["#cdd6ff", "#9aa8ff", "#ffffff"], accent: "#cdd6ff" }),
+  q({ id: "pegasus", name: "飛馬座", englishName: "Pegasus", category: "constellation", subtype: "秋季星座", render: "constellation", system: "飛馬座", description: "飛馬座的四顆亮星構成著名的秋季四邊形(飛馬大四方)。", facts: ["秋季四邊形地標"], funFacts: ["神話中的天馬"], tags: ["星座", "秋季"], palette: ["#cfe0ff", "#9ab8ff", "#ffffff"], accent: "#cfe0ff" }),
+  q({ id: "draco", name: "天龍座", englishName: "Draco", category: "constellation", subtype: "拱極星座", render: "constellation", system: "天龍座", description: "天龍座蜿蜒於大小熊座之間，曾經的北極星右樞就在其中。", facts: ["曾擁有古代的北極星"], funFacts: ["環繞北天極的巨龍"], tags: ["星座", "拱極"], palette: ["#cfe6df", "#9fcfc0", "#ffffff"], accent: "#bfe6d8" }),
+  q({ id: "leo", name: "獅子座", englishName: "Leo", category: "constellation", subtype: "黃道星座", render: "constellation", system: "獅子座", description: "獅子座是春季黃道星座，主星軒轅十四明亮，獅子頭呈反問號狀。", facts: ["主星為軒轅十四"], funFacts: ["獅子座流星雨的輻射點"], tags: ["星座", "黃道", "春季"], palette: ["#ffe7b6", "#ffc878", "#ffffff"], accent: "#ffd98a" }),
+  q({ id: "gemini", name: "雙子座", englishName: "Gemini", category: "constellation", subtype: "黃道星座", render: "constellation", system: "雙子座", description: "雙子座有兩顆亮星北河二與北河三，象徵神話中的雙胞胎兄弟。", facts: ["雙星北河二、北河三"], funFacts: ["雙子座流星雨年度最佳之一"], tags: ["星座", "黃道", "冬季"], palette: ["#cfe0ff", "#9ab8ff", "#ffffff"], accent: "#cfe0ff" }),
+  q({ id: "taurus", name: "金牛座", englishName: "Taurus", category: "constellation", subtype: "黃道星座", render: "constellation", system: "金牛座", description: "金牛座含畢宿星團與昴宿星團，紅巨星畢宿五是公牛的眼睛。", facts: ["含畢宿與昴宿兩星團"], funFacts: ["蟹狀星雲也在其牛角附近"], tags: ["星座", "黃道", "冬季"], palette: ["#ffd9a0", "#ff9a5a", "#ffffff"], accent: "#ffc88a" }),
+  q({ id: "sagittarius", name: "射手座", englishName: "Sagittarius", category: "constellation", subtype: "黃道星座", render: "constellation", system: "射手座", description: "射手座朝向銀河系中心方向，星雲與星團密集，含茶壺星群。", facts: ["指向銀河系中心"], funFacts: ["著名的茶壺形星群"], tags: ["星座", "黃道", "銀河中心"], palette: ["#ffd0b0", "#ff9a7a", "#ffffff"], accent: "#ffc0a0" }),
+
+  // -- Nebulae --
+  q({ id: "eagle", name: "鷹狀星雲 (M16)", englishName: "Eagle Nebula", category: "nebula", subtype: "發射星雲", render: "nebula", distance: "約 7,000 光年", system: "巨蛇座", description: "M16 含著名的「創生之柱」，是哈伯望遠鏡最具代表性的影像之一。", facts: ["創生之柱在此誕生新星"], funFacts: ["哈伯的招牌影像來源"], tags: ["星雲", "Messier", "創生之柱"], palette: ["#7bdfff", "#ffb05a", "#ff7bd0"], accent: "#7bdfff" }),
+  q({ id: "lagoon", name: "礁湖星雲 (M8)", englishName: "Lagoon Nebula", category: "nebula", subtype: "發射星雲", render: "nebula", distance: "約 4,100 光年", system: "射手座", description: "礁湖星雲是少數肉眼可見的恆星形成區，內有沙漏狀的高能結構。", facts: ["肉眼可見的巨大恆星育嬰房"], funFacts: ["中央有沙漏狀湍流"], tags: ["星雲", "Messier", "射手座"], palette: ["#ff7bd0", "#9b6bff", "#5ad6ff"], accent: "#ff8ac4" }),
+  q({ id: "trifid", name: "三裂星雲 (M20)", englishName: "Trifid Nebula", category: "nebula", subtype: "混合星雲", render: "nebula", distance: "約 5,200 光年", system: "射手座", description: "三裂星雲因暗塵帶把發光氣體分成三瓣而得名，兼具發射與反射星雲。", facts: ["塵帶把它分成三瓣"], funFacts: ["紅藍雙色一次看見兩種星雲"], tags: ["星雲", "Messier", "射手座"], palette: ["#ff6ba6", "#7b6bff", "#3ad1ff"], accent: "#ff8ac4" }),
+  q({ id: "horsehead", name: "馬頭星雲", englishName: "Horsehead Nebula", category: "nebula", subtype: "暗星雲", render: "nebula", distance: "約 1,500 光年", system: "獵戶座", description: "馬頭星雲是一團暗塵雲，在背景紅色發射星雲映襯下宛如馬頭剪影。", facts: ["暗塵雲遮擋背景光"], funFacts: ["最具代表性的暗星雲輪廓"], tags: ["星雲", "獵戶座", "暗星雲"], palette: ["#ff5a7b", "#6a3a8a", "#2a2050"], accent: "#ff7b9a" }),
+  q({ id: "ring", name: "環狀星雲 (M57)", englishName: "Ring Nebula", category: "nebula", subtype: "行星狀星雲", render: "nebula", distance: "約 2,300 光年", system: "天琴座", description: "環狀星雲是類太陽恆星death後拋出的氣殼，宛如天空中的煙圈。", facts: ["中央白矮星照亮氣環"], funFacts: ["太陽未來也會變成這樣"], tags: ["星雲", "Messier", "行星狀星雲"], palette: ["#7bdfff", "#9bff9b", "#ff9a5a"], accent: "#7bdfff" }),
+  q({ id: "helix", name: "螺旋星雲", englishName: "Helix Nebula", category: "nebula", subtype: "行星狀星雲", render: "nebula", distance: "約 650 光年", system: "寶瓶座", description: "螺旋星雲是離地球最近的行星狀星雲之一，常被稱為「上帝之眼」。", facts: ["最近的行星狀星雲之一"], funFacts: ["俗稱上帝之眼"], tags: ["星雲", "行星狀星雲"], palette: ["#5ad6ff", "#ff7b9a", "#9bff9b"], accent: "#7bdfff" }),
+  q({ id: "carina", name: "船底座星雲", englishName: "Carina Nebula", category: "nebula", subtype: "發射星雲", render: "nebula", distance: "約 7,500 光年", system: "船底座", description: "船底座星雲是巨大的恆星形成區，含不穩定的超巨星海山二。", facts: ["含可能將爆發的海山二"], funFacts: ["詹姆斯韋伯的首批影像之一"], tags: ["星雲", "船底座"], palette: ["#ff9a6a", "#ff6ba6", "#7b8bff"], accent: "#ff9a7a" }),
+  q({ id: "veil", name: "面紗星雲", englishName: "Veil Nebula", category: "nebula", subtype: "超新星殘骸", render: "nebula", distance: "約 2,400 光年", system: "天鵝座", description: "面紗星雲是數千年前超新星爆發留下的纖細絲狀殘骸。", facts: ["古老超新星的絲狀殘骸"], funFacts: ["絲帶橫跨約六個滿月寬"], tags: ["星雲", "超新星殘骸"], palette: ["#7bdfff", "#9bffd0", "#ff7b9a"], accent: "#7bdfff" }),
+
+  // -- Galaxies --
+  q({ id: "triangulum", name: "三角座星系 (M33)", englishName: "Triangulum Galaxy", category: "galaxy", subtype: "螺旋星系", render: "galaxySpiral", distance: "約 270 萬光年", system: "本星系群", description: "M33 是本星系群第三大星系，結構鬆散、恆星形成活躍。", facts: ["本星系群第三大成員"], funFacts: ["極黑天空下肉眼可見"], tags: ["星系", "Messier", "本星系群"], palette: ["#bcd0ff", "#8a9cff", "#ffd0a0"], accent: "#bcd0ff" }),
+  q({ id: "sombrero", name: "草帽星系 (M104)", englishName: "Sombrero Galaxy", category: "galaxy", subtype: "透鏡狀星系", render: "galaxyElliptical", distance: "約 2,950 萬光年", system: "室女座", description: "草帽星系有明亮的核球與一圈厚實的暗塵帶，外形像墨西哥草帽。", facts: ["醒目的暗塵環"], funFacts: ["中心藏有超大質量黑洞"], tags: ["星系", "Messier", "室女座"], palette: ["#ffe0c0", "#c0a070", "#5a4a3a"], accent: "#ffe0c0" }),
+  q({ id: "lmc", name: "大麥哲倫星系", englishName: "Large Magellanic Cloud", category: "galaxy", subtype: "不規則星系", render: "galaxySpiral", distance: "約 16 萬光年", system: "本星系群", description: "大麥哲倫雲是銀河系的衛星星系，含劇烈恆星形成的蜘蛛星雲。", facts: ["銀河系最大的衛星星系", "1987A 超新星在此爆發"], funFacts: ["南半球肉眼可見的雲狀天體"], tags: ["星系", "本星系群", "南天"], palette: ["#cfe0ff", "#9ab8ff", "#ffd0a0"], accent: "#cfe0ff" }),
+  q({ id: "smc", name: "小麥哲倫星系", englishName: "Small Magellanic Cloud", category: "galaxy", subtype: "不規則星系", render: "galaxySpiral", distance: "約 20 萬光年", system: "本星系群", description: "小麥哲倫雲是銀河系另一個衛星星系，與大麥哲倫雲以麥哲倫流相連。", facts: ["協助校準宇宙距離尺"], funFacts: ["與大麥哲倫雲是天空中的一對"], tags: ["星系", "本星系群", "南天"], palette: ["#cfe0ff", "#9ab8ff", "#ffffff"], accent: "#cfe0ff" }),
+  q({ id: "ngc1300", name: "NGC 1300", englishName: "NGC 1300", category: "galaxy", subtype: "棒旋星系", render: "galaxySpiral", distance: "約 6,100 萬光年", system: "波江座", description: "NGC 1300 是棒旋星系的典範，明顯的中央棒延伸出對稱旋臂。", facts: ["教科書級的棒旋結構"], funFacts: ["棒長約 10 萬光年"], tags: ["星系", "棒旋"], palette: ["#bcd0ff", "#8a78ff", "#ffc0a0"], accent: "#bcd0ff" }),
+  q({ id: "centaurus-a", name: "半人馬座 A", englishName: "Centaurus A", category: "galaxy", subtype: "活躍星系", render: "galaxyElliptical", distance: "約 1,300 萬光年", system: "半人馬座", description: "半人馬座 A 是最近的活躍星系之一，核心黑洞噴出強烈電波噴流。", facts: ["最近的電波星系之一"], funFacts: ["被一條塵帶橫腰穿過"], tags: ["星系", "活躍星系"], palette: ["#ffd0a0", "#a0788a", "#3a2a3a"], accent: "#ffd0a0" }),
+  q({ id: "m82", name: "雪茄星系 (M82)", englishName: "Cigar Galaxy", category: "galaxy", subtype: "星暴星系", render: "galaxySpiral", distance: "約 1,200 萬光年", system: "大熊座", description: "M82 是劇烈的星暴星系，中心爆發出紅色的氫氣外流。", facts: ["恆星形成速率極高"], funFacts: ["中央噴出壯觀的紅色氣流"], tags: ["星系", "Messier", "星暴"], palette: ["#ff9a7a", "#ffd0a0", "#7b8bff"], accent: "#ff9a7a" }),
+  q({ id: "m101", name: "風車星系 (M101)", englishName: "Pinwheel Galaxy", category: "galaxy", subtype: "螺旋星系", render: "galaxySpiral", distance: "約 2,100 萬光年", system: "大熊座", description: "M101 是一個面向我們的巨大螺旋星系，旋臂上點綴著眾多恆星形成區。", facts: ["直徑約銀河系兩倍"], funFacts: ["旋臂略不對稱，可能受伴星系擾動"], tags: ["星系", "Messier", "大熊座"], palette: ["#cfe0ff", "#9ab8ff", "#ffd0a0"], accent: "#cfe0ff" }),
+  q({ id: "m81", name: "波德星系 (M81)", englishName: "Bode's Galaxy", category: "galaxy", subtype: "螺旋星系", render: "galaxySpiral", distance: "約 1,200 萬光年", system: "大熊座", description: "M81 是一個結構優美的大設計螺旋星系，與 M82 構成互動星系對。", facts: ["與 M82 引力互動"], funFacts: ["業餘望遠鏡的熱門目標"], tags: ["星系", "Messier", "大熊座"], palette: ["#bcd0ff", "#8a9cff", "#ffd0a0"], accent: "#bcd0ff" }),
+  q({ id: "m63", name: "向日葵星系 (M63)", englishName: "Sunflower Galaxy", category: "galaxy", subtype: "絮狀螺旋星系", render: "galaxySpiral", distance: "約 2,700 萬光年", system: "獵犬座", description: "M63 的旋臂呈現許多短而蓬鬆的片段，宛如向日葵花瓣。", facts: ["絮狀旋臂結構"], funFacts: ["花瓣狀的旋臂得名向日葵"], tags: ["星系", "Messier", "獵犬座"], palette: ["#ffe0b0", "#cfa86a", "#7b8bff"], accent: "#ffe0b0" }),
+  q({ id: "m106", name: "M106 星系", englishName: "Messier 106", category: "galaxy", subtype: "活躍螺旋星系", render: "galaxySpiral", distance: "約 2,400 萬光年", system: "獵犬座", description: "M106 擁有活躍星系核，並有由黑洞噴流激發的異常旋臂。", facts: ["核心藏有活躍黑洞"], funFacts: ["有兩條由氣體構成的異常臂"], tags: ["星系", "Messier", "獵犬座"], palette: ["#bcd0ff", "#8a78ff", "#ffc0a0"], accent: "#bcd0ff" }),
+  q({ id: "m110", name: "M110 星系", englishName: "Messier 110", category: "galaxy", subtype: "矮橢圓星系", render: "galaxyElliptical", distance: "約 270 萬光年", system: "本星系群", description: "M110 是仙女座星系的衛星星系，一個平滑的矮橢圓星系。", facts: ["仙女座星系的伴星系"], funFacts: ["梅西耶星表的最後一個天體"], tags: ["星系", "Messier", "本星系群"], palette: ["#d0d8ff", "#9aa8d0", "#ffffff"], accent: "#d0d8ff" }),
+
+  // -- Black holes / high-energy --
+  q({ id: "cygnus-x1", name: "天鵝座 X-1", englishName: "Cygnus X-1", category: "blackhole", subtype: "恆星級黑洞", render: "blackhole", distance: "約 7,200 光年", mass: "約 21 太陽質量", system: "天鵝座", description: "天鵝座 X-1 是人類確認的第一個黑洞候選，從伴星吸積物質發出強烈 X 射線。", facts: ["第一個被廣泛接受的黑洞", "霍金曾為它打過賭"], funFacts: ["從藍超巨星伴星吞食氣體"], tags: ["黑洞", "X射線", "天鵝座"], palette: ["#ffd27a", "#ff7a3a", "#7a2aff"], accent: "#ffd27a" }),
+  q({ id: "v404-cygni", name: "V404 Cygni", englishName: "V404 Cygni", category: "blackhole", subtype: "微類星體", render: "blackhole", distance: "約 7,800 光年", mass: "約 9 太陽質量", system: "天鵝座", description: "V404 Cygni 是一個會週期性爆發的黑洞 X 射線雙星，2015 年曾劇烈活動。", facts: ["會突然爆發 X 射線"], funFacts: ["2015 年的爆發被全球望遠鏡追蹤"], tags: ["黑洞", "X射線雙星"], palette: ["#ffca8a", "#ff7a4a", "#a23aff"], accent: "#ffca8a" }),
+  q({ id: "ton618", name: "TON 618", englishName: "TON 618", category: "blackhole", subtype: "極超大質量黑洞", render: "blackhole", distance: "約 104 億光年", mass: "約 660 億太陽質量", system: "獵犬座", description: "TON 618 是已知質量最大的黑洞之一，位於一個遙遠的明亮類星體中心。", facts: ["質量約 660 億倍太陽，名列最大黑洞之一"], funFacts: ["事件視界比整個太陽系還大數十倍"], tags: ["黑洞", "類星體", "極大質量"], palette: ["#ffd27a", "#ff7a3a", "#a23aff"], accent: "#ffd27a" }),
+  q({ id: "gw150914", name: "GW150914 重力波事件", englishName: "GW150914", category: "blackhole", subtype: "黑洞合併事件", render: "blackhole", distance: "約 13 億光年", system: "南天", description: "GW150914 是 2015 年 LIGO 首次直接偵測到的重力波，來自兩個黑洞的合併。", facts: ["人類首次直接偵測重力波", "由 36 與 29 太陽質量黑洞合併"], funFacts: ["合併瞬間釋放 3 個太陽質量的能量"], tags: ["黑洞", "重力波", "LIGO"], palette: ["#a0c0ff", "#7a8aff", "#ff7adf"], accent: "#a0c0ff" }),
+  q({ id: "crab-pulsar", name: "蟹狀星雲脈衝星", englishName: "Crab Pulsar", category: "blackhole", subtype: "中子星 / 脈衝星", render: "star", distance: "約 6,500 光年", mass: "約 1.4 太陽質量", system: "金牛座", description: "蟹狀脈衝星是 1054 年超新星留下的中子星，每秒自轉約 30 次並掃出射束。", facts: ["每秒自轉約 30 圈"], funFacts: ["像宇宙燈塔般規律閃爍"], tags: ["中子星", "脈衝星", "金牛座"], palette: ["#bfe0ff", "#7bb0ff", "#ffffff"], accent: "#bfe0ff" }),
+
+  // -- Star clusters --
+  q({ id: "m13", name: "武仙座大星團 (M13)", englishName: "Hercules Cluster", category: "cluster", subtype: "球狀星團", render: "cluster", distance: "約 22,200 光年", system: "武仙座", description: "M13 是北半球最壯觀的球狀星團，含數十萬顆古老恆星。", facts: ["約含 30 萬顆恆星"], funFacts: ["1974 年曾向它發送阿雷西博訊息"], tags: ["星團", "Messier", "球狀星團"], palette: ["#ffe7c0", "#cfb088", "#ffffff"], accent: "#ffe7c0" }),
+  q({ id: "hyades", name: "畢宿星團", englishName: "Hyades", category: "cluster", subtype: "疏散星團", render: "cluster", distance: "約 153 光年", system: "金牛座", description: "畢宿星團是離地球最近的疏散星團，構成金牛臉部的 V 形。", facts: ["最近的疏散星團"], funFacts: ["V 形畢宿與畢宿五同框"], tags: ["星團", "疏散星團", "金牛座"], palette: ["#cfe4ff", "#9ec2ff", "#ffffff"], accent: "#cfe4ff" }),
+  q({ id: "omega-centauri", name: "半人馬座 ω", englishName: "Omega Centauri", category: "cluster", subtype: "球狀星團", render: "cluster", distance: "約 17,000 光年", system: "半人馬座", description: "半人馬座 ω 是銀河系最大最亮的球狀星團，可能是矮星系的殘核。", facts: ["銀河系最大的球狀星團", "含約一千萬顆恆星"], funFacts: ["也許是被吞併的矮星系核心"], tags: ["星團", "球狀星團", "南天"], palette: ["#ffe7c0", "#cfb088", "#ffffff"], accent: "#ffe7c0" }),
+  q({ id: "m4", name: "M4 球狀星團", englishName: "Messier 4", category: "cluster", subtype: "球狀星團", render: "cluster", distance: "約 7,200 光年", system: "天蠍座", description: "M4 是離地球最近的球狀星團之一，位於亮星心宿二旁，含古老白矮星。", facts: ["最近的球狀星團之一"], funFacts: ["藏有上百億歲的白矮星"], tags: ["星團", "Messier", "天蠍座"], palette: ["#ffe7c0", "#cfb088", "#ffffff"], accent: "#ffe7c0" })
 ];
 
 // ---- helpers ----
@@ -169,12 +243,61 @@ function deep(
   };
 }
 
+// Compact builder for the extended catalog — fills sensible defaults so each entry
+// only needs the fields that matter. Function declaration is hoisted, so it can be
+// referenced inside the catalog array above.
+function q(p: Partial<CatalogEntry> & { id: string; name: string; englishName: string; category: CatalogCategory; render: RenderKind }): CatalogEntry {
+  return {
+    subtype: "",
+    distance: "—",
+    radius: "—",
+    mass: "—",
+    temperature: "—",
+    rotationPeriod: "—",
+    orbitalPeriod: "—",
+    system: "—",
+    description: "",
+    facts: [],
+    funFacts: [],
+    tags: [],
+    sources: [NASA_SCIENCE],
+    palette: ["#88aaff", "#5a7aff", "#ffffff"],
+    accent: "#88aaff",
+    seed: hashSeed(p.id),
+    ...p
+  } as CatalogEntry;
+}
+
+function hashSeed(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i += 1) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) % 90000 + 1000;
+}
+
+const MESSIER_RE = /M\s?\d+/i;
+
 export const catalogById: Record<string, CatalogEntry> = Object.fromEntries(catalog.map((e) => [e.id, e]));
 
 export function entriesByCategory(category: CatalogCategory): CatalogEntry[] {
+  if (category === "messier") {
+    return catalog.filter((e) => MESSIER_RE.test(e.name) || MESSIER_RE.test(e.englishName) || e.tags.includes("Messier"));
+  }
   return catalog.filter((e) => e.category === category);
 }
 
 export function categoryOf(id: string): CatalogCategory | null {
   return catalogById[id]?.category ?? null;
+}
+
+// Free-text search across name / english / tags / category / system / Messier id.
+export function searchCatalog(query: string): CatalogEntry[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  return catalog.filter((e) => {
+    const hay = [e.name, e.englishName, e.category, e.subtype, e.system, ...e.tags].join(" ").toLowerCase();
+    return hay.includes(q);
+  });
 }

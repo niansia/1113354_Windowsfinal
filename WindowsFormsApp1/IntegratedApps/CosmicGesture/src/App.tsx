@@ -95,13 +95,14 @@ export default function App() {
 
   const navigateObject = useCallback(
     (dir: "prev" | "next") => {
-      const list = entriesByCategory(menuCategory);
-      const pool = list.length > 1 ? list : catalog;
+      // Interstellar travel: swipe traverses the ENTIRE catalog, never bound by the
+      // current category. (Categories are only a convenience filter in the menu.)
+      const pool = catalog;
       const index = Math.max(0, pool.findIndex((e) => e.id === selectedId));
       const nextIndex = (index + (dir === "next" ? 1 : -1) + pool.length) % pool.length;
       selectEntry(pool[nextIndex].id);
     },
-    [menuCategory, selectedId, selectEntry]
+    [selectedId, selectEntry]
   );
 
   const navigateCategory = useCallback(

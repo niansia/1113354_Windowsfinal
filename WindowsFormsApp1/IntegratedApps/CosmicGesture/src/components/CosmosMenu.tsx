@@ -1,4 +1,5 @@
-import { CATEGORIES, type CatalogCategory, entriesByCategory } from "../data/catalog";
+import { useMemo, useState } from "react";
+import { CATEGORIES, type CatalogCategory, entriesByCategory, searchCatalog } from "../data/catalog";
 
 interface CosmosMenuProps {
   activeCategory: CatalogCategory;
@@ -7,10 +8,13 @@ interface CosmosMenuProps {
   onSelect: (id: string) => void;
 }
 
-// Categorised, extensible explorer menu that replaces the old flat planet rail.
-// Left column = category tabs, right column = the bodies in that category.
+// Categorised + searchable explorer menu. Left column = category tabs, right column
+// = the bodies in that category, or live search results across the whole catalog.
 export function CosmosMenu({ activeCategory, selectedId, onCategoryChange, onSelect }: CosmosMenuProps) {
-  const entries = entriesByCategory(activeCategory);
+  const [query, setQuery] = useState("");
+  const searching = query.trim().length > 0;
+  const results = useMemo(() => (searching ? searchCatalog(query) : entriesByCategory(activeCategory)), [searching, query, activeCategory]);
+  const headLabel = searching ? "搜尋結果" : CATEGORIES.find((c) => c.id === activeCategory)?.englishName;
 
   return (
     <nav className="cosmos-menu" aria-label="宇宙天體導覽">
@@ -19,8 +23,8 @@ export function CosmosMenu({ activeCategory, selectedId, onCategoryChange, onSel
           <button
             key={cat.id}
             type="button"
-            className={cat.id === activeCategory ? "cat-tab active" : "cat-tab"}
-            onClick={() => onCategoryChange(cat.id)}
+            className={!searching && cat.id === activeCategory ? "cat-tab active" : "cat-tab"}
+            onClick={() => { setQuery(""); onCategoryChange(cat.id); }}
             title={cat.englishName}
           >
             <span className="cat-glyph">{cat.glyph}</span>
@@ -29,12 +33,19 @@ export function CosmosMenu({ activeCategory, selectedId, onCategoryChange, onSel
         ))}
       </div>
       <div className="cosmos-menu-list">
+        <input
+          className="cosmos-search"
+          type="text"
+          value={query}
+          placeholder="搜尋天體 / M96 / 黑洞 / 獵戶座…"
+          onChange={(e) => setQuery(e.target.value)}
+        />
         <div className="cosmos-menu-list-head">
-          {CATEGORIES.find((c) => c.id === activeCategory)?.englishName}
-          <span>{entries.length}</span>
+          {headLabel}
+          <span>{results.length}</span>
         </div>
         <div className="cosmos-menu-scroll">
-          {entries.map((entry) => (
+          {results.map((entry) => (
             <button
               key={entry.id}
               type="button"
@@ -48,6 +59,7 @@ export function CosmosMenu({ activeCategory, selectedId, onCategoryChange, onSel
               </span>
             </button>
           ))}
+          {searching && results.length === 0 && <div className="cosmos-empty">找不到符合的天體</div>}
         </div>
       </div>
     </nav>

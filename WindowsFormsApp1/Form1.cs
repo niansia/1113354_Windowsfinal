@@ -41,6 +41,12 @@ namespace WindowsFormsApp1
         private Process cosmicServerProcess;
         private int cameraAppWindowCount = 0;
         private const bool UseViteDevServer = false;
+
+        // ---- Browser-like controls (zoom / fullscreen / devtools) ----
+        private bool isFullscreen = false;
+        private FormBorderStyle prevBorderStyle;
+        private FormWindowState prevWindowState;
+        private Rectangle prevBounds;
         private const bool RunNativeCameraSmokeTest = false;
 
         public Form1()
@@ -412,6 +418,7 @@ namespace WindowsFormsApp1
                 // WebView2 Settings
                 carouselWebView.CoreWebView2.Settings.AreDevToolsEnabled = true;
                 carouselWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
+                ApplyWebViewBrowserShortcuts(carouselWebView);
                 
                 // Set Permissions BEFORE Navigate
                 carouselWebView.CoreWebView2.PermissionRequested += (sender, args) =>
@@ -1571,6 +1578,7 @@ namespace WindowsFormsApp1
                 };
                 webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
                 webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
+                ApplyWebViewBrowserShortcuts(webView);
                 webView.NavigationCompleted += delegate (object eventSender, CoreWebView2NavigationCompletedEventArgs args)
                 {
                     if (!args.IsSuccess)
@@ -1635,6 +1643,63 @@ namespace WindowsFormsApp1
             };
             button.FlatAppearance.BorderSize = 0;
             return button;
+        }
+
+        // Gives every WebView2 in FusionOS Chrome-like controls. Zoom (Ctrl +/-/0 and
+        // Ctrl+wheel) and F12 DevTools are handled natively by WebView2's built-in
+        // browser accelerator keys; F11 fullscreen is handled by a tiny injected
+        // keydown listener that posts a message back to the host Form.
+        private void ApplyWebViewBrowserShortcuts(WebView2 webView)
+        {
+            if (webView == null || webView.CoreWebView2 == null) return;
+            try
+            {
+                var s = webView.CoreWebView2.Settings;
+                s.AreDevToolsEnabled = true;                 // F12 DevTools
+                s.IsZoomControlEnabled = true;               // Ctrl+wheel zoom
+                s.AreBrowserAcceleratorKeysEnabled = true;   // Ctrl +/-/0 zoom, F12, etc.
+            }
+            catch { }
+
+            try
+            {
+                webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
+                    "document.addEventListener('keydown',function(e){if(e.key==='F11'){e.preventDefault();try{window.chrome.webview.postMessage('FUSION_FULLSCREEN');}catch(_){}}},true);");
+            }
+            catch { }
+
+            webView.CoreWebView2.WebMessageReceived += delegate (object sender, CoreWebView2WebMessageReceivedEventArgs e)
+            {
+                try
+                {
+                    string msg = e.TryGetWebMessageAsString();
+                    if (msg == "FUSION_FULLSCREEN") BeginInvoke((Action)ToggleFullscreen);
+                }
+                catch { }
+            };
+        }
+
+        private void ToggleFullscreen()
+        {
+            if (!isFullscreen)
+            {
+                prevBorderStyle = FormBorderStyle;
+                prevWindowState = WindowState;
+                prevBounds = Bounds;
+                FormBorderStyle = FormBorderStyle.None;
+                WindowState = FormWindowState.Normal;
+                Bounds = Screen.FromControl(this).Bounds;
+                TopMost = true;
+                isFullscreen = true;
+            }
+            else
+            {
+                TopMost = false;
+                FormBorderStyle = prevBorderStyle;
+                WindowState = prevWindowState;
+                if (prevWindowState == FormWindowState.Normal) Bounds = prevBounds;
+                isFullscreen = false;
+            }
         }
 
         // Tells the desktop carousel WebView to release or resume the shared webcam
