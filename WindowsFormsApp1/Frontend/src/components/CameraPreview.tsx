@@ -187,7 +187,24 @@ export const CameraPreview: React.FC<CameraPreviewProps> = ({ status, videoRef, 
           <div>TAP PHASE: <span style={{ color: '#ffd500' }}>{upper(debug?.tapPhase)}</span></div>
           <div className="col-span-2">ACTIVATE TYPE: <span style={{ color: '#00f2ff' }}>{upper(gestureData.activateType)}</span></div>
           <div className="col-span-2">CONFIDENCE: {gestureData.confidence.toFixed(2)}</div>
-          
+
+          <div className="col-span-2 h-[1px] bg-white/10 my-1"></div>
+          <div className="col-span-2" style={{ color: '#ff66cc', fontWeight: 'bold' }}>— ACTIVE HAND / INTENT —</div>
+
+          <div>CONTROL MODE: <span style={{ color: '#7ffbf1' }}>{upper(debug?.controlMode)}</span></div>
+          <div>ACTIVE HAND: <span style={{ color: '#7ffbf1' }}>{upper(debug?.activeHandSide)} {debug?.activeHandScore}</span></div>
+          <div className="col-span-2">ACTIVE REASON: <span style={{ color: '#9aa' }}>{debug?.activeHandReason}</span></div>
+          <div className="col-span-2" style={{ fontSize: '8px', opacity: 0.7 }}>IGNORED: {debug?.ignoredHands || '—'}</div>
+          <div>RESTING HAND: <span style={{ color: debug?.restingHand ? '#ff5555' : '#0f0' }}>{debug?.restingHand ? 'YES' : 'NO'}</span></div>
+          <div>RESTING REASON: <span style={{ color: '#ff8800', fontSize: '8px' }}>{debug?.restingReason || '—'}</span></div>
+          <div>MOUSE ACTIVE: <span style={{ color: debug?.mouseActive ? '#ffd500' : '#888' }}>{debug?.mouseActive ? 'YES' : 'NO'}</span></div>
+          <div>FIST PHASE: <span style={{ color: '#ffd500' }}>{upper(debug?.fistPhase)}</span></div>
+          <div>FIST TRANSITION: <span style={{ color: debug?.fistTransition ? '#0f0' : '#888' }}>{debug?.fistTransition ? 'YES' : 'NO'}</span></div>
+          <div>STATIC FIST SUPPR: <span style={{ color: debug?.staticFistSuppressed ? '#ff5555' : '#888' }}>{debug?.staticFistSuppressed ? 'YES' : 'NO'}</span></div>
+          <div className="col-span-2">ACTIVATE GATE: <span style={{ color: debug?.activateGate === 'SAFE_ACTIVATE_ALLOWED' ? '#0f0' : '#ff8800' }}>{debug?.activateGate}</span></div>
+          <div className="col-span-2" style={{ fontSize: '8px' }}>SUPPRESSED: {debug?.activateSuppressedReason || '—'}</div>
+          <div className="col-span-2" style={{ fontSize: '8px', opacity: 0.7 }}>LAST ACT: {debug?.lastActivateType} · LAST SUPPR: {debug?.lastSuppressedType}/{debug?.lastSuppressedReason || '—'}</div>
+
           {debug?.errorName && (
             <div className="col-span-2 mt-1 p-1 bg-red-900/40 border border-red-500/50 rounded text-[8px] text-red-200">
                ERROR: {debug.errorName} - {debug.errorMessage}

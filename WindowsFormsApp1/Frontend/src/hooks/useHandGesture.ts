@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { GestureType, ActivateType, StrokePhase, TapPhase, HandSide } from '../types';
+import type { GestureType, ActivateType, StrokePhase, TapPhase, HandSide, ControlMode, FistPhase } from '../types';
 
-export type { GestureType, ActivateType, StrokePhase, TapPhase, HandSide };
+export type { GestureType, ActivateType, StrokePhase, TapPhase, HandSide, ControlMode, FistPhase };
 
 export type GestureStatus =
   | 'INIT'
@@ -100,6 +100,23 @@ export interface GestureData {
     returnDirIgnored: 'left' | 'right' | null;
     tapPhase: TapPhase;
     isFist: boolean;
+    // active-hand / intent gating
+    controlMode: ControlMode;
+    activeHandSide: HandSide;
+    activeHandScore: number;
+    activeHandReason: string;
+    ignoredHands: string;
+    restingHand: boolean;
+    restingReason: string;
+    mouseActive: boolean;
+    fistPhase: FistPhase;
+    fistTransition: boolean;
+    staticFistSuppressed: boolean;
+    activateGate: string;
+    activateSuppressedReason: string;
+    lastActivateType: string;
+    lastSuppressedType: string;
+    lastSuppressedReason: string;
     errorName?: string;
     errorMessage?: string;
     trackInfo?: string;
@@ -128,7 +145,18 @@ const activateSafeGapMs = 400;      // no activate within this of a fire
 const activateSwipeGuardMs = 450;   // no activate within this of a swipe fire
 
 // ---- Fist activate ----
-const fistHoldMs = 280;
+const fistHoldMs = 300;
+const fistOpenRecentMs = 950;   // an open/relaxed hand must have been seen this recently
+
+// ---- Active control hand + intent gating ----
+const mouseActiveWindowMs = 800;     // recent mouse activity window
+const restingStillMs = 800;          // hand still this long => resting candidate
+const restingVelocity = 0.004;       // |velocity| under this counts as "still"
+const activeHandLockMs = 900;        // hysteresis before switching active hand
+const switchHandScoreMargin = 0.25;  // new hand must beat active by this margin
+const controlArmStableMs = 250;      // open/index centred this long => armed
+const controlArmedDurationMs = 5000; // control stays armed this long
+const intentRecentMs = 1200;         // a recent intentional transition window
 
 // ---- Index double-tap activate ----
 const tapDownThresholdY = 0.025;
@@ -182,6 +210,22 @@ const INITIAL_DEBUG: GestureData['debug'] = {
   returnDirIgnored: null,
   tapPhase: 'IDLE',
   isFist: false,
+  controlMode: 'INACTIVE',
+  activeHandSide: 'Unknown',
+  activeHandScore: 0,
+  activeHandReason: 'INIT',
+  ignoredHands: '',
+  restingHand: false,
+  restingReason: '',
+  mouseActive: false,
+  fistPhase: 'IDLE',
+  fistTransition: false,
+  staticFistSuppressed: false,
+  activateGate: 'IDLE',
+  activateSuppressedReason: '',
+  lastActivateType: 'NONE',
+  lastSuppressedType: 'NONE',
+  lastSuppressedReason: '',
   origin: typeof window !== 'undefined' ? window.location.origin : '',
   href: typeof window !== 'undefined' ? window.location.href : '',
   mediapipeStatus: 'NOT_STARTED',
@@ -275,6 +319,50 @@ export const useHandGesture = (
   const tapBaselineYRef = useRef(0.5);
   const firstTapTimeRef = useRef(0);
 
+  // ---- Active control hand + intent gating ----
+  const lastMouseActivityRef = useRef(0);
+  const handTracksRef = useRef<Record<string, { x: number; y: number; t: number; vEma: number; stillSince: number; lastMoveT: number; sawIntentT: number; lastSeen: number }>>({});
+  const activeHandRef = useRef<{ key: string | null; since: number; score: number }>({ key: null, since: 0, score: 0 });
+  const switchCandidateRef = useRef<{ key: string | null; since: number }>({ key: null, since: 0 });
+  const controlModeRef = useRef<ControlMode>('INACTIVE');
+  const controlArmedUntilRef = useRef(0);
+  const controlArmingSinceRef = useRef(0);
+  const restingRef = useRef(false);
+  const restingReasonRef = useRef('');
+  // fist transition machine
+  const fistPhaseRef = useRef<FistPhase>('IDLE');
+  const fistOpenSeenRef = useRef(0);
+  const fistClosingSinceRef = useRef(0);
+  // debug refs
+  const activeHandReasonRef = useRef('INIT');
+  const ignoredHandsRef = useRef('');
+  const activateGateRef = useRef('IDLE');
+  const activateSuppressedReasonRef = useRef('');
+  const lastActivateTypeRef = useRef('NONE');
+  const lastSuppressedTypeRef = useRef('NONE');
+  const lastSuppressedReasonRef = useRef('');
+  const fistTransitionRef = useRef(false);
+  const staticFistSuppressedRef = useRef(false);
+
+  // Track mouse activity (over the stage) so activate gestures get stricter while
+  // the user is actually using the mouse — avoids a bent hand on the mouse firing.
+  useEffect(() => {
+    const mark = () => { lastMouseActivityRef.current = Date.now(); };
+    const opts = { passive: true } as AddEventListenerOptions;
+    window.addEventListener('mousemove', mark, opts);
+    window.addEventListener('mousedown', mark, opts);
+    window.addEventListener('wheel', mark, opts);
+    window.addEventListener('click', mark, opts);
+    window.addEventListener('dragover', mark, opts);
+    return () => {
+      window.removeEventListener('mousemove', mark);
+      window.removeEventListener('mousedown', mark);
+      window.removeEventListener('wheel', mark);
+      window.removeEventListener('click', mark);
+      window.removeEventListener('dragover', mark);
+    };
+  }, []);
+
   const updateDebug = useCallback((updates: Partial<GestureData['debug']> | { status: GestureStatus, reason: string }) => {
     setGestureData(prev => {
       const newStatus = (updates as any).status || prev.status;
@@ -334,6 +422,8 @@ export const useHandGesture = (
     let instVx = 0;
     let isFistFlag = false;
 
+    const mouseActiveNow = () => now - lastMouseActivityRef.current < mouseActiveWindowMs;
+
     // Emit a single activate event (shared by all activate gestures).
     const emitActivate = (type: ActivateType, reason: string) => {
       nextActivateType = type;
@@ -342,29 +432,149 @@ export const useHandGesture = (
       lastActivateTimeRef.current = now;
       lastGestureTime.current = now + 400;
       debugReason = reason;
+      activateGateRef.current = 'SAFE_ACTIVATE_ALLOWED';
+      activateSuppressedReasonRef.current = '';
+      lastActivateTypeRef.current = type;
     };
-    // Strict gate (fist / double pinch): only when stroke machine is idle.
-    const canActivateNow = () =>
-      (strokePhaseRef.current === 'IDLE' || strokePhaseRef.current === 'READY_FOR_NEXT') &&
-      now - lastFireTimeRef.current > activateSwipeGuardMs &&
-      now - lastActivateTimeRef.current > activateCooldownMs;
-    // Relaxed gate (index double-tap): index pointing forces TRACKING, so allow it
-    // as long as we are not mid-swipe (FIRED/RETURNING) and not right after a fire.
-    const canActivateTap = () =>
-      strokePhaseRef.current !== 'FIRED' && strokePhaseRef.current !== 'RETURNING' &&
-      now - lastFireTimeRef.current > activateSwipeGuardMs &&
-      now - lastActivateTimeRef.current > activateCooldownMs;
+
+    // ===== Unified activate gate. Every app-launch gesture must pass through here.
+    const tryActivate = (type: ActivateType): boolean => {
+      const strict = type !== 'INDEX_DOUBLE_TAP_ACTIVATE';
+      const block = (reason: string) => {
+        activateGateRef.current = 'SAFE_ACTIVATE_BLOCKED';
+        activateSuppressedReasonRef.current = reason;
+        lastSuppressedTypeRef.current = type;
+        lastSuppressedReasonRef.current = reason;
+        return false;
+      };
+      // 1. cooldown / not immediately after a swipe
+      if (now - lastActivateTimeRef.current < activateCooldownMs) return block('ACTIVATE_COOLDOWN');
+      if (now - lastFireTimeRef.current < activateSwipeGuardMs) return block('SELECTED_APP_NOT_STABLE');
+      // 2. stroke phase safe
+      const phaseOk = strict
+        ? (strokePhaseRef.current === 'IDLE' || strokePhaseRef.current === 'READY_FOR_NEXT')
+        : (strokePhaseRef.current !== 'FIRED' && strokePhaseRef.current !== 'RETURNING');
+      if (!phaseOk) return block('SELECTED_APP_NOT_STABLE');
+      // 3. resting hand suppression
+      if (restingRef.current) return block('RESTING_HAND_SUPPRESSED');
+      // 4. control mode must be armed (or just performed a stroke)
+      const controlOk = now < controlArmedUntilRef.current || now - lastFireTimeRef.current < intentRecentMs + 400;
+      if (!controlOk) return block('CONTROL_MODE_INACTIVE');
+      // 5. mouse activity makes strict gestures even stricter (need armed control)
+      if (mouseActiveNow() && strict && now >= controlArmedUntilRef.current) {
+        return block('MOUSE_ACTIVE_ACTIVATE_SUPPRESSED');
+      }
+      emitActivate(type, 'SAFE_ACTIVATE_ALLOWED');
+      return true;
+    };
 
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
       isHandPresent = true;
       lostFrameCount.current = 0;
-      const landmarks = results.multiHandLandmarks[0];
-      currentLandmarks = landmarks;
-      currentConfidence = results.multiHandWorldLandmarks?.[0]?.[0]?.score || 0.8;
 
-      // Handedness is FOR DISPLAY ONLY. Never used to gate gestures.
-      const rawSide = results.multiHandedness?.[0]?.label;
-      handSide = rawSide === 'Left' ? 'Left' : rawSide === 'Right' ? 'Right' : 'Unknown';
+      // ===================== ACTIVE CONTROL HAND SELECTION =====================
+      // Score every detected hand and pick the one most likely being used to
+      // control. Non-active hands (resting / face-support / mouse hand) are ignored
+      // for gestures and only surfaced in debug.
+      const allHands: any[] = results.multiHandLandmarks;
+      const handedArr: any[] = results.multiHandedness || [];
+      const labelSeen: Record<string, number> = {};
+      type Cand = { key: string; side: HandSide; lm: any; conf: number; cx: number; cy: number; score: number; openish: boolean };
+      const cands: Cand[] = allHands.map((lm: any, i: number) => {
+        const rawSide = handedArr[i]?.label;
+        const side: HandSide = rawSide === 'Left' ? 'Left' : rawSide === 'Right' ? 'Right' : 'Unknown';
+        const n = (labelSeen[side] = (labelSeen[side] || 0) + 1);
+        const key = `${side}#${n}`;
+        const pc = [lm[0], lm[5], lm[9], lm[13], lm[17]];
+        const cx = pc.reduce((s: number, p: any) => s + p.x, 0) / 5;
+        const cy = pc.reduce((s: number, p: any) => s + p.y, 0) / 5;
+        const conf = handedArr[i]?.score ?? 0.8;
+        // finger extension for shape score
+        const ext = (lm[8].y < lm[6].y ? 1 : 0) + (lm[12].y < lm[10].y ? 1 : 0) + (lm[16].y < lm[14].y ? 1 : 0) + (lm[20].y < lm[18].y ? 1 : 0);
+        const openish = ext >= 2;
+
+        // per-hand motion tracking
+        const prev = handTracksRef.current[key];
+        let vEma = 0;
+        if (prev) {
+          const dt = Math.max(16, now - prev.t);
+          const v = Math.hypot(cx - prev.x, cy - prev.y) / dt;
+          vEma = prev.vEma * 0.6 + v * 0.4;
+          const moving = v > restingVelocity;
+          handTracksRef.current[key] = {
+            x: cx, y: cy, t: now, vEma,
+            stillSince: moving ? 0 : (prev.stillSince || now),
+            lastMoveT: moving ? now : prev.lastMoveT,
+            sawIntentT: openish ? now : prev.sawIntentT,
+            lastSeen: now
+          };
+        } else {
+          handTracksRef.current[key] = { x: cx, y: cy, t: now, vEma: 0, stillSince: now, lastMoveT: 0, sawIntentT: openish ? now : 0, lastSeen: now };
+        }
+
+        // ---- scores ----
+        const movementScore = Math.min(1, vEma * 220);
+        const edgePenalty = Math.max(0, Math.abs(cx - 0.5) - 0.32) + Math.max(0, Math.abs(cy - 0.55) - 0.32);
+        const facePenalty = cy < 0.26 ? 0.4 : 0; // high in frame ~ near face
+        const centerScore = Math.max(0, 1 - Math.hypot(cx - 0.5, cy - 0.55) * 1.3 - edgePenalty - facePenalty);
+        const confScore = Math.min(1, conf);
+        const shapeScore = openish ? 0.9 : ext === 1 ? 0.7 : 0.3;
+        const recentInteraction = (key === activeHandRef.current.key && (now - lastFireTimeRef.current < 1500 || now - lastActivateTimeRef.current < 1500)) ? 0.4 : 0;
+        const score = 0.32 * movementScore + 0.24 * centerScore + 0.16 * confScore + 0.18 * shapeScore + 0.10 * recentInteraction;
+        return { key, side, lm, conf, cx, cy, score, openish };
+      });
+
+      // best candidate
+      let best = cands[0];
+      for (const c of cands) if (c.score > best.score) best = c;
+
+      // hysteresis: keep current active unless a clearly better hand persists
+      const active = activeHandRef.current;
+      const activeCand = cands.find((c) => c.key === active.key);
+      if (!active.key || !activeCand) {
+        const prevTrack = active.key ? handTracksRef.current[active.key] : undefined;
+        const lostFor = prevTrack ? now - prevTrack.lastSeen : Infinity;
+        if (!active.key || lostFor > activeHandLockMs) {
+          activeHandRef.current = { key: best.key, since: now, score: best.score };
+          activeHandReasonRef.current = 'ACTIVE_HAND_SELECTED';
+          switchCandidateRef.current = { key: null, since: 0 };
+        }
+      } else {
+        if (best.key !== active.key && best.score > activeCand.score + switchHandScoreMargin) {
+          if (switchCandidateRef.current.key === best.key) {
+            if (now - switchCandidateRef.current.since > activeHandLockMs) {
+              activeHandRef.current = { key: best.key, since: now, score: best.score };
+              activeHandReasonRef.current = 'ACTIVE_HAND_SWITCHED';
+              switchCandidateRef.current = { key: null, since: 0 };
+            }
+          } else {
+            switchCandidateRef.current = { key: best.key, since: now };
+          }
+        } else {
+          switchCandidateRef.current = { key: null, since: 0 };
+          activeHandRef.current.score = activeCand.score;
+        }
+      }
+
+      const chosen = cands.find((c) => c.key === activeHandRef.current.key) || best;
+      const chosenTrack = handTracksRef.current[chosen.key];
+      ignoredHandsRef.current = cands.filter((c) => c.key !== chosen.key).map((c) => `${c.key}(${c.score.toFixed(2)})`).join(', ');
+
+      // resting-hand detection for the chosen hand
+      const stillFor = chosenTrack && chosenTrack.stillSince ? now - chosenTrack.stillSince : 0;
+      const intentAgo = chosenTrack ? now - chosenTrack.sawIntentT : Infinity;
+      if (stillFor > restingStillMs && intentAgo > intentRecentMs) {
+        restingRef.current = true;
+        restingReasonRef.current = chosen.cy < 0.26 ? 'RESTING_HAND_SUPPRESSED' : 'NO_INTENT_TRANSITION';
+      } else {
+        restingRef.current = false;
+        restingReasonRef.current = '';
+      }
+
+      const landmarks = chosen.lm;
+      currentLandmarks = landmarks;
+      currentConfidence = chosen.conf;
+      handSide = chosen.side;
 
       const thumbTip = landmarks[4];
       const indexTip = landmarks[8];
@@ -395,6 +605,22 @@ export const useHandGesture = (
       if (isOpenPalm) lastPalmDetectTime.current = now;
       const isLatchedPalm = isOpenPalm || (now - lastPalmDetectTime.current < 400);
 
+      // ----- Control mode: arm naturally when an open/index hand rests centred -----
+      const mouseActive = mouseActiveNow();
+      const centred = Math.abs(chosen.cx - 0.5) < 0.3 && chosen.cy > 0.24 && chosen.cy < 0.82;
+      const armCandidate = (isOpenPalm || isIndexPointing) && centred && !restingRef.current;
+      if (armCandidate) {
+        if (controlArmingSinceRef.current === 0) controlArmingSinceRef.current = now;
+        if (now - controlArmingSinceRef.current > controlArmStableMs) controlArmedUntilRef.current = now + controlArmedDurationMs;
+      } else {
+        controlArmingSinceRef.current = 0;
+      }
+      if (isOpenPalm || isIndexPointing) fistOpenSeenRef.current = now; // intent marker
+      if (mouseActive && now >= controlArmedUntilRef.current) controlModeRef.current = 'SUSPENDED_BY_MOUSE';
+      else if (now < controlArmedUntilRef.current) controlModeRef.current = (strokePhaseRef.current === 'TRACKING' || strokePhaseRef.current === 'FIRED') ? 'ACTIVE_CONTROLLING' : 'CONTROL_ARMED';
+      else if (armCandidate) controlModeRef.current = 'ARMING';
+      else controlModeRef.current = 'INACTIVE';
+
       // ----- Fist detection (tip below pip => curled) -----
       const indexCurl = indexTip.y > indexPip.y;
       const middleCurl = middleTip.y > middlePip.y;
@@ -403,8 +629,17 @@ export const useHandGesture = (
       const curledCount = [indexCurl, middleCurl, ringCurl, pinkyCurl].filter(Boolean).length;
       const isFist = curledCount >= 3;
       isFistFlag = isFist;
-      // Must fully release the fist before it can fire again.
-      if (!isFist) { fistSinceRef.current = 0; fistFiredRef.current = false; }
+      // Any non-fist posture is an "open/relaxed/pointing" precursor: it re-arms the
+      // fist machine and marks a recent open. A hand that appears already as a fist
+      // (no preceding open) never gets re-armed -> static fist is suppressed.
+      if (!isFist) {
+        fistSinceRef.current = 0;
+        fistFiredRef.current = false;
+        fistOpenSeenRef.current = now;
+        if (fistPhaseRef.current !== 'READY_OPEN_HAND') fistPhaseRef.current = 'READY_OPEN_HAND';
+        fistTransitionRef.current = false;
+        staticFistSuppressedRef.current = false;
+      }
 
       // ----- Candidate selection by priority -----
       // A. Index finger swipe
@@ -447,15 +682,9 @@ export const useHandGesture = (
         }
         lastPinchDownTime.current = now;
 
-        // Activate only in a safe stroke state, away from a recent fire.
-        const phaseSafe = strokePhaseRef.current === 'IDLE' || strokePhaseRef.current === 'READY_FOR_NEXT';
-        const farFromFire = now - lastFireTimeRef.current > activateSafeGapMs;
-        const cooldownOk = now - lastActivateTimeRef.current > activateCooldownMs;
-        if (pinchCountRef.current >= 2 && phaseSafe && farFromFire && cooldownOk) {
-          emitActivate('DOUBLE_PINCH_ACTIVATE', 'DOUBLE_PINCH_ACTIVATE_SELECTED_APP');
-          pinchCountRef.current = 0;
-        } else if (pinchCountRef.current >= 2) {
-          // Detected but blocked by stroke state -> swallow.
+        // Double pinch is inherently transitional; still routed through the gate.
+        if (pinchCountRef.current >= 2) {
+          tryActivate('DOUBLE_PINCH_ACTIVATE');
           pinchCountRef.current = 0;
         }
       } else if (IS_PINCH_UP) {
@@ -465,19 +694,43 @@ export const useHandGesture = (
       nextIsPinching = !isFist && (IS_PINCH_DOWN || (gestureData.isPinching && !IS_PINCH_UP));
 
       if (isFist) {
-        // ----- Fist activate: open the currently centered app on hold -----
+        // ----- Intentional fist: open -> fist -> hold (>=300ms) -> activate -----
         candidateType = 'NONE';
         resetStroke('IDLE');
         tapPhaseRef.current = 'IDLE';
-        if (fistSinceRef.current === 0) fistSinceRef.current = now;
-        if (!fistFiredRef.current && now - fistSinceRef.current >= fistHoldMs && canActivateNow()) {
-          emitActivate('FIST_ACTIVATE', 'FIST_ACTIVATE_SELECTED_APP');
-          fistFiredRef.current = true;
-        } else if (!fistFiredRef.current) {
-          debugReason = 'FIST_HOLDING';
-        } else {
-          debugReason = 'FIST_HELD';
+        const sawOpenRecently = now - fistOpenSeenRef.current < fistOpenRecentMs;
+        switch (fistPhaseRef.current) {
+          case 'IDLE':
+          case 'SUPPRESSED_RESTING':
+            // appeared as a fist with no preceding open -> static fist, suppress
+            if (sawOpenRecently) {
+              fistPhaseRef.current = 'FIST_CLOSING';
+              fistClosingSinceRef.current = now;
+              controlArmedUntilRef.current = now + controlArmedDurationMs; // deliberate fist arms control
+            } else {
+              fistPhaseRef.current = 'SUPPRESSED_RESTING';
+            }
+            break;
+          case 'READY_OPEN_HAND':
+            fistPhaseRef.current = 'FIST_CLOSING';
+            fistClosingSinceRef.current = now;
+            controlArmedUntilRef.current = now + controlArmedDurationMs; // deliberate fist arms control
+            break;
+          case 'FIST_CLOSING':
+            if (now - fistClosingSinceRef.current >= fistHoldMs) fistPhaseRef.current = 'FIST_HOLDING';
+            break;
+          case 'FIST_HOLDING':
+            if (tryActivate('FIST_ACTIVATE')) fistPhaseRef.current = 'WAIT_RELEASE';
+            break;
+          case 'WAIT_RELEASE':
+            break;
         }
+        fistTransitionRef.current = fistPhaseRef.current === 'FIST_CLOSING' || fistPhaseRef.current === 'FIST_HOLDING';
+        staticFistSuppressedRef.current = fistPhaseRef.current === 'SUPPRESSED_RESTING';
+        debugReason = staticFistSuppressedRef.current ? 'STATIC_FIST_SUPPRESSED'
+          : fistPhaseRef.current === 'FIST_HOLDING' ? 'FIST_HOLDING'
+          : fistPhaseRef.current === 'WAIT_RELEASE' ? 'FIST_HELD'
+          : 'FIST_CLOSING';
       } else if (nextIsPinching) {
         // Pinch drag control: stroke recognizer paused & reset.
         nextStatus = 'PINCH_CONTROL';
@@ -552,6 +805,8 @@ export const useHandGesture = (
             lastFireDirectionRef.current = dir;
             lastFireTimeRef.current = now;
             lastFireXRef.current = sx;
+            // a real stroke proves intent -> (re)arm control for the active hand
+            controlArmedUntilRef.current = now + controlArmedDurationMs;
             // Single-consume guard: nothing up to here can re-trigger.
             lastConsumedHistoryTimeRef.current = now;
             lastGestureTime.current = now;
@@ -638,10 +893,8 @@ export const useHandGesture = (
             }
           } else if (tp === 'TAP_DOWN_2') {
             if (dyDown < tapReleaseThresholdY) {
-              // Second tap released -> double tap complete.
-              if (canActivateTap()) {
-                emitActivate('INDEX_DOUBLE_TAP_ACTIVATE', 'INDEX_DOUBLE_TAP_ACTIVATE_SELECTED_APP');
-              }
+              // Second tap released -> double tap complete (through unified gate).
+              tryActivate('INDEX_DOUBLE_TAP_ACTIVATE');
               tapPhaseRef.current = 'IDLE';
             } else if (now - firstTapTimeRef.current > tapMaxIntervalMs * 2) {
               tapPhaseRef.current = 'IDLE';
@@ -668,6 +921,17 @@ export const useHandGesture = (
         fistSinceRef.current = 0;
         fistFiredRef.current = false;
         tapPhaseRef.current = 'IDLE';
+        // Full intent reset: a fist reappearing after hand-lost must re-open first.
+        fistPhaseRef.current = 'IDLE';
+        fistOpenSeenRef.current = 0;
+        fistTransitionRef.current = false;
+        staticFistSuppressedRef.current = false;
+        activeHandRef.current = { key: null, since: 0, score: 0 };
+        switchCandidateRef.current = { key: null, since: 0 };
+        controlModeRef.current = 'LOST';
+        controlArmingSinceRef.current = 0;
+        restingRef.current = false;
+        ignoredHandsRef.current = '';
         debugReason = 'RESET_BY_HAND_LOST';
       } else {
         nextStatus = status === 'NO_HAND_IN_FRAME' ? 'NO_HAND_IN_FRAME' : status;
@@ -739,7 +1003,23 @@ export const useHandGesture = (
         timeSinceFire: lastFireTimeRef.current ? now - lastFireTimeRef.current : 0,
         returnDirIgnored: returnDirIgnoredRef.current,
         tapPhase: tapPhaseRef.current,
-        isFist: isFistFlag
+        isFist: isFistFlag,
+        controlMode: controlModeRef.current,
+        activeHandSide: handSide,
+        activeHandScore: Number(activeHandRef.current.score.toFixed(2)),
+        activeHandReason: activeHandReasonRef.current,
+        ignoredHands: ignoredHandsRef.current,
+        restingHand: restingRef.current,
+        restingReason: restingReasonRef.current,
+        mouseActive: now - lastMouseActivityRef.current < mouseActiveWindowMs,
+        fistPhase: fistPhaseRef.current,
+        fistTransition: fistTransitionRef.current,
+        staticFistSuppressed: staticFistSuppressedRef.current,
+        activateGate: activateGateRef.current,
+        activateSuppressedReason: activateSuppressedReasonRef.current,
+        lastActivateType: lastActivateTypeRef.current,
+        lastSuppressedType: lastSuppressedTypeRef.current,
+        lastSuppressedReason: lastSuppressedReasonRef.current
       }
     }));
     setStatus(nextStatus);
@@ -764,7 +1044,7 @@ export const useHandGesture = (
       if (!Hands || !Camera) throw new Error('MediaPipe scripts not found');
       const hands = new Hands({ locateFile: (file: string) => `./mediapipe/hands/${file}` });
       updateDebug({ mediapipeSource: 'LOCAL' });
-      hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.35, minTrackingConfidence: 0.35 });
+      hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.45, minTrackingConfidence: 0.45 });
       hands.onResults(onResults);
       handsRef.current = hands;
       if (!cameraRef.current) {

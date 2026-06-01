@@ -29,6 +29,23 @@ export type TapPhase =
 
 export type HandSide = 'Left' | 'Right' | 'Unknown';
 
+export type ControlMode =
+  | 'INACTIVE'
+  | 'ARMING'
+  | 'CONTROL_ARMED'
+  | 'ACTIVE_CONTROLLING'
+  | 'SUSPENDED_BY_MOUSE'
+  | 'LOST';
+
+export type FistPhase =
+  | 'IDLE'
+  | 'READY_OPEN_HAND'
+  | 'FIST_CLOSING'
+  | 'FIST_HOLDING'
+  | 'ACTIVATED'
+  | 'WAIT_RELEASE'
+  | 'SUPPRESSED_RESTING';
+
 export interface AppConfig {
   id: AppId;
   title: string;

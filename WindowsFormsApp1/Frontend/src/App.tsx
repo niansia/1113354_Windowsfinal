@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useHandGesture } from './hooks/useHandGesture';
-import { GestureAppCarousel } from './components/GestureAppCarousel';
+import { SpatialHomeStage } from './components/SpatialHomeStage';
 import { CameraPreview } from './components/CameraPreview';
 
 // Production UI is clean. Enable the camera preview + debug HUD only by running
@@ -84,12 +84,13 @@ export default function App() {
         <video ref={videoRef} autoPlay playsInline muted style={HIDDEN_VIDEO_STYLE} />
       )}
 
-      {/* Central Stage */}
+      {/* Central Stage — FusionOS 3D Spatial Desktop */}
       <div className="flex-1 relative">
-        <GestureAppCarousel
+        <SpatialHomeStage
+          status={status}
+          gestureData={gestureData}
           onIndexChange={setActiveAppIndex}
           onQueueChange={setQueueDepth}
-          gestureData={gestureData}
         />
       </div>
       
