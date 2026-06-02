@@ -52,12 +52,23 @@ namespace WindowsFormsApp1
         private FormBorderStyle prevBorderStyle;
         private FormWindowState prevWindowState;
         private Rectangle prevBounds;
-        private const bool RunNativeCameraSmokeTest = false;
+        private static readonly bool RunNativeCameraSmokeTest = false;
 
         // ---- System-level boot mode ----
         private bool isBooting = false;
         private bool bootDoneReceived = false;
+        private bool frontendErrorToastShown = false;
         private System.Windows.Forms.Timer bootTimeoutTimer;
+
+        // ---- Collapsible sidebar ----
+        private int railWidth = 250;
+        private bool railExpanded = true;
+        private int railTargetWidth = 250;
+        private System.Windows.Forms.Timer railAnimTimer;
+        private Label railTitleLabel;
+        private Label railSubtitleLabel;
+        private const int RailExpandedWidth = 250;
+        private const int RailCollapsedWidth = 76;
 
         private const double AppZoomMin = 0.5;
         private const double AppZoomMax = 2.5;
@@ -160,7 +171,7 @@ namespace WindowsFormsApp1
         // and the hero-stage WebView WITHOUT re-navigating or re-initializing anything.
         private void CompleteSystemBoot()
         {
-            if (!isBooting) return;
+            if (!isBooting || bootDoneReceived) return;
             isBooting = false;
             bootDoneReceived = true;
 
@@ -189,6 +200,112 @@ namespace WindowsFormsApp1
             leftRail?.BringToFront();
             taskbar?.BringToFront();
             Debug.WriteLine("[FusionOS] System boot complete, desktop revealed.");
+
+            // Tell React the shell + hero-stage layout are FINAL, so it performs the
+            // single clean reveal (no intermediate state). Small delay lets the WebView
+            // finish resizing/painting at hero-stage size first.
+            var readyTimer = new System.Windows.Forms.Timer { Interval = 130 };
+            readyTimer.Tick += delegate
+            {
+                readyTimer.Stop();
+                readyTimer.Dispose();
+                PostSidebarLayout(false);
+                try { carouselWebView?.CoreWebView2?.PostWebMessageAsString("FUSION_SHELL_READY"); } catch { }
+            };
+            readyTimer.Start();
+        }
+
+        // ===================== Collapsible sidebar =====================
+        private void ToggleSidebar()
+        {
+            railExpanded = !railExpanded;
+            railTargetWidth = railExpanded ? RailExpandedWidth : RailCollapsedWidth;
+            PostSidebarLayout(true);
+            if (railAnimTimer == null)
+            {
+                railAnimTimer = new System.Windows.Forms.Timer { Interval = 15 };
+                railAnimTimer.Tick += RailAnimTick;
+            }
+            railAnimTimer.Start();
+        }
+
+        private void RailAnimTick(object sender, EventArgs e)
+        {
+            int diff = railTargetWidth - railWidth;
+            bool done = Math.Abs(diff) <= 2;
+            railWidth = done ? railTargetWidth : railWidth + (int)Math.Round(diff * 0.32);
+
+            // Lightweight per-tick update only: rail width + rail visuals.
+            // Do not resize WebView2 here; high-frequency host resize causes
+            // visible flashes in the WinForms WebView2 surface.
+            if (leftRail != null) leftRail.Width = railWidth;
+            ApplyRailCompactState(false);
+
+            if (done)
+            {
+                railAnimTimer.Stop();
+                UpdateShelfScrollSize();
+                PostSidebarLayout(false);
+            }
+        }
+
+        // Legacy fallback host layout. The real React WebView uses a stable full
+        // shell work area and receives sidebar safe-area messages instead.
+        private void UpdateHeroBounds()
+        {
+            if (leftRail == null || taskbar == null) return;
+            int x = leftRail.Right + 18;
+            int y = 22;
+            int rightMargin = 28;
+            int bottomLimit = taskbar.Top - 18;
+            int width = Math.Max(620, ClientSize.Width - x - rightMargin);
+            int height = Math.Max(420, bottomLimit - y);
+            if (heroStage != null) heroStage.Bounds = new Rectangle(x, y, width, height);
+        }
+
+        private Rectangle HomeWebViewBounds()
+        {
+            int bottom = taskbar == null || !taskbar.Visible ? ClientSize.Height : taskbar.Top;
+            return new Rectangle(0, 0, Math.Max(320, ClientSize.Width), Math.Max(260, bottom));
+        }
+
+        private void PostSidebarLayout(bool useTargetWidth)
+        {
+            if (carouselWebView == null || carouselWebView.CoreWebView2 == null) return;
+            int width = useTargetWidth ? railTargetWidth : railWidth;
+            string json =
+                "{\"type\":\"FUSION_SIDEBAR_LAYOUT\",\"payload\":{" +
+                "\"expanded\":" + (railExpanded ? "true" : "false") + "," +
+                "\"width\":" + width + "," +
+                "\"compactWidth\":" + RailCollapsedWidth + "," +
+                "\"expandedWidth\":" + RailExpandedWidth +
+                "}}";
+            try { carouselWebView.CoreWebView2.PostWebMessageAsString(json); } catch { }
+        }
+
+        // Adapt the rail contents to the current width: icon-only tiles + hidden
+        // header text when narrow.
+        private void ApplyRailCompactState(bool updateScroll = true)
+        {
+            bool compact = railWidth < 150;
+            if (railTitleLabel != null && railTitleLabel.Visible == compact) railTitleLabel.Visible = !compact;
+            if (railSubtitleLabel != null && railSubtitleLabel.Visible == compact) railSubtitleLabel.Visible = !compact;
+
+            if (iconRail != null)
+            {
+                int tileW = Math.Max(56, railWidth - 34);
+                foreach (Control c in iconRail.Controls)
+                {
+                    var tile = c as CanvasIconTile;
+                    if (tile != null)
+                    {
+                        tile.Compact = compact;
+                        int desiredWidth = compact ? 56 : tileW;
+                        if (tile.Width != desiredWidth) tile.Width = desiredWidth;
+                    }
+                }
+                if (updateScroll) UpdateShelfScrollSize();
+            }
         }
 
         private void Form1_MouseWheel(object sender, MouseEventArgs e)
@@ -298,7 +415,7 @@ namespace WindowsFormsApp1
             if (leftRail != null)
             {
                 leftRail.Location = new Point(12, 18);
-                leftRail.Size = new Size(250, Math.Max(360, ClientSize.Height - (taskbar == null ? 82 : taskbar.Height) - 40));
+                leftRail.Size = new Size(railWidth, Math.Max(360, ClientSize.Height - (taskbar == null ? 82 : taskbar.Height) - 40));
                 UpdateShelfScrollSize();
                 leftRail.BringToFront();
             }
@@ -397,25 +514,36 @@ namespace WindowsFormsApp1
             };
             railLayout.Controls.Add(header, 0, 0);
 
-            var title = new Label
+            var hamburger = new HamburgerButton
             {
-                Location = new Point(4, 0),
-                Size = new Size(220, 34),
+                Location = new Point(6, 20),
+                Size = new Size(42, 38),
+                AccentColor = accent,
+                Cursor = Cursors.Hand
+            };
+            hamburger.Click += delegate { ToggleSidebar(); };
+            header.Controls.Add(hamburger);
+            hamburger.BringToFront();
+
+            railTitleLabel = new Label
+            {
+                Location = new Point(56, 4),
+                Size = new Size(180, 32),
                 Text = "FUSION OS",
                 ForeColor = accent,
-                Font = new Font(Font.FontFamily, 18F, FontStyle.Bold)
+                Font = new Font(Font.FontFamily, 17F, FontStyle.Bold)
             };
-            header.Controls.Add(title);
+            header.Controls.Add(railTitleLabel);
 
-            var subtitle = new Label
+            railSubtitleLabel = new Label
             {
-                Location = new Point(4, 40),
-                Size = new Size(220, 38),
-                Text = "HTML-IN-CANVAS LAB",
+                Location = new Point(56, 42),
+                Size = new Size(180, 34),
+                Text = "SPATIAL DESKTOP",
                 ForeColor = accent2,
                 Font = new Font(Font.FontFamily, 9F, FontStyle.Bold)
             };
-            header.Controls.Add(subtitle);
+            header.Controls.Add(railSubtitleLabel);
 
             iconRail = new ScrollableFlowLayoutPanel
             {
@@ -634,6 +762,53 @@ namespace WindowsFormsApp1
                     }
                 };
                 Debug.WriteLine("[FusionOS WebView2] PermissionRequested handler registered");
+
+                string frontendGuardScript = @"
+(() => {
+  if (window.__fusionFrontendGuardInstalled) return;
+  window.__fusionFrontendGuardInstalled = true;
+  const post = (payload) => {
+    try {
+      if (window.chrome && window.chrome.webview) {
+        window.chrome.webview.postMessage(payload);
+      }
+    } catch (_) {}
+  };
+  post({ type: 'FUSION_FRONTEND_ALIVE', href: location.href, readyState: document.readyState });
+  window.addEventListener('DOMContentLoaded', () => {
+    post({ type: 'FUSION_FRONTEND_DOM_READY', href: location.href, readyState: document.readyState });
+  });
+  window.addEventListener('error', (event) => {
+    post({
+      type: 'FUSION_FRONTEND_ERROR',
+      kind: 'error',
+      message: event.message || '',
+      source: event.filename || '',
+      line: event.lineno || 0,
+      column: event.colno || 0
+    });
+  });
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason;
+    post({
+      type: 'FUSION_FRONTEND_ERROR',
+      kind: 'promise',
+      message: reason && reason.message ? reason.message : String(reason || '')
+    });
+  });
+})();
+";
+                await carouselWebView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(frontendGuardScript);
+
+                carouselWebView.CoreWebView2.ProcessFailed += (sender, args) =>
+                {
+                    Debug.WriteLine("[FusionOS WebView2 ProcessFailed] Kind=" + args.ProcessFailedKind + ", Reason=" + args.Reason);
+                    if (!frontendErrorToastShown && IsHandleCreated)
+                    {
+                        frontendErrorToastShown = true;
+                        BeginInvoke((Action)(() => ShowToast("前端啟動失敗，請查看 Visual Studio 輸出視窗", accent2)));
+                    }
+                };
                 
                 carouselWebView.CoreWebView2.NavigationStarting += (s, e) => {
                     Debug.WriteLine($"[FusionOS NavigationStarting] URL={e.Uri}");
@@ -642,7 +817,17 @@ namespace WindowsFormsApp1
                 carouselWebView.CoreWebView2.NavigationCompleted += async (s, e) => {
                     Debug.WriteLine($"[FusionOS NavigationCompleted] Success={e.IsSuccess}, Status={e.WebErrorStatus}");
                     
-                    if (!e.IsSuccess || !RunNativeCameraSmokeTest) return;
+                    if (!e.IsSuccess)
+                    {
+                        if (!frontendErrorToastShown && IsHandleCreated)
+                        {
+                            frontendErrorToastShown = true;
+                            BeginInvoke((Action)(() => ShowToast("前端載入失敗：" + e.WebErrorStatus, accent2)));
+                        }
+                        return;
+                    }
+
+                    if (!RunNativeCameraSmokeTest) return;
 
                     // Native Camera Smoke Test
                     string script = @"
@@ -720,6 +905,7 @@ namespace WindowsFormsApp1
                     // Cache busting with timestamp
                     string url = "https://fusion.local/index.html?v=" + DateTimeOffset.Now.ToUnixTimeMilliseconds();
                     Debug.WriteLine($"[FusionOS WebView2] Navigate={url}");
+                    frontendErrorToastShown = false;
                     carouselWebView.CoreWebView2.Navigate(url);
                     
                     carouselWebView.Visible = true;
@@ -880,6 +1066,22 @@ namespace WindowsFormsApp1
 
                 string lower = message.ToLower();
 
+                if (lower.Contains("fusion_frontend_alive") || lower.Contains("fusion_frontend_dom_ready"))
+                {
+                    Debug.WriteLine("[FusionOS Frontend] " + message);
+                }
+
+                if (lower.Contains("fusion_frontend_error"))
+                {
+                    Debug.WriteLine("[FusionOS Frontend Error] " + message);
+                    if (!frontendErrorToastShown)
+                    {
+                        frontendErrorToastShown = true;
+                        ShowToast("前端發生錯誤，請查看 Visual Studio 輸出視窗", accent2);
+                    }
+                    return;
+                }
+
                 // System-level boot completion from React.
                 if (lower.Contains("fusion_boot_done") || lower.Contains("\"boot_done\""))
                 {
@@ -991,9 +1193,13 @@ namespace WindowsFormsApp1
 
             if (carouselWebView != null)
             {
-                carouselWebView.Size = new Size(width, height);
-                carouselWebView.Location = new Point(x, y);
+                Rectangle bounds = HomeWebViewBounds();
+                if (carouselWebView.Bounds != bounds)
+                {
+                    carouselWebView.Bounds = bounds;
+                }
                 carouselWebView.BringToFront();
+                PostSidebarLayout(false);
             }
 
             // Ensure system controls are on top of the hero area
@@ -1377,7 +1583,7 @@ namespace WindowsFormsApp1
             string exePath = appRoot == null ? null : FindFirstExe(appRoot);
             if (exePath == null)
             {
-                OpenSystemWindow(L("PianoStudio"), L("PianoMissingBody"), accent2);
+                ShowToast(L("PianoStudio") + " 找不到執行檔", accent2);
                 return;
             }
 
@@ -1395,9 +1601,9 @@ namespace WindowsFormsApp1
                     OpenExternalProcessWindow(L("PianoStudio"), process, accent2, exePath);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                OpenSystemWindow(L("PianoLaunchError"), L("PianoLaunchErrorBody") + "\r\n\r\n" + L("Executable") + ":\r\n" + exePath + "\r\n\r\n" + L("Error") + ":\r\n" + ex.Message, accent2);
+                ShowToast(L("PianoStudio") + " 啟動失敗", accent2);
             }
         }
 
@@ -1407,7 +1613,7 @@ namespace WindowsFormsApp1
             string serverPath = appRoot == null ? null : Path.Combine(appRoot, "server.py");
             if (serverPath == null || !File.Exists(serverPath))
             {
-                OpenSystemWindow(L("CosmicGesture"), L("CosmicMissingBody"), accent3);
+                ShowToast(L("CosmicGesture") + " 找不到 server.py", accent3);
                 return;
             }
 
@@ -1417,7 +1623,7 @@ namespace WindowsFormsApp1
                 string python = FindPythonCommand();
                 if (python == null)
                 {
-                    OpenSystemWindow(L("CosmicGesture"), L("PythonMissingBody"), accent3);
+                    ShowToast(L("CosmicGesture") + " 需要 Python 才能啟動", accent3);
                     return;
                 }
 
@@ -1434,16 +1640,16 @@ namespace WindowsFormsApp1
                     cosmicServerProcess = Process.Start(startInfo);
                     serverReady = await WaitForCosmicServerAsync();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    OpenSystemWindow(L("CosmicLaunchError"), L("CosmicLaunchErrorBody") + "\r\n\r\n" + L("Error") + ":\r\n" + ex.Message, accent3);
+                    ShowToast(L("CosmicGesture") + " 啟動失敗", accent3);
                     return;
                 }
             }
 
             if (!serverReady)
             {
-                OpenSystemWindow(L("CosmicLaunchError"), L("CosmicLaunchErrorBody") + "\r\n\r\n" + L("Error") + ":\r\nhttp://127.0.0.1:8765 did not respond.", accent3);
+                ShowToast(L("CosmicGesture") + " 伺服器尚未就緒", accent3);
                 return;
             }
 
@@ -1746,7 +1952,7 @@ namespace WindowsFormsApp1
             if (app.ExternalProcess != null)
             {
                 BringExternalProcessToFront(app);
-                ShowInlineStatus(app, app.ExternalProcess.HasExited ? "Native app process has exited." : "Native app does not expose reload; brought it to front.");
+                ShowToast(app.ExternalProcess.HasExited ? app.Title + " 已關閉" : app.Title + " 已帶到前景", app.AccentColor);
                 return;
             }
             app.Window.Invalidate(true);
@@ -1887,16 +2093,7 @@ namespace WindowsFormsApp1
                 return;
             }
 
-            string status =
-                "Active app: " + app.Title + "\r\n" +
-                "Kind: " + app.Kind + "\r\n" +
-                "Zoom: " + Math.Round(app.ZoomFactor * 100) + "%\r\n" +
-                "Minimized: " + app.IsMinimized + "\r\n" +
-                "Maximized: " + app.IsMaximized + "\r\n" +
-                "Fullscreen: " + app.IsFullscreen + "\r\n" +
-                "WebView2: " + (app.WebView == null ? "unavailable" : "available") + "\r\n" +
-                "External process: " + (app.ExternalProcess == null ? "none" : (app.ExternalProcess.HasExited ? "exited" : "running"));
-            OpenSystemWindow(app.Title + " Status", status, app.AccentColor);
+            ShowToast(app.Title + " 不是 WebView App，沒有可開啟的 DevTools", app.AccentColor);
         }
 
         private void ZoomActiveApp(double delta)
@@ -1927,7 +2124,8 @@ namespace WindowsFormsApp1
             }
             else
             {
-                ShowInlineStatus(app, "Zoom is unavailable for native external windows.");
+                ShowToast(app.Title + " 不支援 FusionOS 內部縮放", app.AccentColor);
+                return;
             }
             ShowInlineStatus(app, "Zoom " + Math.Round(zoom * 100) + "%");
         }
@@ -1994,28 +2192,59 @@ namespace WindowsFormsApp1
             if (handle != IntPtr.Zero) ShowWindow(handle, command);
         }
 
+        // A native app launches its OWN window; FusionOS no longer wraps it in a
+        // placeholder / process / status frame. Just a brief confirmation toast.
         private void OpenExternalProcessWindow(string title, Process process, Color color, string exePath)
         {
-            OpenSystemWindow(title, "Native WinForms app launched.\r\n\r\nExecutable:\r\n" + exePath + "\r\n\r\nUse this FusionOS frame to minimize, maximize, close, focus, or inspect the running app.", color);
-            FusionAppWindow app = activeApp;
-            if (app != null)
+            ShowToast(title + " 已啟動", color);
+        }
+
+        // Lightweight auto-dismissing toast (replaces big status/placeholder frames).
+        private void ShowToast(string message, Color color)
+        {
+            if (desktop == null || string.IsNullOrEmpty(message)) return;
+            try
             {
-                app.Kind = "external";
-                app.ExternalProcess = process;
-                app.ExternalPath = exePath;
-                process.EnableRaisingEvents = true;
-                process.Exited += delegate
+                int w = Math.Max(240, TextRenderer.MeasureText(message, new Font(Font.FontFamily, 11F, FontStyle.Bold)).Width + 96);
+                var toast = new RoundedPanel
                 {
-                    try
-                    {
-                        BeginInvoke((Action)delegate
-                        {
-                            if (app.Window != null && !app.Window.IsDisposed) ShowInlineStatus(app, "Process exited.");
-                        });
-                    }
-                    catch { }
+                    Radius = 16,
+                    BackColor = Color.FromArgb(244, 12, 18, 34),
+                    Size = new Size(w, 50)
                 };
+                int bottom = (taskbar != null ? taskbar.Top : ClientSize.Height) - 26;
+                toast.Location = new Point((ClientSize.Width - toast.Width) / 2, bottom - toast.Height);
+
+                var dot = new Panel { Size = new Size(10, 10), Location = new Point(20, 20), BackColor = color };
+                toast.Controls.Add(dot);
+                var label = new Label
+                {
+                    AutoSize = false,
+                    Bounds = new Rectangle(42, 0, w - 56, 50),
+                    Text = message,
+                    ForeColor = text,
+                    Font = new Font(Font.FontFamily, 11F, FontStyle.Bold),
+                    TextAlign = ContentAlignment.MiddleLeft
+                };
+                toast.Controls.Add(label);
+
+                desktop.Controls.Add(toast);
+                toast.BringToFront();
+
+                var t = new Timer { Interval = 2300 };
+                t.Tick += delegate
+                {
+                    t.Stop();
+                    t.Dispose();
+                    if (!toast.IsDisposed)
+                    {
+                        desktop.Controls.Remove(toast);
+                        toast.Dispose();
+                    }
+                };
+                t.Start();
             }
+            catch { }
         }
 
         private void OpenSystemWindow(string title, string body, Color color)
@@ -2876,6 +3105,69 @@ namespace WindowsFormsApp1
         }
     }
 
+    // Neon thin-line hamburger toggle matching the FusionOS glass visual language.
+    public class HamburgerButton : Control
+    {
+        private bool hovered;
+        private bool pressed;
+        public Color AccentColor { get; set; }
+
+        public HamburgerButton()
+        {
+            AccentColor = Color.FromArgb(95, 230, 232);
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint | ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
+            BackColor = Color.Transparent;
+            MouseEnter += delegate { hovered = true; Invalidate(); };
+            MouseLeave += delegate { hovered = false; pressed = false; Invalidate(); };
+            MouseDown += delegate { pressed = true; Invalidate(); };
+            MouseUp += delegate { pressed = false; Invalidate(); };
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+            Rectangle r = new Rectangle(2, 2, Width - 4, Height - 4);
+            using (var path = Round(r, 12))
+            {
+                using (var brush = new SolidBrush(Color.FromArgb(hovered ? 95 : 55, 18, 28, 52)))
+                    g.FillPath(brush, path);
+                using (var pen = new Pen(Color.FromArgb(hovered ? 210 : 95, AccentColor), hovered ? 1.6f : 1.1f))
+                    g.DrawPath(pen, path);
+            }
+            int lineLeft = r.Left + 9;
+            int lineRight = r.Right - 9;
+            int cy = r.Top + r.Height / 2;
+            int gap = 6;
+            int off = pressed ? 1 : 0;
+            if (hovered)
+            {
+                using (var glow = new Pen(Color.FromArgb(70, AccentColor), 5f))
+                    g.DrawLine(glow, lineLeft, cy, lineRight, cy);
+            }
+            using (var pen = new Pen(Color.FromArgb(hovered ? 255 : 215, AccentColor), 2.4f))
+            {
+                pen.StartCap = LineCap.Round;
+                pen.EndCap = LineCap.Round;
+                g.DrawLine(pen, lineLeft, cy - gap + off, lineRight, cy - gap + off);
+                g.DrawLine(pen, lineLeft, cy, lineRight, cy);
+                g.DrawLine(pen, lineLeft, cy + gap - off, lineRight, cy + gap - off);
+            }
+        }
+
+        private static GraphicsPath Round(Rectangle b, int radius)
+        {
+            int d = Math.Max(2, radius * 2);
+            var path = new GraphicsPath();
+            path.AddArc(b.Left, b.Top, d, d, 180, 90);
+            path.AddArc(b.Right - d, b.Top, d, d, 270, 90);
+            path.AddArc(b.Right - d, b.Bottom - d, d, d, 0, 90);
+            path.AddArc(b.Left, b.Bottom - d, d, d, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+    }
+
     public class CanvasIconTile : Control
     {
         public event MouseEventHandler TitleClicked;
@@ -2886,6 +3178,12 @@ namespace WindowsFormsApp1
         public string Description { get; set; }
         public Color AccentColor { get; set; }
         public Image IconImage { get; set; }
+        private bool compact;
+        public bool Compact
+        {
+            get { return compact; }
+            set { if (compact != value) { compact = value; Invalidate(); } }
+        }
 
         public CanvasIconTile()
         {
@@ -2903,6 +3201,41 @@ namespace WindowsFormsApp1
             e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
             int lift = hovered ? -6 : 0;
+
+            // Compact (collapsed sidebar): icon-only square tile, no text.
+            if (compact)
+            {
+                int s = Math.Min(Width, Height) - 14;
+                Rectangle cb = new Rectangle((Width - s) / 2, (Height - s) / 2 + lift, s, s);
+                using (var path = RoundRect(cb, 16))
+                using (var brush = new LinearGradientBrush(cb, Color.FromArgb(150, 15, 23, 42), Color.FromArgb(110, 30, 41, 59), LinearGradientMode.Vertical))
+                using (var pen = new Pen(Color.FromArgb(hovered ? 220 : 110, AccentColor), hovered ? 2f : 1.2f))
+                {
+                    e.Graphics.FillPath(brush, path);
+                    e.Graphics.DrawPath(pen, path);
+                }
+                Rectangle cIcon = new Rectangle(cb.X + (cb.Width - 40) / 2, cb.Y + (cb.Height - 40) / 2, 40, 40);
+                using (var iconPath = RoundRect(cIcon, 12))
+                using (var iconBrush = new LinearGradientBrush(cIcon, Color.FromArgb(190, AccentColor), Color.FromArgb(70, AccentColor), LinearGradientMode.ForwardDiagonal))
+                {
+                    e.Graphics.FillPath(iconBrush, iconPath);
+                }
+                if (IconImage != null)
+                {
+                    e.Graphics.DrawImage(IconImage, new Rectangle(cIcon.X + 8, cIcon.Y + 8, cIcon.Width - 16, cIcon.Height - 16));
+                }
+                else
+                {
+                    using (var glyphBrush = new SolidBrush(Color.White))
+                    using (var font = new Font(Font.FontFamily, Glyph != null && Glyph.Length <= 3 ? 10F : 8F, FontStyle.Bold))
+                    {
+                        var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+                        e.Graphics.DrawString(Glyph ?? "?", font, glyphBrush, cIcon, sf);
+                    }
+                }
+                return;
+            }
+
             Rectangle body = new Rectangle(10, 8 + lift, Width - 22, Height - 20);
             
             // Neon Glow

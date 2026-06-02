@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import type { PerfProfile } from '../utils/performanceProfile';
+import { fusionRuntimeCache } from '../boot/runtimeCache';
 
 interface FusionDepthBackgroundProps {
   // 0..1 horizontal hand position for gesture parallax (falls back to pointer).
@@ -41,20 +42,23 @@ export const FusionDepthBackground: React.FC<FusionDepthBackgroundProps> = ({ ha
     let width = 0;
     let height = 0;
     let particles: Particle[] = [];
+    let resizeRaf = 0;
 
     const seed = () => {
       particles = [];
+      const cached = fusionRuntimeCache.starfield;
       const count = profile.particleCount;
       for (let i = 0; i < count; i += 1) {
-        const z = Math.random();
+        const node = cached && cached.length ? cached[i % cached.length] : null;
+        const z = node ? node.z : Math.random();
         particles.push({
-          x: Math.random(),
-          y: Math.random(),
+          x: node ? node.x : Math.random(),
+          y: node ? node.y : Math.random(),
           z,
           vx: (Math.random() - 0.5) * 0.00018 * (0.4 + z),
           vy: (-0.00006 - Math.random() * 0.00016) * (0.4 + z),
-          r: 0.4 + z * 1.8,
-          hue: Math.random() > 0.7 ? 280 : 188
+          r: node ? Math.max(0.35, node.mag * (0.45 + z * 1.35)) : 0.4 + z * 1.8,
+          hue: node ? node.hue : Math.random() > 0.7 ? 280 : 188
         });
       }
     };
@@ -71,7 +75,15 @@ export const FusionDepthBackground: React.FC<FusionDepthBackgroundProps> = ({ ha
     resize();
     seed();
 
-    const ro = new ResizeObserver(resize);
+    const scheduleResize = () => {
+      if (resizeRaf) return;
+      resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = 0;
+        resize();
+      });
+    };
+
+    const ro = new ResizeObserver(scheduleResize);
     ro.observe(canvas);
 
     const onPointer = (e: PointerEvent) => {
@@ -90,10 +102,10 @@ export const FusionDepthBackground: React.FC<FusionDepthBackgroundProps> = ({ ha
       const dt = Math.min(64, now - last);
       last = now;
 
-      // fps report ~ every 500ms
+      // fps report ~ every 1000ms to avoid React state churn.
       fpsAccum += dt;
       fpsFrames += 1;
-      if (fpsAccum >= 500) {
+      if (fpsAccum >= 1000) {
         onFps?.(Math.round((fpsFrames * 1000) / fpsAccum));
         fpsAccum = 0;
         fpsFrames = 0;
@@ -170,6 +182,7 @@ export const FusionDepthBackground: React.FC<FusionDepthBackgroundProps> = ({ ha
 
     return () => {
       cancelAnimationFrame(raf);
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
       ro.disconnect();
       window.removeEventListener('pointermove', onPointer);
     };

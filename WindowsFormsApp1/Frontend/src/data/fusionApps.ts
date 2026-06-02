@@ -1,9 +1,16 @@
 import type { AppId } from '../types';
 
-// Single source of truth for the spatial desktop app metadata.
-// `id` + `glyph` are kept identical to the original APPS_CONFIG so the existing
-// WebView2 launch bridge (Form1.cs) keeps working unchanged.
-export type AppCategory = 'system' | 'files' | 'creative' | 'dev' | 'data' | 'web' | 'play' | 'tools' | 'settings';
+// The WebView2 host routes app launches by id, so keep these ids stable.
+export type AppCategory =
+  | 'system'
+  | 'files'
+  | 'creative'
+  | 'dev'
+  | 'data'
+  | 'web'
+  | 'play'
+  | 'tools'
+  | 'settings';
 
 export interface FusionApp {
   id: AppId;
@@ -18,17 +25,147 @@ export interface FusionApp {
 }
 
 export const FUSION_APPS: FusionApp[] = [
-  { id: 'pc', title: '本機', subtitle: 'System Core', description: '系統檔案管理與電腦資訊入口，掌握整台機器的狀態。', glyph: 'PC', color: '#6366f1', category: 'system', tags: ['系統', '檔案', '硬體'], status: 'ONLINE' },
-  { id: 'dir', title: '專案檔案', subtitle: 'Project Vault', description: '存放舊作品與新作品的預設資料夾，集中管理所有專案。', glyph: 'DIR', color: '#5ad4ff', category: 'files', tags: ['專案', '資料夾'], status: 'SYNCED' },
-  { id: 'piano', title: '鋼琴工作室', subtitle: 'Piano Studio', description: '啟動鋼琴學習與音樂創作工具，整合式音訊體驗。', glyph: '88', color: '#cd5fff', category: 'creative', tags: ['音樂', '創作', 'App'], status: 'READY' },
-  { id: 'cosmic', title: '宇宙手勢', subtitle: 'Cosmic Explorer', description: 'WebGL 粒子宇宙與手勢操控的天體探索控制台。', glyph: 'COS', color: '#677dff', category: 'creative', tags: ['3D', '手勢', '天文'], status: 'LIVE' },
-  { id: 'user', title: '使用者檔案', subtitle: 'User Space', description: '執行時由使用者加入的檔案捷徑，個人化工作區。', glyph: 'USR', color: '#56d6ff', category: 'files', tags: ['捷徑', '個人'], status: 'READY' },
-  { id: 'add', title: '新增檔案', subtitle: 'Add Shortcut', description: '選擇本機檔案並建立桌面捷徑，快速擴充工作區。', glyph: '+', color: '#82a5ff', category: 'tools', tags: ['工具', '捷徑'], status: 'READY' },
-  { id: 'dev', title: '語言實驗室', subtitle: 'Language Lab', description: 'C#、Python、JavaScript、SQL、C++ 多語言融合實驗區。', glyph: 'DEV', color: '#22d3ee', category: 'dev', tags: ['程式', '實驗'], status: 'BETA' },
-  { id: 'tool', title: '工具箱', subtitle: 'Toolbox', description: '自動化與資料處理工具集合，提升日常效率。', glyph: 'TOOL', color: '#ff818e', category: 'tools', tags: ['自動化', '工具'], status: 'READY' },
-  { id: 'db', title: '資料庫', subtitle: 'Data Core', description: 'SQL 與資料分析專案，結構化資料的中樞。', glyph: 'DB', color: '#ffce8a', category: 'data', tags: ['SQL', '分析'], status: 'ONLINE' },
-  { id: 'web', title: '網頁區', subtitle: 'Web Zone', description: 'WebView 與網頁作品展示，內嵌瀏覽體驗。', glyph: 'WEB', color: '#77bbff', category: 'web', tags: ['Web', '瀏覽'], status: 'ONLINE' },
-  { id: 'game', title: '遊戲室', subtitle: 'Game Hub', description: '遊戲與視覺展示，互動娛樂專區。', glyph: 'GAME', color: '#c026d3', category: 'play', tags: ['遊戲', '視覺'], status: 'READY' },
-  { id: 'cmd', title: '終端機', subtitle: 'Terminal', description: '命令面板，直接與系統核心對話。', glyph: 'CMD', color: '#70e2bc', category: 'tools', tags: ['CLI', '系統'], status: 'READY' },
-  { id: 'set', title: '系統設定', subtitle: 'Settings', description: '語言、主題、啟動、資料夾與路徑的全域設定。', glyph: 'SET', color: '#a385ff', category: 'settings', tags: ['設定', '主題'], status: 'ONLINE' }
+  {
+    id: 'pc',
+    title: '系統核心',
+    subtitle: 'This PC',
+    description: '檢視 FusionOS 狀態、裝置資訊與目前整合中的系統模組。',
+    glyph: 'PC',
+    color: '#38d5ff',
+    category: 'system',
+    tags: ['系統', '狀態', '裝置'],
+    status: 'ONLINE'
+  },
+  {
+    id: 'dir',
+    title: '專案檔案',
+    subtitle: 'Project Files',
+    description: '集中管理期末專案、整合套件、使用者加入的檔案與作品資料夾。',
+    glyph: 'DIR',
+    color: '#ffb45c',
+    category: 'files',
+    tags: ['資料夾', '整合', '作品'],
+    status: 'SYNCED'
+  },
+  {
+    id: 'piano',
+    title: '鋼琴工作室',
+    subtitle: 'Piano Studio',
+    description: '已整包導入的 WinForms 鋼琴作品，可從 FusionOS 直接啟動。',
+    glyph: '88',
+    color: '#ff4fb8',
+    category: 'creative',
+    tags: ['音樂', 'WinForms', '內建 App'],
+    status: 'READY'
+  },
+  {
+    id: 'cosmic',
+    title: '宇宙手勢',
+    subtitle: 'Cosmic Gesture',
+    description: 'React、Three.js、粒子天體與手勢辨識組成的沉浸式宇宙互動作品。',
+    glyph: 'COS',
+    color: '#7c8cff',
+    category: 'creative',
+    tags: ['WebGL', '手勢', '粒子'],
+    status: 'LIVE'
+  },
+  {
+    id: 'user',
+    title: '使用者空間',
+    subtitle: 'User Space',
+    description: '放置你自行新增的檔案、捷徑與之後要收進系統的作品素材。',
+    glyph: 'USR',
+    color: '#39d8c8',
+    category: 'files',
+    tags: ['檔案', '個人', '快捷'],
+    status: 'READY'
+  },
+  {
+    id: 'add',
+    title: '新增檔案',
+    subtitle: 'Add File',
+    description: '把外部檔案新增到 FusionOS 桌面，作為可管理的系統檔案。',
+    glyph: '+',
+    color: '#68a5ff',
+    category: 'tools',
+    tags: ['新增', '檔案'],
+    status: 'READY'
+  },
+  {
+    id: 'dev',
+    title: '語言實驗室',
+    subtitle: 'Language Lab',
+    description: '預留給 C#、Python、JavaScript、資料庫與跨語言整合實驗。',
+    glyph: 'DEV',
+    color: '#22d3ee',
+    category: 'dev',
+    tags: ['程式', '跨語言', '模組'],
+    status: 'BETA'
+  },
+  {
+    id: 'tool',
+    title: '工具箱',
+    subtitle: 'Tool Box',
+    description: '集中放置資料處理、API、小工具、轉換器與實用功能。',
+    glyph: 'TOOL',
+    color: '#ff6a7f',
+    category: 'tools',
+    tags: ['工具', 'API', '流程'],
+    status: 'READY'
+  },
+  {
+    id: 'db',
+    title: '資料核心',
+    subtitle: 'Database',
+    description: '預留資料庫、SQL、資料視覺化與作品資料索引整合區。',
+    glyph: 'DB',
+    color: '#55d7d0',
+    category: 'data',
+    tags: ['SQL', '資料', '索引'],
+    status: 'ONLINE'
+  },
+  {
+    id: 'web',
+    title: '網頁區域',
+    subtitle: 'Web Zone',
+    description: '整合網頁作品、WebView 模組、前端頁面與外部資料來源。',
+    glyph: 'WEB',
+    color: '#7aa7ff',
+    category: 'web',
+    tags: ['Web', 'WebView', '前端'],
+    status: 'ONLINE'
+  },
+  {
+    id: 'game',
+    title: '遊戲房',
+    subtitle: 'Game Room',
+    description: '預留遊戲、互動視覺、Unity、Unreal 或 Canvas 作品整合。',
+    glyph: 'GAME',
+    color: '#c35cff',
+    category: 'play',
+    tags: ['遊戲', '互動', '3D'],
+    status: 'READY'
+  },
+  {
+    id: 'cmd',
+    title: '終端機',
+    subtitle: 'Terminal',
+    description: '預留命令列、腳本執行、系統紀錄與開發者操作入口。',
+    glyph: 'CMD',
+    color: '#70e2bc',
+    category: 'tools',
+    tags: ['CLI', '腳本', '系統'],
+    status: 'READY'
+  },
+  {
+    id: 'set',
+    title: '系統設定',
+    subtitle: 'Settings',
+    description: '調整語言、外觀、手勢、效能與 FusionOS 系統行為。',
+    glyph: 'SET',
+    color: '#a385ff',
+    category: 'settings',
+    tags: ['設定', '語言', '偏好'],
+    status: 'ONLINE'
+  }
 ];

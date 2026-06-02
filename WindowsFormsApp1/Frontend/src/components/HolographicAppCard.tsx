@@ -20,16 +20,20 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?:
 
 interface HolographicAppCardProps {
   app: FusionApp;
+  index: number;
   position: number; // relative offset from centre (0 = active)
   isActive: boolean;
   spread: number;
-  onClick: () => void;
+  onSelect: (index: number) => void;
 }
 
 // A single floating HTML "surface" placed in 3D space via CSS transforms. The DOM
 // stays fully interactive (click / hover / a11y) — canvas only composites depth
 // around it — mirroring the HTML-in-Canvas interaction model.
-export const HolographicAppCard: React.FC<HolographicAppCardProps> = ({ app, position, isActive, spread, onClick }) => {
+//
+// Memoized: with a stable onSelect, it only re-renders when its own visual props
+// (position / isActive) change — NOT on every gesture frame.
+const HolographicAppCardImpl: React.FC<HolographicAppCardProps> = ({ app, index, position, isActive, spread, onSelect }) => {
   const Icon = ICON_MAP[app.glyph] || Monitor;
   const abs = Math.abs(position);
 
@@ -54,7 +58,7 @@ export const HolographicAppCard: React.FC<HolographicAppCardProps> = ({ app, pos
     <div
       className={`holo-card ${isActive ? 'is-active' : 'is-side'}`}
       style={style}
-      onClick={onClick}
+      onClick={() => onSelect(index)}
       role="button"
       tabIndex={isActive ? 0 : -1}
       aria-label={`${app.title} ${app.subtitle}`}
@@ -91,3 +95,5 @@ export const HolographicAppCard: React.FC<HolographicAppCardProps> = ({ app, pos
     </div>
   );
 };
+
+export const HolographicAppCard = React.memo(HolographicAppCardImpl);

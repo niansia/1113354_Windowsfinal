@@ -4,6 +4,7 @@ import { getPerformanceProfile } from '../utils/performanceProfile';
 
 export interface BootState extends BootSnapshot {
   debug: boolean;
+  allowSkip: boolean;
   reducedMotion: boolean;
   tier: string;
   skip: () => void;
@@ -36,6 +37,12 @@ export function useBootSequence(): BootState {
   const reducedMotion = profile.current.reducedMotion;
   const debug = flag('debug');
 
+  // Skip is DEVELOPER-ONLY. Production boot can never be skipped by the user; it can
+  // only fall back via the system timeout. Enable with ?bootDebug=1 or
+  // localStorage.fusionBootDebug='1' / localStorage.fusionAllowBootSkip='1'.
+  let allowSkip = debug;
+  try { if (window.localStorage?.getItem('fusionAllowBootSkip') === '1') allowSkip = true; } catch { /* ignore */ }
+
   const [snap, setSnap] = useState<BootSnapshot>(INITIAL);
   const skipRef = useRef(false);
   const startedRef = useRef(false);
@@ -49,7 +56,7 @@ export function useBootSequence(): BootState {
     let played = false;
     try { played = window.sessionStorage?.getItem('fusionBootPlayed') === '1'; } catch { /* ignore */ }
 
-    let paceScale = 1;
+    let paceScale = 0.62;
     if (!force && played) paceScale = 0.4; // same-session F5 => short boot
     if (reducedMotion || profile.current.tier === 'low') paceScale = Math.min(paceScale, 0.5);
     if (force) paceScale = 1;
@@ -67,8 +74,9 @@ export function useBootSequence(): BootState {
   return {
     ...snap,
     debug,
+    allowSkip,
     reducedMotion,
     tier: profile.current.tier,
-    skip: () => { skipRef.current = true; }
+    skip: () => { if (allowSkip) skipRef.current = true; }
   };
 }

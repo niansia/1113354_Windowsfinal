@@ -13,6 +13,9 @@ interface GestureAppCarouselProps {
 }
 
 const ANIM_MS = 400;
+const DEBUG_GESTURE_CAROUSEL =
+  typeof window !== 'undefined' &&
+  window.localStorage?.getItem('fusionCarouselDebug') === '1';
 
 type QueuedSwipe = {
   swipeId: number;
@@ -59,11 +62,13 @@ export const GestureAppCarousel: React.FC<GestureAppCarouselProps> = ({
       const queued = queuedSwipeRef.current;
       if (queued) {
         setQueue(null);
-        console.log('[GestureCarousel] swipe accepted', {
-          swipeId: queued.swipeId,
-          swipeDirection: queued.swipeDirection,
-          gestureType: queued.gestureType
-        });
+        if (DEBUG_GESTURE_CAROUSEL) {
+          console.log('[GestureCarousel] swipe accepted', {
+            swipeId: queued.swipeId,
+            swipeDirection: queued.swipeDirection,
+            gestureType: queued.gestureType
+          });
+        }
         runSwipe(queued.swipeDirection);
       }
     }, ANIM_MS);
@@ -104,19 +109,23 @@ export const GestureAppCarousel: React.FC<GestureAppCarouselProps> = ({
     if (isAnimatingRef.current) {
       // Queue the LATEST valid swipe (max 1). Older queued entry is replaced.
       setQueue({ swipeId, swipeDirection, gestureType });
-      console.log('[GestureCarousel] swipe queued', {
+      if (DEBUG_GESTURE_CAROUSEL) {
+        console.log('[GestureCarousel] swipe queued', {
+          swipeId,
+          swipeDirection,
+          gestureType
+        });
+      }
+      return;
+    }
+
+    if (DEBUG_GESTURE_CAROUSEL) {
+      console.log('[GestureCarousel] swipe accepted', {
         swipeId,
         swipeDirection,
         gestureType
       });
-      return;
     }
-
-    console.log('[GestureCarousel] swipe accepted', {
-      swipeId,
-      swipeDirection,
-      gestureType
-    });
     runSwipe(swipeDirection);
   }, [gestureData?.swipeId, runSwipe, setQueue]);
 
@@ -135,20 +144,24 @@ export const GestureAppCarousel: React.FC<GestureAppCarouselProps> = ({
 
     // Never launch a mid-swipe (wrong) card: ignore while a page animation runs.
     if (isAnimatingRef.current) {
-      console.log('[GestureCarousel] activate ignored (animating)', {
-        activateId: gestureData.activateId,
-        activateType: gestureData.activateType
-      });
+      if (DEBUG_GESTURE_CAROUSEL) {
+        console.log('[GestureCarousel] activate ignored (animating)', {
+          activateId: gestureData.activateId,
+          activateType: gestureData.activateType
+        });
+      }
       return;
     }
 
     const activeApp = APPS_CONFIG[currentIndex];
-    console.log('[GestureCarousel] activate selected app', {
-      activateId: gestureData.activateId,
-      activateType: gestureData.activateType,
-      activeIndex: currentIndex,
-      app: activeApp?.id
-    });
+    if (DEBUG_GESTURE_CAROUSEL) {
+      console.log('[GestureCarousel] activate selected app', {
+        activateId: gestureData.activateId,
+        activateType: gestureData.activateType,
+        activeIndex: currentIndex,
+        app: activeApp?.id
+      });
+    }
 
     if (activeApp) launchApp(activeApp.id);
   }, [gestureData?.activateId, currentIndex]);

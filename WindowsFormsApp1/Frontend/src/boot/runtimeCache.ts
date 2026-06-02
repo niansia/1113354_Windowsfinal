@@ -55,6 +55,7 @@ export interface FusionRuntimeCache {
   pianoManifest: PianoManifest | null;
   gestureConfig: GestureConfig | null;
   apod: unknown | null;
+  preloadedApps: string[];
   bootDiagnostics: BootDiagnostics | null;
   bootCompleted: boolean;
 }
@@ -68,6 +69,7 @@ export const fusionRuntimeCache: FusionRuntimeCache = {
   pianoManifest: null,
   gestureConfig: null,
   apod: null,
+  preloadedApps: [],
   bootDiagnostics: null,
   bootCompleted: false
 };

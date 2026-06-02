@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { GestureData } from '../hooks/useHandGesture';
-import { FUSION_APPS } from '../data/fusionApps';
+import { FUSION_APPS, type FusionApp } from '../data/fusionApps';
 import { HolographicAppCard } from './HolographicAppCard';
 import { launchApp } from '../utils/bridge';
 
 interface SpatialAppCarouselProps {
+  apps?: FusionApp[];
   gestureData?: GestureData;
   onIndexChange?: (index: number) => void;
   onQueueChange?: (depth: number) => void;
@@ -12,10 +13,13 @@ interface SpatialAppCarouselProps {
 
 const ANIM_MS = 450;
 const SPREAD = 300;
+const DEBUG_CAROUSEL =
+  typeof window !== 'undefined' &&
+  window.localStorage?.getItem('fusionCarouselDebug') === '1';
 
 type QueuedSwipe = { swipeId: number; swipeDirection: 'left' | 'right' | null; gestureType: string };
 
-export const SpatialAppCarousel: React.FC<SpatialAppCarouselProps> = ({ gestureData, onIndexChange, onQueueChange }) => {
+export const SpatialAppCarousel: React.FC<SpatialAppCarouselProps> = ({ apps = FUSION_APPS, gestureData, onIndexChange, onQueueChange }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dragOffset, setDragOffset] = useState(0); // fractional card units
   const [dragging, setDragging] = useState(false);
@@ -40,9 +44,9 @@ export const SpatialAppCarousel: React.FC<SpatialAppCarouselProps> = ({ gestureD
   }, [onQueueChange]);
 
   const movePage = useCallback((direction: 'left' | 'right' | null) => {
-    if (direction === 'left') setCurrentIndex((p) => (p >= FUSION_APPS.length - 1 ? p : p + 1));
+    if (direction === 'left') setCurrentIndex((p) => (p >= apps.length - 1 ? p : p + 1));
     else if (direction === 'right') setCurrentIndex((p) => (p <= 0 ? p : p - 1));
-  }, []);
+  }, [apps.length]);
 
   // One animation cycle; flush a queued swipe afterwards (max 1 queued).
   const runSwipe = useCallback((direction: 'left' | 'right' | null) => {
@@ -63,9 +67,21 @@ export const SpatialAppCarousel: React.FC<SpatialAppCarouselProps> = ({ gestureD
   const handlePrev = useCallback(() => { if (!isAnimatingRef.current) runSwipe('right'); }, [runSwipe]);
 
   const launchCurrent = useCallback(() => {
-    const app = FUSION_APPS[currentIndex];
+    const app = apps[currentIndex];
     if (app) launchApp(app.id);
-  }, [currentIndex]);
+  }, [apps, currentIndex]);
+
+  // Stable card handler (reads currentIndex via ref) so memoized cards don't
+  // re-render every gesture frame just because the click closure changed.
+  const currentIndexRef = useRef(0);
+  const onSelectCard = useCallback((index: number) => {
+    if (dragMoved.current) return;
+    if (index === currentIndexRef.current) {
+      const app = apps[index];
+      if (app) launchApp(app.id);
+    }
+    else setCurrentIndex(index);
+  }, [apps]);
 
   // Keyboard: arrows step, Enter launches, Esc resets.
   useEffect(() => {
@@ -88,10 +104,10 @@ export const SpatialAppCarousel: React.FC<SpatialAppCarouselProps> = ({ gestureD
 
     if (isAnimatingRef.current) {
       setQueue({ swipeId, swipeDirection, gestureType });
-      console.log('[SpatialCarousel] swipe queued', { swipeId, swipeDirection, gestureType });
+      if (DEBUG_CAROUSEL) console.log('[SpatialCarousel] swipe queued', { swipeId, swipeDirection, gestureType });
       return;
     }
-    console.log('[SpatialCarousel] swipe accepted', { swipeId, swipeDirection, gestureType });
+    if (DEBUG_CAROUSEL) console.log('[SpatialCarousel] swipe accepted', { swipeId, swipeDirection, gestureType });
     runSwipe(swipeDirection);
   }, [gestureData?.swipeId, runSwipe, setQueue]);
 
@@ -103,21 +119,21 @@ export const SpatialAppCarousel: React.FC<SpatialAppCarouselProps> = ({ gestureD
     if (now - lastActivateTime.current < 900) return;
     // Selected-app stability gate: never launch a mid-swipe / unstable target.
     if (isAnimatingRef.current || queuedSwipeRef.current) {
-      console.log('[SpatialCarousel] activate ignored', { reason: 'SELECTED_APP_NOT_STABLE' });
+      if (DEBUG_CAROUSEL) console.log('[SpatialCarousel] activate ignored', { reason: 'SELECTED_APP_NOT_STABLE' });
       return;
     }
     if (now - lastSwipeAtRef.current < 400 || now - indexStableSinceRef.current < 250) {
-      console.log('[SpatialCarousel] activate ignored', { reason: 'SELECTED_APP_NOT_STABLE' });
+      if (DEBUG_CAROUSEL) console.log('[SpatialCarousel] activate ignored', { reason: 'SELECTED_APP_NOT_STABLE' });
       return;
     }
     lastActivateId.current = gestureData.activateId;
     lastActivateTime.current = now;
-    const app = FUSION_APPS[currentIndex];
-    console.log('[SpatialCarousel] activate selected app', { activateId: gestureData.activateId, activateType: gestureData.activateType, app: app?.id });
+    const app = apps[currentIndex];
+    if (DEBUG_CAROUSEL) console.log('[SpatialCarousel] activate selected app', { activateId: gestureData.activateId, activateType: gestureData.activateType, app: app?.id });
     if (app) launchApp(app.id);
-  }, [gestureData?.activateId, currentIndex]);
+  }, [gestureData?.activateId, apps, currentIndex]);
 
-  useEffect(() => { indexStableSinceRef.current = Date.now(); }, [currentIndex]);
+  useEffect(() => { indexStableSinceRef.current = Date.now(); currentIndexRef.current = currentIndex; }, [currentIndex]);
   useEffect(() => { onIndexChange?.(currentIndex); }, [currentIndex, onIndexChange]);
 
   // Pointer drag (mouse) on the deck.
@@ -161,21 +177,18 @@ export const SpatialAppCarousel: React.FC<SpatialAppCarouselProps> = ({ gestureD
         onPointerCancel={endDrag}
         onPointerLeave={endDrag}
       >
-        {FUSION_APPS.map((app, index) => {
+        {apps.map((app, index) => {
           const position = index - currentIndex - dragOffset - externalDrag;
           if (Math.abs(position) > 3.4) return null;
           return (
             <HolographicAppCard
               key={app.id}
               app={app}
+              index={index}
               position={position}
               isActive={index === currentIndex && Math.abs(dragOffset) < 0.5}
               spread={SPREAD}
-              onClick={() => {
-                if (dragMoved.current) return; // ignore click that ended a drag
-                if (index === currentIndex) launchApp(app.id);
-                else setCurrentIndex(index);
-              }}
+              onSelect={onSelectCard}
             />
           );
         })}
@@ -183,7 +196,7 @@ export const SpatialAppCarousel: React.FC<SpatialAppCarouselProps> = ({ gestureD
 
       {/* page indicator */}
       <div className="spatial-dots">
-        {FUSION_APPS.map((_, i) => (
+        {apps.map((_, i) => (
           <span key={i} className={i === currentIndex ? 'dot active' : 'dot'} />
         ))}
       </div>

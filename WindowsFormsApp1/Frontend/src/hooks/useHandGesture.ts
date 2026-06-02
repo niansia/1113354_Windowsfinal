@@ -1044,7 +1044,7 @@ export const useHandGesture = (
       if (!Hands || !Camera) throw new Error('MediaPipe scripts not found');
       const hands = new Hands({ locateFile: (file: string) => `./mediapipe/hands/${file}` });
       updateDebug({ mediapipeSource: 'LOCAL' });
-      hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.45, minTrackingConfidence: 0.45 });
+      hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.45, minTrackingConfidence: 0.45 });
       hands.onResults(onResults);
       handsRef.current = hands;
       if (!cameraRef.current) {
@@ -1053,13 +1053,15 @@ export const useHandGesture = (
             frameCountRef.current++;
             if (handsRef.current && video) { try { await handsRef.current.send({ image: video }); } catch (e) {} }
           },
-          width: 640, height: 480
+          width: 424, height: 320
         });
         await cameraRef.current.start();
       }
       updateDebug({ mediapipeStatus: 'LOADED', reason: 'MEDIAPIPE_RUNNING', status: 'MEDIAPIPE_RUNNING' });
     } catch (err: any) {
-      console.error('MediaPipe Init Failed', err);
+      if (window.localStorage?.getItem('fusionGestureDebug') === '1') {
+        console.error('MediaPipe Init Failed', err);
+      }
       updateDebug({ mediapipeStatus: 'FAILED', reason: 'MEDIAPIPE_INIT_FAILED', status: 'CAMERA_ONLY_MODE' });
     }
   }, [videoRef, onResults, updateDebug]);
@@ -1073,7 +1075,15 @@ export const useHandGesture = (
       try {
         initializingRef.current = true;
         updateDebug({ status: 'CHECKING_MEDIA_DEVICES', reason: 'CALLING_GET_USER_MEDIA' });
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, frameRate: 30, facingMode: "user" }, audio: false });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 424 },
+            height: { ideal: 320 },
+            frameRate: { ideal: 24, max: 30 },
+            facingMode: "user"
+          },
+          audio: false
+        });
         streamRef.current = stream;
         video.srcObject = stream;
         video.muted = true;

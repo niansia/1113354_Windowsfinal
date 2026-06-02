@@ -1,5 +1,6 @@
 import { FUSION_APPS } from '../data/fusionApps';
 import { getPerformanceProfile } from '../utils/performanceProfile';
+import { fusionRuntimeCache } from './runtimeCache';
 import type { AppRegistry, CosmicSummary, GestureConfig, PianoManifest, StarNode } from './runtimeCache';
 
 // ----- App registry + search index (used by Home) -----
@@ -74,6 +75,20 @@ export function buildPianoManifest(): PianoManifest {
     mapping.push({ note: `${name}${octave}`, midi });
   }
   return { keys: 88, mapping, ready: true };
+}
+
+export async function preloadApp(appId: string): Promise<void> {
+  const registry = fusionRuntimeCache.appRegistry ?? buildAppRegistry();
+  fusionRuntimeCache.appRegistry = registry;
+  if (registry.byId[appId] && !fusionRuntimeCache.preloadedApps.includes(appId)) {
+    fusionRuntimeCache.preloadedApps.push(appId);
+  }
+  await Promise.resolve();
+}
+
+export async function preloadCommonApps(): Promise<string> {
+  await Promise.all(['piano', 'cosmic', 'set', 'web'].map((id) => preloadApp(id)));
+  return `Preloaded ${fusionRuntimeCache.preloadedApps.length} app manifests`;
 }
 
 // ----- Gesture state-machine config (no camera side effects) -----

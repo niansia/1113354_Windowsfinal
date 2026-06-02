@@ -1,5 +1,5 @@
 import React from 'react';
-import type { GestureData, GestureStatus } from '../hooks/useHandGesture';
+import type { GestureStatus, HandSide } from '../hooks/useHandGesture';
 import type { FusionApp } from '../data/fusionApps';
 import type { RenderMode } from '../utils/htmlInCanvasSupport';
 import type { PerfTier } from '../utils/performanceProfile';
@@ -7,7 +7,8 @@ import type { PerfTier } from '../utils/performanceProfile';
 interface FusionHudProps {
   app: FusionApp;
   status: GestureStatus;
-  gestureData?: GestureData;
+  tracking: boolean;
+  handSide: HandSide;
   fps: number;
   renderMode: RenderMode;
   tier: PerfTier;
@@ -36,8 +37,8 @@ function gestureHint(status: GestureStatus): string {
 // Always-on sci-fi operations bar for the central stage (separate from the native
 // WinForms taskbar). Non-interactive readout: selected app, gesture mode, render
 // pipeline and live diagnostics.
-export const FusionHud: React.FC<FusionHudProps> = ({ app, status, gestureData, fps, renderMode, tier, index, total }) => {
-  const tracking = !!gestureData?.debug?.hasHand;
+// Memoized: only re-renders when these primitives change, not every gesture frame.
+const FusionHudImpl: React.FC<FusionHudProps> = ({ app, status, tracking, handSide, fps, renderMode, tier, index, total }) => {
   return (
     <div className="fusion-hud" aria-hidden>
       <div className="fhud-block fhud-left">
@@ -56,7 +57,7 @@ export const FusionHud: React.FC<FusionHudProps> = ({ app, status, gestureData, 
           <span className="fhud-pulse" />
           {gestureHint(status)}
         </div>
-        <span className="fhud-sub">{gestureData?.handSide ? `HAND ${gestureData.handSide.toUpperCase()}` : 'AIR CONTROL'}</span>
+        <span className="fhud-sub">{handSide && handSide !== 'Unknown' ? `HAND ${handSide.toUpperCase()}` : 'AIR CONTROL'}</span>
       </div>
 
       <div className="fhud-block fhud-right">
@@ -72,3 +73,5 @@ export const FusionHud: React.FC<FusionHudProps> = ({ app, status, gestureData, 
     </div>
   );
 };
+
+export const FusionHud = React.memo(FusionHudImpl);

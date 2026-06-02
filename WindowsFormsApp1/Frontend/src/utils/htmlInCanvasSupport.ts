@@ -41,10 +41,12 @@ export function getRenderMode(): RenderMode {
   const supported = detectHtmlInCanvas();
   if (!logged) {
     logged = true;
-    if (supported) {
-      console.info('[FusionOS] HTML-in-Canvas API detected — progressive enhancement available.');
-    } else {
-      console.info('[FusionOS] HTML-in-Canvas API not available, using CSS3D/DOM fallback.');
+    if (window.localStorage?.getItem('fusionPerfDebug') === '1') {
+      if (supported) {
+        console.info('[FusionOS] HTML-in-Canvas API detected - progressive enhancement available.');
+      } else {
+        console.info('[FusionOS] HTML-in-Canvas API not available, using CSS3D/DOM fallback.');
+      }
     }
   }
   return supported ? 'html-in-canvas' : 'css3d';

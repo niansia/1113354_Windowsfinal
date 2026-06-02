@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import type { BootState } from '../../hooks/useBootSequence';
 import { fusionRuntimeCache } from '../../boot/runtimeCache';
 import { BootParticleCanvas } from './BootParticleCanvas';
-import { BootCubeSurface } from './BootCubeSurface';
 
 interface FusionBootSequenceProps {
   state: BootState;
@@ -10,74 +9,93 @@ interface FusionBootSequenceProps {
   onSkip: () => void;
 }
 
-// FusionOS Liquid Glass Boot Sequence overlay.
 export const FusionBootSequence: React.FC<FusionBootSequenceProps> = ({ state, fadingOut, onSkip }) => {
   const pct = Math.round(state.progress * 100);
+  const allowSkip = state.allowSkip;
 
-  // Esc / Enter / Space skip the ritual pacing (necessary tasks still finish).
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === 'Enter' || e.code === 'Space') {
-        e.preventDefault();
+    if (!allowSkip) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' || event.key === 'Enter' || event.code === 'Space') {
+        event.preventDefault();
         onSkip();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onSkip]);
+  }, [allowSkip, onSkip]);
 
   const cosmic = fusionRuntimeCache.cosmicSummary;
   const stars = fusionRuntimeCache.starfield?.length ?? 0;
+  const runningModule = state.modules.find((module) => module.state === 'running');
 
   return (
     <div className={`fusion-boot ${fadingOut ? 'is-revealing' : ''} ${state.reducedMotion ? 'reduced' : ''}`}>
-      <BootParticleCanvas intensity={state.progress} reducedMotion={state.reducedMotion} />
+      <BootParticleCanvas intensity={Math.max(0.35, state.progress)} reducedMotion={state.reducedMotion} />
+      <div className="boot-backlight" />
+      <div className="boot-scanline" />
 
-      {/* central liquid-glass core + assembling cube */}
-      <div className="boot-stage">
-        <div className="boot-glass-core" style={{ ['--p' as string]: state.progress } as React.CSSProperties}>
-          <div className="bgc-ring" />
-          <div className="bgc-ring bgc-ring-2" />
-          <div className="bgc-flow" />
-          <BootCubeSurface progress={state.progress} />
+      <div className="boot-brand-panel">
+        <span>FUSION OS</span>
+        <strong>期末專案系統核心</strong>
+      </div>
+
+      <main className="boot-center-stage" aria-live="polite">
+        <div className="boot-energy-field" style={{ ['--boot-progress' as string]: state.progress } as React.CSSProperties}>
+          <span className="boot-orbit boot-orbit-a" />
+          <span className="boot-orbit boot-orbit-b" />
+          <span className="boot-orbit boot-orbit-c" />
+          <span className="boot-loop boot-loop-a" />
+          <span className="boot-loop boot-loop-b" />
+          <span className="boot-loop boot-loop-c" />
+          <span className="boot-core" />
+          <span className="boot-core-pulse" />
         </div>
-      </div>
 
-      {/* brand + phase */}
-      <div className="boot-brand">
-        <div className="boot-logo">FUSION&nbsp;OS</div>
-        <div className="boot-sub">BOOT SEQUENCE · LIQUID GLASS CORE</div>
-      </div>
+        <section className="boot-wordmark">
+          <span>Initializing Fusion OS</span>
+          <h1>FUSION OS</h1>
+          <p>{state.phaseLabel} / {state.taskLabel}</p>
+        </section>
 
-      <div className="boot-phase">
-        <span className="boot-phase-name">{state.phaseLabel}</span>
-        <span className="boot-task">{state.taskLabel}</span>
-      </div>
+        <section className="boot-progress-panel">
+          <div className="boot-progress-line">
+            <span style={{ width: `${pct}%` }} />
+          </div>
+          <div className="boot-progress-meta">
+            <span>{pct}%</span>
+            <strong>{runningModule?.label ?? '核心模組同步完成'}</strong>
+            <span>{cosmic ? `COSMIC ${cosmic.total} / STARFIELD ${stars}` : 'BUILD DIST ACTIVE'}</span>
+          </div>
+        </section>
+      </main>
 
-      {/* progress */}
-      <div className="boot-progress">
-        <div className="boot-progress-bar">
-          <div className="boot-progress-fill" style={{ width: `${pct}%` }} />
+      <aside className="boot-module-stack">
+        <div className="boot-module-head">
+          <span>Core Modules</span>
+          <strong>{state.tier.toUpperCase()}</strong>
         </div>
-        <div className="boot-progress-meta">
-          <span>{pct}%</span>
-          <span>{cosmic ? `CATALOG ${cosmic.total} · STARFIELD ${stars}` : 'INITIALIZING'}</span>
-        </div>
-      </div>
-
-      {/* module HUD */}
-      <div className="boot-modules">
-        {state.modules.map((m) => (
-          <div key={m.id} className={`boot-mod ${m.state}`}>
-            <span className="boot-mod-dot" />
-            <span className="boot-mod-label">{m.label}</span>
-            <span className="boot-mod-detail">{m.detail || (m.state === 'running' ? '…' : m.state === 'pending' ? '' : 'Ready')}</span>
+        {state.modules.map((module) => (
+          <div key={module.id} className={`boot-module-row ${module.state}`}>
+            <span className="boot-module-led" />
+            <div>
+              <strong>{module.label}</strong>
+              <small>{module.detail || (module.state === 'pending' ? '等待中' : module.state === 'running' ? '載入中' : 'Ready')}</small>
+            </div>
           </div>
         ))}
-      </div>
+      </aside>
 
-      {/* skip + debug */}
-      <button type="button" className="boot-skip" onClick={onSkip}>跳過 · SKIP (Esc)</button>
+      <footer className="boot-footer">
+        <span>WebView2 embedded runtime</span>
+        <span>Vite dist / React shell / Fusion bridge</span>
+      </footer>
+
+      {allowSkip && (
+        <button type="button" className="boot-skip" onClick={onSkip}>
+          跳過啟動 / DEV
+        </button>
+      )}
 
       {state.debug && (
         <div className="boot-debug">

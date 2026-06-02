@@ -89,11 +89,12 @@
     <None Remove="IntegratedApps\CosmicGesture\.vite\**\*.*" />
     <IntegratedAppProject Include="IntegratedApps\PianoStudio\**\*.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <TypeScriptCompile Include="FusionWebOS.tsx" />
-  </ItemGroup>
   <Target Name="BuildIntegratedApps" BeforeTargets="Build" Condition="'@(IntegratedAppProject)' != ''">
     <MSBuild Projects="@(IntegratedAppProject)" Properties="Configuration=$(Configuration);Platform=AnyCPU" />
   </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="BuildFusionFrontend" BeforeTargets="BeforeBuild" Condition="Exists('$(MSBuildProjectDirectory)\Frontend\package.json')">
+    <Message Text="Building FusionOS React frontend dist..." Importance="high" />
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)\Frontend" Command="npm run build" />
+  </Target>
 </Project>

@@ -6,6 +6,7 @@ import {
   buildPianoManifest,
   detectPerformance,
   generateStarfield,
+  preloadCommonApps,
   warmApod,
   warmTheme
 } from './bootData';
@@ -102,6 +103,7 @@ function buildTasks(): BootTask[] {
         return `Indexed ${fusionRuntimeCache.cosmicSummary.total} objects`;
       } },
     { id: 'piano', label: '鋼琴引擎預備', phase: 'runtime', weight: 1, minMs: 900, timeoutMs: 4000, run: async () => { fusionRuntimeCache.pianoManifest = buildPianoManifest(); return `${fusionRuntimeCache.pianoManifest.keys}-key mapping`; } },
+    { id: 'preload-apps', label: '預載常用 App metadata', phase: 'runtime', weight: 1, minMs: 240, timeoutMs: 3000, run: preloadCommonApps },
     { id: 'bridge', label: 'WebView 橋接與快捷鍵', phase: 'runtime', weight: 1, minMs: 600, timeoutMs: 3000, run: async () => { const ok = typeof (window as unknown as { chrome?: { webview?: unknown } }).chrome?.webview !== 'undefined'; return ok ? 'Bridge linked' : 'Bridge (console fallback)'; } },
     { id: 'apod', label: 'NASA 影像背景預熱', phase: 'runtime', weight: 1, minMs: 400, timeoutMs: 3500, optional: true, run: async () => {
         const ctrl = new AbortController();
