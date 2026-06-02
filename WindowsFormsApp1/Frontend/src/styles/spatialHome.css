@@ -51,15 +51,19 @@
   position: absolute;
   z-index: 3;
   top: clamp(20px, 3vh, 34px);
-  left: calc(var(--fusion-sidebar-inset, 280px) + 24px);
+  left: clamp(20px, 3vw, 48px);
   right: clamp(20px, 3vw, 34px);
   bottom: clamp(104px, 12vh, 130px);
   display: grid;
-  grid-template-columns: minmax(180px, 220px) minmax(420px, 1fr) minmax(270px, 340px);
+  grid-template-columns: minmax(210px, 240px) minmax(420px, 1fr) minmax(280px, 350px);
   gap: clamp(16px, 2vw, 24px);
   perspective: 1600px;
   transform-origin: center;
-  transition: transform 0.28s ease-out;
+  transition: transform 0.28s ease-out, grid-template-columns 0.24s ease;
+}
+
+.fusion-shell.sidebar-collapsed {
+  grid-template-columns: 82px minmax(420px, 1fr) minmax(280px, 350px);
 }
 
 .fusion-side-panel,
@@ -122,6 +126,31 @@
   letter-spacing: 3px;
 }
 
+.fusion-side-title {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.fusion-side-toggle {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(142, 246, 255, 0.22);
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  color: #eaf8ff;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+}
+
+.fusion-side-toggle:hover,
+.fusion-side-toggle:focus-visible {
+  outline: none;
+  border-color: rgba(142, 246, 255, 0.72);
+  background: rgba(86, 220, 255, 0.16);
+}
+
 .fusion-side-nav {
   display: grid;
   align-content: start;
@@ -151,6 +180,34 @@
   color: rgba(226, 232, 240, 0.68);
   background: transparent;
   transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease;
+}
+
+.fusion-shell.sidebar-collapsed .fusion-side-panel {
+  padding-inline: 13px;
+}
+
+.fusion-shell.sidebar-collapsed .fusion-side-brand {
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+
+.fusion-shell.sidebar-collapsed .fusion-side-title,
+.fusion-shell.sidebar-collapsed .fusion-side-nav button span,
+.fusion-shell.sidebar-collapsed .fusion-user-pill div {
+  display: none;
+}
+
+.fusion-shell.sidebar-collapsed .fusion-side-nav button {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 0;
+}
+
+.fusion-shell.sidebar-collapsed .fusion-user-pill {
+  justify-content: center;
+  min-height: 48px;
+  padding: 0;
 }
 
 .fusion-side-nav button:hover,
@@ -211,6 +268,7 @@
   display: grid;
   grid-template-columns: minmax(280px, 0.82fr) minmax(220px, 0.9fr);
   align-items: center;
+  border-color: color-mix(in srgb, var(--app-color, #60e7ff) 34%, transparent);
 }
 
 .fusion-hero-card::before {
@@ -328,6 +386,26 @@
   animation: liquidPulse 3s ease-in-out infinite;
 }
 
+.fusion-liquid-label {
+  position: relative;
+  z-index: 3;
+  min-width: 74px;
+  height: 74px;
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  padding-inline: 12px;
+  color: #ffffff;
+  font-size: clamp(22px, 3.1vw, 40px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  background: rgba(4, 8, 20, 0.44);
+  border: 1px solid rgba(148, 236, 255, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 38px color-mix(in srgb, var(--app-color, #60e7ff) 30%, transparent);
+}
+
 .fusion-running-section {
   border-radius: 26px;
   padding: 22px;
@@ -368,7 +446,7 @@
 
 .fusion-module-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 14px;
   min-height: 0;
 }
@@ -430,6 +508,16 @@
   display: block;
 }
 
+.fusion-module-status.open {
+  color: #061118;
+  background: #8cf6ff;
+}
+
+.fusion-module-status.error {
+  color: #fff4f4;
+  background: rgba(255, 93, 124, 0.42);
+}
+
 .fusion-module-title {
   font-size: 16px;
   font-weight: 900;
@@ -455,7 +543,7 @@
 .fusion-widget-column {
   min-height: 0;
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: clamp(14px, 1.6vw, 18px);
 }
 
@@ -529,6 +617,15 @@
   gap: 9px;
 }
 
+.fusion-launch-status {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  color: rgba(218, 231, 255, 0.66);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
 .task-widget svg {
   color: #7ee8ff;
 }
@@ -554,8 +651,8 @@
 .fusion-dock {
   position: absolute;
   z-index: 4;
-  left: calc(var(--fusion-sidebar-inset, 280px) + 42px);
-  right: 42px;
+  left: clamp(22px, 4vw, 72px);
+  right: clamp(22px, 4vw, 72px);
   bottom: 22px;
   min-height: 74px;
   border-radius: 24px;
@@ -611,6 +708,23 @@
   box-shadow: 0 0 16px rgba(140, 246, 255, 0.9);
 }
 
+.fusion-dock button.is-running::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #36efc5;
+  box-shadow: 0 0 12px rgba(54, 239, 197, 0.9);
+}
+
+.fusion-dock .dock-step {
+  min-width: 52px;
+  max-width: 52px;
+}
+
 @keyframes liquidSpin {
   to { rotate: 360deg; }
 }
@@ -626,7 +740,7 @@
   }
 
   .fusion-module-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .fusion-hero-card {

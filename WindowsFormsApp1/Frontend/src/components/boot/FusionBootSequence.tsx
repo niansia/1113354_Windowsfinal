@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import type { BootState } from '../../hooks/useBootSequence';
 import { fusionRuntimeCache } from '../../boot/runtimeCache';
 import { BootParticleCanvas } from './BootParticleCanvas';
+import { BootWebGLInfinity } from './BootWebGLInfinity';
 
 interface FusionBootSequenceProps {
   state: BootState;
@@ -42,6 +43,7 @@ export const FusionBootSequence: React.FC<FusionBootSequenceProps> = ({ state, f
 
       <main className="boot-center-stage" aria-live="polite">
         <div className="boot-energy-field" style={{ ['--boot-progress' as string]: state.progress } as React.CSSProperties}>
+          <BootWebGLInfinity progress={state.progress} reducedMotion={state.reducedMotion} />
           <span className="boot-orbit boot-orbit-a" />
           <span className="boot-orbit boot-orbit-b" />
           <span className="boot-orbit boot-orbit-c" />

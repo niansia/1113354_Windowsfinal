@@ -3,35 +3,8 @@ import type { CSSProperties } from 'react';
 import { useBootSequence } from './hooks/useBootSequence';
 import { FusionBootSequence } from './components/boot/FusionBootSequence';
 import { FusionHome } from './components/FusionHome';
-import { sendMessageToHost } from './utils/bridge';
+import { addHostMessageListener, sendMessageToHost } from './utils/bridge';
 import { fusionRuntimeCache } from './boot/runtimeCache';
-
-interface SidebarLayoutMessage {
-  type: 'FUSION_SIDEBAR_LAYOUT';
-  payload: {
-    expanded: boolean;
-    width: number;
-    compactWidth: number;
-    expandedWidth: number;
-  };
-}
-
-const DEFAULT_SIDEBAR_LAYOUT = {
-  expanded: true,
-  width: 250,
-  compactWidth: 76,
-  expandedWidth: 250
-};
-
-function parseHostMessage(data: unknown): unknown {
-  if (typeof data !== 'string') return data;
-  if (!data.trim().startsWith('{')) return data;
-  try {
-    return JSON.parse(data);
-  } catch {
-    return data;
-  }
-}
 
 // FusionOS startup orchestrator.
 //
@@ -48,26 +21,16 @@ export default function App() {
   const [showHome, setShowHome] = useState(false);
   const [revealHome, setRevealHome] = useState(false);
   const [overlayGone, setOverlayGone] = useState(false);
-  const [sidebarLayout, setSidebarLayout] = useState(DEFAULT_SIDEBAR_LAYOUT);
+  const [hostFullscreen, setHostFullscreen] = useState(true);
   const bootDoneSentRef = useRef(false);
 
   useEffect(() => {
-    const wv = (window as unknown as { chrome?: { webview?: { addEventListener?: (t: string, cb: (e: MessageEvent) => void) => void; removeEventListener?: (t: string, cb: (e: MessageEvent) => void) => void } } }).chrome?.webview;
-    const onMsg = (e: MessageEvent) => {
-      const parsed = parseHostMessage(e.data) as Partial<SidebarLayoutMessage>;
-      if (parsed && parsed.type === 'FUSION_SIDEBAR_LAYOUT' && parsed.payload) {
-        setSidebarLayout({
-          expanded: !!parsed.payload.expanded,
-          width: Number(parsed.payload.width) || DEFAULT_SIDEBAR_LAYOUT.width,
-          compactWidth: Number(parsed.payload.compactWidth) || DEFAULT_SIDEBAR_LAYOUT.compactWidth,
-          expandedWidth: Number(parsed.payload.expandedWidth) || DEFAULT_SIDEBAR_LAYOUT.expandedWidth
-        });
+    return addHostMessageListener((message) => {
+      if (message.type === 'FUSION_HOST_FULLSCREEN_CHANGED' && message.payload && typeof message.payload === 'object') {
+        const payload = message.payload as { fullscreen?: unknown };
+        setHostFullscreen(Boolean(payload.fullscreen));
       }
-    };
-    wv?.addEventListener?.('message', onMsg);
-    return () => {
-      wv?.removeEventListener?.('message', onMsg);
-    };
+    });
   }, []);
 
   // Mount Home (hidden) + notify host exactly once when boot completes.
@@ -96,33 +59,32 @@ export default function App() {
       window.setTimeout(() => setOverlayGone(true), 820);
     };
 
-    const wv = (window as unknown as { chrome?: { webview?: { addEventListener?: (t: string, cb: (e: MessageEvent) => void) => void; removeEventListener?: (t: string, cb: (e: MessageEvent) => void) => void } } }).chrome?.webview;
-    const onMsg = (e: MessageEvent) => {
-      const data = typeof e.data === 'string' ? e.data : '';
-      if (data === 'FUSION_SHELL_READY') reveal();
-    };
-    wv?.addEventListener?.('message', onMsg);
+    const disposeHostListener = addHostMessageListener((message) => {
+      if (message.type === 'FUSION_SHELL_READY') reveal();
+    });
 
     // Fallback: reveal even if the host never reports shell-ready (e.g. browser).
     const fallback = window.setTimeout(reveal, 1500);
 
     return () => {
-      wv?.removeEventListener?.('message', onMsg);
+      disposeHostListener();
       window.clearTimeout(fallback);
     };
   }, [showHome]);
 
-  const sidebarInset = Math.max(0, sidebarLayout.width + 30);
   const shellStyle = {
-    '--fusion-sidebar-inset': `${sidebarInset}px`,
-    '--fusion-sidebar-width': `${sidebarLayout.width}px`,
-    '--fusion-sidebar-expanded': sidebarLayout.expanded ? '1' : '0'
+    '--fusion-sidebar-inset': '0px',
+    '--fusion-sidebar-width': '0px',
+    '--fusion-sidebar-expanded': '0'
   } as CSSProperties;
 
   return (
     <>
       {showHome && (
-        <div className={`fusion-home-wrap ${revealHome ? 'revealed' : ''}`} style={shellStyle}>
+        <div
+          className={`fusion-home-wrap ${revealHome ? 'revealed' : ''} ${hostFullscreen ? 'host-fullscreen' : 'host-windowed'}`}
+          style={shellStyle}
+        >
           <FusionHome />
         </div>
       )}

@@ -73,6 +73,12 @@ namespace WindowsFormsApp1
         private const double AppZoomMin = 0.5;
         private const double AppZoomMax = 2.5;
         private const double AppZoomStep = 0.1;
+        private static readonly bool ReactOwnsShell = true;
+        private static readonly bool WindowedDevMode = string.Equals(
+            Environment.GetEnvironmentVariable("FUSION_WINDOWED_DEV"),
+            "1",
+            StringComparison.OrdinalIgnoreCase
+        );
 
         [DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
@@ -87,7 +93,19 @@ namespace WindowsFormsApp1
         public Form1()
         {
             InitializeComponent();
+            ConfigureHostWindowMode();
             BuildSystemDesktop();
+        }
+
+        private void ConfigureHostWindowMode()
+        {
+            StartPosition = FormStartPosition.CenterScreen;
+            if (!ReactOwnsShell || WindowedDevMode) return;
+
+            FormBorderStyle = FormBorderStyle.None;
+            WindowState = FormWindowState.Maximized;
+            MinimumSize = new Size(960, 640);
+            isFullscreen = true;
         }
 
         private void BuildSystemDesktop()
@@ -121,6 +139,7 @@ namespace WindowsFormsApp1
             BuildLeftRail();
             BuildHeroStage();
             BuildStartMenu();
+            if (ReactOwnsShell) SetNativeShellVisible(false);
 
             // Enter system-level boot mode BEFORE the first layout: the WebView fills
             // the whole client area and the shell (rail/taskbar/start menu) stays hidden
@@ -154,9 +173,7 @@ namespace WindowsFormsApp1
         // Fullscreen boot layout: shell hidden, WebView covers the entire client area.
         private void ApplyBootLayout()
         {
-            if (leftRail != null) leftRail.Visible = false;
-            if (taskbar != null) taskbar.Visible = false;
-            if (startMenu != null) startMenu.Visible = false;
+            SetNativeShellVisible(false);
             if (heroStage != null) heroStage.Visible = false;
 
             if (carouselWebView != null)
@@ -184,21 +201,22 @@ namespace WindowsFormsApp1
 
             SuspendLayout();
 
-            if (leftRail != null) leftRail.Visible = true;
-            if (taskbar != null) taskbar.Visible = true;
-            if (startMenu != null) startMenu.Visible = false; // start menu stays hidden by default
+            SetNativeShellVisible(!ReactOwnsShell);
 
             if (carouselWebView != null)
             {
-                carouselWebView.Dock = DockStyle.None;
+                carouselWebView.Dock = ReactOwnsShell ? DockStyle.Fill : DockStyle.None;
                 carouselWebView.Visible = true;
             }
 
             LayoutShell();          // now isBooting == false => normal hero-stage layout
             ResumeLayout(true);
 
-            leftRail?.BringToFront();
-            taskbar?.BringToFront();
+            if (!ReactOwnsShell)
+            {
+                leftRail?.BringToFront();
+                taskbar?.BringToFront();
+            }
             Debug.WriteLine("[FusionOS] System boot complete, desktop revealed.");
 
             // Tell React the shell + hero-stage layout are FINAL, so it performs the
@@ -211,8 +229,16 @@ namespace WindowsFormsApp1
                 readyTimer.Dispose();
                 PostSidebarLayout(false);
                 try { carouselWebView?.CoreWebView2?.PostWebMessageAsString("FUSION_SHELL_READY"); } catch { }
+                PostHostFullscreenChanged();
             };
             readyTimer.Start();
+        }
+
+        private void SetNativeShellVisible(bool visible)
+        {
+            if (leftRail != null) leftRail.Visible = visible;
+            if (taskbar != null) taskbar.Visible = visible;
+            if (startMenu != null) startMenu.Visible = false;
         }
 
         // ===================== Collapsible sidebar =====================
@@ -265,6 +291,10 @@ namespace WindowsFormsApp1
 
         private Rectangle HomeWebViewBounds()
         {
+            if (ReactOwnsShell)
+            {
+                return new Rectangle(0, 0, Math.Max(320, ClientSize.Width), Math.Max(260, ClientSize.Height));
+            }
             int bottom = taskbar == null || !taskbar.Visible ? ClientSize.Height : taskbar.Top;
             return new Rectangle(0, 0, Math.Max(320, ClientSize.Width), Math.Max(260, bottom));
         }
@@ -272,13 +302,42 @@ namespace WindowsFormsApp1
         private void PostSidebarLayout(bool useTargetWidth)
         {
             if (carouselWebView == null || carouselWebView.CoreWebView2 == null) return;
-            int width = useTargetWidth ? railTargetWidth : railWidth;
+            int width = ReactOwnsShell ? 0 : (useTargetWidth ? railTargetWidth : railWidth);
             string json =
                 "{\"type\":\"FUSION_SIDEBAR_LAYOUT\",\"payload\":{" +
-                "\"expanded\":" + (railExpanded ? "true" : "false") + "," +
+                "\"expanded\":" + (!ReactOwnsShell && railExpanded ? "true" : "false") + "," +
                 "\"width\":" + width + "," +
                 "\"compactWidth\":" + RailCollapsedWidth + "," +
                 "\"expandedWidth\":" + RailExpandedWidth +
+                "}}";
+            try { carouselWebView.CoreWebView2.PostWebMessageAsString(json); } catch { }
+        }
+
+        private static string JsonEscape(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+            return value.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n");
+        }
+
+        private void PostAppLaunchStatus(string appId, string status, string message)
+        {
+            if (carouselWebView == null || carouselWebView.CoreWebView2 == null) return;
+            string json =
+                "{\"type\":\"FUSION_APP_LAUNCH_STATUS\",\"payload\":{" +
+                "\"appId\":\"" + JsonEscape(appId) + "\"," +
+                "\"status\":\"" + JsonEscape(status) + "\"," +
+                "\"message\":\"" + JsonEscape(message) + "\"" +
+                "}}";
+            try { carouselWebView.CoreWebView2.PostWebMessageAsString(json); } catch { }
+        }
+
+        private void PostActiveAppChanged(FusionAppWindow app)
+        {
+            if (carouselWebView == null || carouselWebView.CoreWebView2 == null || app == null) return;
+            string json =
+                "{\"type\":\"FUSION_ACTIVE_APP_CHANGED\",\"payload\":{" +
+                "\"title\":\"" + JsonEscape(app.Title) + "\"," +
+                "\"kind\":\"" + JsonEscape(app.Kind) + "\"" +
                 "}}";
             try { carouselWebView.CoreWebView2.PostWebMessageAsString(json); } catch { }
         }
@@ -401,6 +460,27 @@ namespace WindowsFormsApp1
             if (isBooting)
             {
                 ApplyBootLayout();
+                return;
+            }
+
+            if (ReactOwnsShell)
+            {
+                SetNativeShellVisible(false);
+                PositionHeroStage();
+                foreach (FusionAppWindow app in appWindows.Values)
+                {
+                    if (app.Window == null || app.Window.IsDisposed) continue;
+                    if (app.IsFullscreen)
+                    {
+                        app.Window.Bounds = AppWorkArea(true);
+                    }
+                    else if (app.IsMaximized)
+                    {
+                        app.Window.Bounds = AppWorkArea(false);
+                    }
+                    app.Window.BringToFront();
+                }
+                PostHostFullscreenChanged();
                 return;
             }
 
@@ -1168,6 +1248,19 @@ namespace WindowsFormsApp1
                 return;
             }
 
+            if (ReactOwnsShell)
+            {
+                if (heroStage != null) heroStage.Visible = false;
+                if (carouselWebView != null)
+                {
+                    carouselWebView.Dock = DockStyle.Fill;
+                    carouselWebView.Visible = true;
+                    carouselWebView.BringToFront();
+                    PostSidebarLayout(false);
+                }
+                return;
+            }
+
             if (leftRail == null || taskbar == null)
             {
                 return;
@@ -1385,6 +1478,29 @@ namespace WindowsFormsApp1
             }
 
             OpenSystemWindow(info.Name, info.Description + "\r\n\r\n" + L("DefaultEntryBody"), ColorFor(info));
+            PostAppLaunchStatus(AppIdForIcon(info), "open", info.Name + " 已開啟");
+        }
+
+        private string AppIdForIcon(IconInfo info)
+        {
+            if (info == null || string.IsNullOrEmpty(info.Glyph)) return "system";
+            switch (info.Glyph.ToUpperInvariant())
+            {
+                case "PC": return "pc";
+                case "DIR": return "dir";
+                case "88": return "piano";
+                case "COS": return "cosmic";
+                case "USR": return "user";
+                case "+": return "add";
+                case "DEV": return "dev";
+                case "TOOL": return "tool";
+                case "DB": return "db";
+                case "WEB": return "web";
+                case "GAME": return "game";
+                case "CMD": return "cmd";
+                case "SET": return "set";
+                default: return info.Glyph.ToLowerInvariant();
+            }
         }
 
         private void ShowIconContextMenu(Control source, IconInfo info, Point location)
@@ -1584,6 +1700,7 @@ namespace WindowsFormsApp1
             if (exePath == null)
             {
                 ShowToast(L("PianoStudio") + " 找不到執行檔", accent2);
+                PostAppLaunchStatus("piano", "error", "找不到 Piano Studio 執行檔");
                 return;
             }
 
@@ -1599,11 +1716,13 @@ namespace WindowsFormsApp1
                 if (process != null)
                 {
                     OpenExternalProcessWindow(L("PianoStudio"), process, accent2, exePath);
+                    PostAppLaunchStatus("piano", "open", exePath);
                 }
             }
             catch (Exception)
             {
                 ShowToast(L("PianoStudio") + " 啟動失敗", accent2);
+                PostAppLaunchStatus("piano", "error", "Piano Studio 啟動失敗");
             }
         }
 
@@ -1614,6 +1733,7 @@ namespace WindowsFormsApp1
             if (serverPath == null || !File.Exists(serverPath))
             {
                 ShowToast(L("CosmicGesture") + " 找不到 server.py", accent3);
+                PostAppLaunchStatus("cosmic", "error", "找不到 Cosmic Gesture server.py");
                 return;
             }
 
@@ -1624,6 +1744,7 @@ namespace WindowsFormsApp1
                 if (python == null)
                 {
                     ShowToast(L("CosmicGesture") + " 需要 Python 才能啟動", accent3);
+                    PostAppLaunchStatus("cosmic", "error", "找不到 Python");
                     return;
                 }
 
@@ -1643,6 +1764,7 @@ namespace WindowsFormsApp1
                 catch (Exception)
                 {
                     ShowToast(L("CosmicGesture") + " 啟動失敗", accent3);
+                    PostAppLaunchStatus("cosmic", "error", "Cosmic Gesture 伺服器啟動失敗");
                     return;
                 }
             }
@@ -1650,9 +1772,11 @@ namespace WindowsFormsApp1
             if (!serverReady)
             {
                 ShowToast(L("CosmicGesture") + " 伺服器尚未就緒", accent3);
+                PostAppLaunchStatus("cosmic", "error", "Cosmic Gesture 伺服器尚未就緒");
                 return;
             }
 
+            PostAppLaunchStatus("cosmic", "open", "Cosmic Gesture WebView 開啟中");
             OpenWebAppWindow(L("CosmicGesture"), "http://127.0.0.1:8765/?host=fusionos", accent3, ownsCamera: true);
         }
 
@@ -1800,6 +1924,7 @@ namespace WindowsFormsApp1
                 appWindows.Remove(win);
                 baseFontSizes.Clear();
                 if (object.ReferenceEquals(activeApp, app)) activeApp = null;
+                PostAppLaunchStatus(app.Kind, "closed", app.Title + " closed");
             };
             AttachActivation(win, app);
             AddWindowControlStrip(header, app);
@@ -1890,6 +2015,7 @@ namespace WindowsFormsApp1
                 item.TaskButton.BackColor = active ? Color.FromArgb(56, 88, 130) : Color.FromArgb(36, 49, 78);
                 item.TaskButton.FlatAppearance.BorderColor = active ? accent : Color.FromArgb(36, 49, 78);
             }
+            PostActiveAppChanged(app);
         }
 
         private FusionAppWindow GetActiveApp()
@@ -2212,7 +2338,7 @@ namespace WindowsFormsApp1
                     BackColor = Color.FromArgb(244, 12, 18, 34),
                     Size = new Size(w, 50)
                 };
-                int bottom = (taskbar != null ? taskbar.Top : ClientSize.Height) - 26;
+                int bottom = (taskbar != null && taskbar.Visible ? taskbar.Top : ClientSize.Height) - 26;
                 toast.Location = new Point((ClientSize.Width - toast.Width) / 2, bottom - toast.Height);
 
                 var dot = new Panel { Size = new Size(10, 10), Location = new Point(20, 20), BackColor = color };
@@ -2250,19 +2376,27 @@ namespace WindowsFormsApp1
         private void OpenSystemWindow(string title, string body, Color color)
         {
             windowOffset = (windowOffset + 30) % 180;
+            Rectangle area = AppWorkArea(false);
+            int width = Math.Min(640, Math.Max(460, area.Width - 80));
+            int height = Math.Min(420, Math.Max(340, area.Height - 80));
+            int x = Math.Min(area.Right - width, area.Left + 64 + windowOffset);
+            int y = Math.Min(area.Bottom - height, area.Top + 44 + windowOffset / 2);
             var win = new RoundedPanel
             {
                 Radius = 22,
                 BackColor = Color.FromArgb(246, 10, 16, 30),
-                Size = new Size(Math.Min(600, Math.Max(460, ClientSize.Width - leftRail.Right - 70)), 380),
-                Location = new Point(Math.Min(Math.Max(leftRail.Right + 24, 330 + windowOffset), Math.Max(leftRail.Right + 24, ClientSize.Width - 630)), Math.Max(44, 64 + windowOffset / 2)),
+                Size = new Size(width, height),
+                Location = new Point(Math.Max(area.Left, x), Math.Max(area.Top, y)),
                 Padding = new Padding(0)
             };
             desktop.Controls.Add(win);
             openWindows.Add(win);
             win.BringToFront();
-            startMenu.BringToFront();
-            taskbar.BringToFront();
+            if (!ReactOwnsShell)
+            {
+                startMenu?.BringToFront();
+                taskbar?.BringToFront();
+            }
 
             var header = new Panel
             {
@@ -2326,12 +2460,11 @@ namespace WindowsFormsApp1
         private async void OpenWebAppWindow(string title, string url, Color color, bool ownsCamera = false)
         {
             windowOffset = (windowOffset + 28) % 168;
-            int x = leftRail == null ? 24 : leftRail.Right + 16;
-            int y = 28;
-            int maxWidth = Math.Max(760, ClientSize.Width - x - 24);
-            int maxHeight = Math.Max(520, (taskbar == null ? ClientSize.Height : taskbar.Top) - y - 18);
-            int width = maxWidth;
-            int height = maxHeight;
+            Rectangle area = AppWorkArea(false);
+            int x = area.Left;
+            int y = area.Top;
+            int width = Math.Max(760, area.Width);
+            int height = Math.Max(520, area.Height);
 
             var win = new RoundedPanel
             {
@@ -2344,8 +2477,11 @@ namespace WindowsFormsApp1
             desktop.Controls.Add(win);
             openWindows.Add(win);
             win.BringToFront();
-            startMenu.BringToFront();
-            taskbar.BringToFront();
+            if (!ReactOwnsShell)
+            {
+                startMenu?.BringToFront();
+                taskbar?.BringToFront();
+            }
 
             // Hand the shared webcam over to this app: release it from the desktop
             // carousel now, and give it back when this window closes.
@@ -2612,6 +2748,30 @@ namespace WindowsFormsApp1
 
         private void ToggleHostFullscreen()
         {
+            if (ReactOwnsShell)
+            {
+                if (isFullscreen)
+                {
+                    Rectangle screen = Screen.FromControl(this).WorkingArea;
+                    TopMost = false;
+                    FormBorderStyle = FormBorderStyle.Sizable;
+                    WindowState = FormWindowState.Normal;
+                    Size = new Size(Math.Min(1440, Math.Max(1100, screen.Width - 160)), Math.Min(900, Math.Max(720, screen.Height - 120)));
+                    Location = new Point(screen.Left + (screen.Width - Width) / 2, screen.Top + (screen.Height - Height) / 2);
+                    isFullscreen = false;
+                }
+                else
+                {
+                    FormBorderStyle = FormBorderStyle.None;
+                    WindowState = FormWindowState.Maximized;
+                    TopMost = false;
+                    isFullscreen = true;
+                }
+                LayoutShell();
+                PostHostFullscreenChanged();
+                return;
+            }
+
             if (!isFullscreen)
             {
                 prevBorderStyle = FormBorderStyle;
@@ -2631,6 +2791,14 @@ namespace WindowsFormsApp1
                 if (prevWindowState == FormWindowState.Normal) Bounds = prevBounds;
                 isFullscreen = false;
             }
+            PostHostFullscreenChanged();
+        }
+
+        private void PostHostFullscreenChanged()
+        {
+            if (carouselWebView == null || carouselWebView.CoreWebView2 == null) return;
+            string json = "{\"type\":\"FUSION_HOST_FULLSCREEN_CHANGED\",\"payload\":{\"fullscreen\":" + (isFullscreen ? "true" : "false") + "}}";
+            try { carouselWebView.CoreWebView2.PostWebMessageAsString(json); } catch { }
         }
 
         // Tells the desktop carousel WebView to release or resume the shared webcam
@@ -2818,6 +2986,7 @@ namespace WindowsFormsApp1
 
         private void OpenSettingsWindow()
         {
+            PostAppLaunchStatus("set", "open", "系統設定已開啟");
             using (var dialog = new Form())
             using (var language = new ComboBox())
             using (var apply = new Button())
