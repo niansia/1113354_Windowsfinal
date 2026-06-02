@@ -36,10 +36,10 @@ export function CosmicBackdrop({ controlsRef, density = 1 }: CosmicBackdropProps
     }
   });
 
-  const stars = useMemo(() => buildStarField(Math.floor(12000 * density)), [density]);
-  const band = useMemo(() => buildGalaxyBand(Math.floor(8000 * density)), [density]);
-  const dust = useMemo(() => buildDust(Math.floor(2800 * density)), [density]);
-  const bright = useMemo(() => buildBrightStars(Math.floor(360 * density)), [density]);
+  const stars = useMemo(() => buildStarField(Math.floor(6800 * density)), [density]);
+  const band = useMemo(() => buildGalaxyBand(Math.floor(3600 * density)), [density]);
+  const dust = useMemo(() => buildDust(Math.floor(1200 * density)), [density]);
+  const bright = useMemo(() => buildBrightStars(Math.floor(180 * density)), [density]);
 
   return (
     <group ref={parallaxRef}>

@@ -33,6 +33,7 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
   const cooldownUntilRef = useRef(0);
   const swipeCooldownRef = useRef(0);
   const frameTimesRef = useRef<number[]>([]);
+  const lastDebugUpdateRef = useRef(0);
 
   // ---- Gesture safety layer (active control hand + intent gating) ----
   const lastMouseRef = useRef(0);
@@ -101,7 +102,7 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
             delegate: "GPU"
           },
           runningMode: "VIDEO",
-          numHands: 2,
+          numHands: 1,
           minHandDetectionConfidence: 0.58,
           minHandPresenceConfidence: 0.58,
           minTrackingConfidence: 0.58
@@ -113,7 +114,7 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
         landmarkerRef.current = landmarker;
 
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480, facingMode: "user" },
+          video: { width: 424, height: 320, facingMode: "user" },
           audio: false
         });
         if (disposed) {
@@ -178,7 +179,10 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
         const mouseActive = now - lastMouseRef.current < 800;
         processLandmarks(smoothLandmarks(hands[bestIdx]), now, mouseActive);
       } else {
-        setDebug((state) => ({ ...state, active: false, label: "未偵測到手" }));
+        if (now - lastDebugUpdateRef.current > 260) {
+          lastDebugUpdateRef.current = now;
+          setDebug((state) => ({ ...state, active: false, label: "未偵測到手" }));
+        }
         restingRef.current = false;
         fistPhaseRef.current = "IDLE";
         fistOpenSeenRef.current = 0;
@@ -285,21 +289,26 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
       }
 
       updateFps(now);
+      const numberGesture = !open && !fist ? classifySingleHandNumberGesture(hand, state) : null;
+      updateNumberVotes(numberGesture?.value ?? 0, numberGesture?.confidence ?? 0, now);
 
-      setDebug({
-        enabled,
-        active: true,
-        label: open ? "張掌" : fist ? "握拳" : "追蹤中",
-        confidence: open || fist ? 0.78 : 0.5,
-        fingerStates: [
-          state.thumb ? "T" : "-",
-          state.index ? "I" : "-",
-          state.middle ? "M" : "-",
-          state.ring ? "R" : "-",
-          state.pinky ? "P" : "-"
-        ].join(""),
-        fps: frameTimesRef.current.length
-      });
+      if (now - lastDebugUpdateRef.current > 140) {
+        lastDebugUpdateRef.current = now;
+        setDebug({
+          enabled,
+          active: true,
+          label: numberGesture ? `辨識：${numberGesture.value}` : open ? "張掌" : fist ? "握拳" : "追蹤中",
+          confidence: numberGesture?.confidence ?? (open || fist ? 0.78 : 0.5),
+          fingerStates: [
+            state.thumb ? "T" : "-",
+            state.index ? "I" : "-",
+            state.middle ? "M" : "-",
+            state.ring ? "R" : "-",
+            state.pinky ? "P" : "-"
+          ].join(""),
+          fps: frameTimesRef.current.length
+        });
+      }
     };
 
     const updateNumberVotes = (value: NumberGestureValue | 0, confidence: number, now: number) => {

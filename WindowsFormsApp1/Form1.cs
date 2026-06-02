@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.IO;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
@@ -33,8 +34,12 @@ namespace WindowsFormsApp1
         private WebView2 carouselWebView;
         private FlowLayoutPanel taskButtons;
         private Label clockLabel;
+        private readonly ToolTip windowToolTips = new ToolTip();
         private readonly List<Control> openWindows = new List<Control>();
+        private readonly Dictionary<Control, FusionAppWindow> appWindows = new Dictionary<Control, FusionAppWindow>();
+        private readonly Dictionary<Control, float> baseFontSizes = new Dictionary<Control, float>();
         private readonly List<DesktopShortcutInfo> desktopShortcuts = new List<DesktopShortcutInfo>();
+        private FusionAppWindow activeApp;
         private int shortcutSerial;
         private int windowOffset;
         private string currentLanguage = "zh-TW";
@@ -48,6 +53,25 @@ namespace WindowsFormsApp1
         private FormWindowState prevWindowState;
         private Rectangle prevBounds;
         private const bool RunNativeCameraSmokeTest = false;
+
+        // ---- System-level boot mode ----
+        private bool isBooting = false;
+        private bool bootDoneReceived = false;
+        private System.Windows.Forms.Timer bootTimeoutTimer;
+
+        private const double AppZoomMin = 0.5;
+        private const double AppZoomMax = 2.5;
+        private const double AppZoomStep = 0.1;
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        private const int SW_RESTORE = 9;
+        private const int SW_MINIMIZE = 6;
+        private const int SW_MAXIMIZE = 3;
 
         public Form1()
         {
@@ -67,6 +91,8 @@ namespace WindowsFormsApp1
             KeyPreview = true;
             KeyDown -= Form1_KeyDown;
             KeyDown += Form1_KeyDown;
+            MouseWheel -= Form1_MouseWheel;
+            MouseWheel += Form1_MouseWheel;
 
             desktop = new DesktopSurfacePanel
             {
@@ -78,11 +104,17 @@ namespace WindowsFormsApp1
             };
             desktop.MouseUp += DesktopMouseUp;
             Controls.Add(desktop);
+            desktop.MouseWheel += Form1_MouseWheel;
 
             BuildTaskbar();
             BuildLeftRail();
             BuildHeroStage();
             BuildStartMenu();
+
+            // Enter system-level boot mode BEFORE the first layout: the WebView fills
+            // the whole client area and the shell (rail/taskbar/start menu) stays hidden
+            // until React posts FUSION_BOOT_DONE.
+            EnterSystemBootMode();
             LayoutShell();
 
             Resize += delegate
@@ -91,18 +123,170 @@ namespace WindowsFormsApp1
             };
         }
 
+        // ===================== System Boot Mode =====================
+        private void EnterSystemBootMode()
+        {
+            isBooting = true;
+            bootDoneReceived = false;
+            ApplyBootLayout();
+
+            // Safety net: if React never reports BOOT_DONE, reveal the desktop anyway.
+            bootTimeoutTimer = new System.Windows.Forms.Timer { Interval = 35000 };
+            bootTimeoutTimer.Tick += delegate
+            {
+                Debug.WriteLine("[FusionOS] Boot timeout fallback, revealing desktop.");
+                CompleteSystemBoot();
+            };
+            bootTimeoutTimer.Start();
+        }
+
+        // Fullscreen boot layout: shell hidden, WebView covers the entire client area.
+        private void ApplyBootLayout()
+        {
+            if (leftRail != null) leftRail.Visible = false;
+            if (taskbar != null) taskbar.Visible = false;
+            if (startMenu != null) startMenu.Visible = false;
+            if (heroStage != null) heroStage.Visible = false;
+
+            if (carouselWebView != null)
+            {
+                carouselWebView.Visible = true;
+                carouselWebView.Dock = DockStyle.Fill;
+                carouselWebView.BringToFront();
+            }
+        }
+
+        // Called when React reports boot completion (or on timeout). Restores the shell
+        // and the hero-stage WebView WITHOUT re-navigating or re-initializing anything.
+        private void CompleteSystemBoot()
+        {
+            if (!isBooting) return;
+            isBooting = false;
+            bootDoneReceived = true;
+
+            if (bootTimeoutTimer != null)
+            {
+                bootTimeoutTimer.Stop();
+                bootTimeoutTimer.Dispose();
+                bootTimeoutTimer = null;
+            }
+
+            SuspendLayout();
+
+            if (leftRail != null) leftRail.Visible = true;
+            if (taskbar != null) taskbar.Visible = true;
+            if (startMenu != null) startMenu.Visible = false; // start menu stays hidden by default
+
+            if (carouselWebView != null)
+            {
+                carouselWebView.Dock = DockStyle.None;
+                carouselWebView.Visible = true;
+            }
+
+            LayoutShell();          // now isBooting == false => normal hero-stage layout
+            ResumeLayout(true);
+
+            leftRail?.BringToFront();
+            taskbar?.BringToFront();
+            Debug.WriteLine("[FusionOS] System boot complete, desktop revealed.");
+        }
+
+        private void Form1_MouseWheel(object sender, MouseEventArgs e)
+        {
+            if ((ModifierKeys & Keys.Control) != Keys.Control)
+            {
+                return;
+            }
+
+            ZoomActiveApp(e.Delta > 0 ? AppZoomStep : -AppZoomStep);
+        }
+
 
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Escape && openWindows.Count > 0)
+            if (HandleAppShortcut(e.KeyData))
             {
-                CloseWindow(openWindows[openWindows.Count - 1]);
+                e.SuppressKeyPress = true;
+                e.Handled = true;
+                return;
+            }
+
+            if (e.KeyCode == Keys.Escape && activeApp != null)
+            {
+                if (activeApp.IsFullscreen)
+                {
+                    ToggleAppFullscreen(activeApp);
+                }
+                else
+                {
+                    CloseWindow(activeApp.Window);
+                }
                 e.Handled = true;
             }
         }
 
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (HandleAppShortcut(keyData))
+            {
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private bool HandleAppShortcut(Keys keyData)
+        {
+            bool ctrl = (keyData & Keys.Control) == Keys.Control;
+            Keys key = keyData & Keys.KeyCode;
+
+            if (key == Keys.F5)
+            {
+                RefreshActiveApp();
+                return true;
+            }
+            if (key == Keys.F11)
+            {
+                ToggleActiveFullscreen();
+                return true;
+            }
+            if (key == Keys.F12)
+            {
+                OpenActiveDevTools();
+                return true;
+            }
+            if (key == Keys.Escape && activeApp != null && activeApp.IsFullscreen)
+            {
+                ToggleAppFullscreen(activeApp);
+                return true;
+            }
+            if (ctrl && (key == Keys.Oemplus || key == Keys.Add))
+            {
+                ZoomActiveApp(AppZoomStep);
+                return true;
+            }
+            if (ctrl && (key == Keys.OemMinus || key == Keys.Subtract))
+            {
+                ZoomActiveApp(-AppZoomStep);
+                return true;
+            }
+            if (ctrl && (key == Keys.D0 || key == Keys.NumPad0))
+            {
+                ResetActiveAppZoom();
+                return true;
+            }
+
+            return false;
+        }
+
         private void LayoutShell()
         {
+            // During system boot the WebView fills everything and the shell stays hidden.
+            if (isBooting)
+            {
+                ApplyBootLayout();
+                return;
+            }
+
             if (taskbar != null)
             {
                 taskbar.Width = ClientSize.Width;
@@ -129,6 +313,20 @@ namespace WindowsFormsApp1
             if (taskbar != null)
             {
                 taskbar.BringToFront();
+            }
+
+            foreach (FusionAppWindow app in appWindows.Values)
+            {
+                if (app.Window == null || app.Window.IsDisposed) continue;
+                if (app.IsFullscreen)
+                {
+                    app.Window.Bounds = AppWorkArea(true);
+                    app.Window.BringToFront();
+                }
+                else if (app.IsMaximized)
+                {
+                    app.Window.Bounds = AppWorkArea(false);
+                }
             }
         }
 
@@ -414,7 +612,10 @@ namespace WindowsFormsApp1
                 
                 var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
                 await carouselWebView.EnsureCoreWebView2Async(env);
-                
+
+                // Dark default background so the boot screen never flashes white before React paints.
+                try { carouselWebView.DefaultBackgroundColor = Color.FromArgb(255, 3, 5, 14); } catch { }
+
                 // WebView2 Settings
                 carouselWebView.CoreWebView2.Settings.AreDevToolsEnabled = true;
                 carouselWebView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
@@ -679,6 +880,14 @@ namespace WindowsFormsApp1
 
                 string lower = message.ToLower();
 
+                // System-level boot completion from React.
+                if (lower.Contains("fusion_boot_done") || lower.Contains("\"boot_done\""))
+                {
+                    if (IsHandleCreated) BeginInvoke((Action)CompleteSystemBoot);
+                    else CompleteSystemBoot();
+                    return;
+                }
+
                 if (lower.Contains("launch_app"))
                 {
                     if (lower.Contains("\"piano\"") || lower.Contains("\"88\"")) LaunchPianoStudio();
@@ -750,6 +959,13 @@ namespace WindowsFormsApp1
 
         private void PositionHeroStage()
         {
+            // Boot mode: keep the WebView fullscreen instead of insetting it.
+            if (isBooting)
+            {
+                ApplyBootLayout();
+                return;
+            }
+
             if (leftRail == null || taskbar == null)
             {
                 return;
@@ -1173,7 +1389,11 @@ namespace WindowsFormsApp1
                     WorkingDirectory = Path.GetDirectoryName(exePath),
                     UseShellExecute = true
                 };
-                Process.Start(startInfo);
+                Process process = Process.Start(startInfo);
+                if (process != null)
+                {
+                    OpenExternalProcessWindow(L("PianoStudio"), process, accent2, exePath);
+                }
             }
             catch (Exception ex)
             {
@@ -1355,6 +1575,449 @@ namespace WindowsFormsApp1
             return files.Length == 0 ? null : files[0];
         }
 
+        private FusionAppWindow RegisterAppWindow(string title, Control win, Panel header, Label titleLabel, Color color, string kind)
+        {
+            var app = new FusionAppWindow
+            {
+                Title = title,
+                Kind = kind,
+                Window = win,
+                Header = header,
+                TitleLabel = titleLabel,
+                AccentColor = color,
+                RestoreBounds = new Rectangle(win.Location, win.Size),
+                ZoomFactor = 1.0
+            };
+            appWindows[win] = app;
+            win.Disposed += delegate
+            {
+                appWindows.Remove(win);
+                baseFontSizes.Clear();
+                if (object.ReferenceEquals(activeApp, app)) activeApp = null;
+            };
+            AttachActivation(win, app);
+            AddWindowControlStrip(header, app);
+            SetActiveApp(app);
+            return app;
+        }
+
+        private void AttachActivation(Control control, FusionAppWindow app)
+        {
+            control.MouseDown += delegate { SetActiveApp(app); };
+            control.Enter += delegate { SetActiveApp(app); };
+            control.GotFocus += delegate { SetActiveApp(app); };
+            control.ControlAdded += delegate (object sender, ControlEventArgs e)
+            {
+                AttachActivation(e.Control, app);
+            };
+            foreach (Control child in control.Controls)
+            {
+                AttachActivation(child, app);
+            }
+        }
+
+        private void AddWindowControlStrip(Panel header, FusionAppWindow app)
+        {
+            var strip = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Right,
+                Width = 292,
+                Height = header.Height,
+                Padding = new Padding(0, 8, 10, 8),
+                Margin = new Padding(0),
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent
+            };
+            header.Controls.Add(strip);
+            strip.BringToFront();
+
+            strip.Controls.Add(HeaderButton("R", "Refresh", delegate { RefreshApp(app); }));
+            strip.Controls.Add(HeaderButton("_", "Minimize", delegate { MinimizeApp(app); }));
+            app.MaximizeButton = HeaderButton("[]", "Maximize", delegate { ToggleMaximizeApp(app); });
+            strip.Controls.Add(app.MaximizeButton);
+            app.FullscreenButton = HeaderButton("[ ]", "Fullscreen", delegate { ToggleAppFullscreen(app); });
+            strip.Controls.Add(app.FullscreenButton);
+            strip.Controls.Add(HeaderButton("<>", "DevTools / Status", delegate { OpenDevTools(app); }));
+            strip.Controls.Add(HeaderButton("X", "Close", delegate { CloseWindow(app.Window); }, true));
+        }
+
+        private Button HeaderButton(string glyph, string tip, EventHandler click, bool danger = false)
+        {
+            var button = new Button
+            {
+                Width = glyph.Length > 1 ? 38 : 34,
+                Height = 32,
+                Text = glyph,
+                FlatStyle = FlatStyle.Flat,
+                ForeColor = Color.White,
+                BackColor = danger ? Color.FromArgb(210, 190, 44, 76) : Color.FromArgb(108, 21, 35, 60),
+                Font = new Font(Font.FontFamily, glyph.Length > 1 ? 8F : 11F, FontStyle.Bold),
+                Margin = new Padding(3, 0, 0, 0),
+                Cursor = Cursors.Hand,
+                TabStop = false
+            };
+            button.FlatAppearance.BorderSize = 1;
+            button.FlatAppearance.BorderColor = danger ? Color.FromArgb(255, 248, 113, 141) : Color.FromArgb(110, accent);
+            button.FlatAppearance.MouseOverBackColor = danger ? Color.FromArgb(240, 255, 82, 120) : Color.FromArgb(130, 34, 211, 238);
+            button.Click += click;
+            windowToolTips.SetToolTip(button, tip);
+            return button;
+        }
+
+        private void SetActiveApp(FusionAppWindow app)
+        {
+            if (app == null || app.Window == null || app.Window.IsDisposed)
+            {
+                return;
+            }
+
+            activeApp = app;
+            app.Window.BringToFront();
+            if (startMenu != null && startMenu.Visible) startMenu.BringToFront();
+            if (taskbar != null && !app.IsFullscreen) taskbar.BringToFront();
+
+            foreach (FusionAppWindow item in appWindows.Values)
+            {
+                if (item.TaskButton == null) continue;
+                bool active = object.ReferenceEquals(item, app);
+                item.TaskButton.BackColor = active ? Color.FromArgb(56, 88, 130) : Color.FromArgb(36, 49, 78);
+                item.TaskButton.FlatAppearance.BorderColor = active ? accent : Color.FromArgb(36, 49, 78);
+            }
+        }
+
+        private FusionAppWindow GetActiveApp()
+        {
+            if (activeApp != null && activeApp.Window != null && !activeApp.Window.IsDisposed && activeApp.Window.Visible)
+            {
+                return activeApp;
+            }
+            for (int i = openWindows.Count - 1; i >= 0; i--)
+            {
+                FusionAppWindow app;
+                if (appWindows.TryGetValue(openWindows[i], out app) && app.Window.Visible)
+                {
+                    activeApp = app;
+                    return app;
+                }
+            }
+            return null;
+        }
+
+        private Rectangle AppWorkArea(bool fullscreen)
+        {
+            if (desktop == null)
+            {
+                return ClientRectangle;
+            }
+            if (fullscreen)
+            {
+                return new Rectangle(0, 0, Math.Max(200, desktop.ClientSize.Width), Math.Max(200, desktop.ClientSize.Height));
+            }
+
+            int left = leftRail == null || !leftRail.Visible ? 18 : leftRail.Right + 16;
+            int top = 18;
+            int right = Math.Max(left + 420, desktop.ClientSize.Width - 18);
+            int bottom = taskbar == null || !taskbar.Visible ? desktop.ClientSize.Height - 18 : taskbar.Top - 14;
+            return new Rectangle(left, top, Math.Max(420, right - left), Math.Max(320, bottom - top));
+        }
+
+        private void RefreshActiveApp()
+        {
+            FusionAppWindow app = GetActiveApp();
+            if (app == null)
+            {
+                desktop.Invalidate();
+                if (heroStage != null) heroStage.Invalidate();
+                if (carouselWebView != null && carouselWebView.CoreWebView2 != null) carouselWebView.Reload();
+                return;
+            }
+            RefreshApp(app);
+        }
+
+        private void RefreshApp(FusionAppWindow app)
+        {
+            SetActiveApp(app);
+            if (app.WebView != null && app.WebView.CoreWebView2 != null)
+            {
+                app.WebView.CoreWebView2.Reload();
+                return;
+            }
+            if (app.ExternalProcess != null)
+            {
+                BringExternalProcessToFront(app);
+                ShowInlineStatus(app, app.ExternalProcess.HasExited ? "Native app process has exited." : "Native app does not expose reload; brought it to front.");
+                return;
+            }
+            app.Window.Invalidate(true);
+            ShowInlineStatus(app, "WinForms app view refreshed.");
+        }
+
+        private void MinimizeApp(FusionAppWindow app)
+        {
+            if (app == null) return;
+            if (app.ExternalProcess != null) ShowExternalWindow(app, SW_MINIMIZE);
+            app.IsMinimized = true;
+            app.Window.Visible = false;
+            if (object.ReferenceEquals(activeApp, app)) activeApp = null;
+            if (app.TaskButton != null) app.TaskButton.BackColor = Color.FromArgb(24, 33, 54);
+        }
+
+        private void RestoreFromTaskbar(FusionAppWindow app)
+        {
+            if (app == null || app.Window == null || app.Window.IsDisposed) return;
+            app.Window.Visible = true;
+            app.IsMinimized = false;
+            if (app.ExternalProcess != null) ShowExternalWindow(app, SW_RESTORE);
+            SetActiveApp(app);
+        }
+
+        private void ToggleMaximizeApp(FusionAppWindow app)
+        {
+            if (app == null) return;
+            if (app.IsFullscreen)
+            {
+                ToggleAppFullscreen(app);
+                return;
+            }
+            if (!app.IsMaximized)
+            {
+                app.RestoreBounds = new Rectangle(app.Window.Location, app.Window.Size);
+                Rectangle area = AppWorkArea(false);
+                app.Window.Bounds = area;
+                app.IsMaximized = true;
+                if (app.ExternalProcess != null) ShowExternalWindow(app, SW_MAXIMIZE);
+            }
+            else
+            {
+                app.Window.Bounds = app.RestoreBounds;
+                app.IsMaximized = false;
+                if (app.ExternalProcess != null) ShowExternalWindow(app, SW_RESTORE);
+            }
+            UpdateWindowStateButtons(app);
+            SetActiveApp(app);
+        }
+
+        private void ToggleActiveFullscreen()
+        {
+            FusionAppWindow app = GetActiveApp();
+            if (app != null)
+            {
+                ToggleAppFullscreen(app);
+            }
+            else
+            {
+                ToggleHostFullscreen();
+            }
+        }
+
+        private void ToggleAppFullscreen(FusionAppWindow app)
+        {
+            if (app == null) return;
+            if (!app.IsFullscreen)
+            {
+                app.RestoreBounds = new Rectangle(app.Window.Location, app.Window.Size);
+                app.WasMaximizedBeforeFullscreen = app.IsMaximized;
+                SetShellChromeVisible(false);
+                Rectangle area = AppWorkArea(true);
+                app.Window.Bounds = area;
+                app.IsFullscreen = true;
+                app.IsMaximized = false;
+                if (app.ExternalProcess != null) ShowExternalWindow(app, SW_MAXIMIZE);
+            }
+            else
+            {
+                app.Window.Bounds = app.RestoreBounds;
+                app.IsFullscreen = false;
+                app.IsMaximized = app.WasMaximizedBeforeFullscreen;
+                SetShellChromeVisible(true);
+                if (app.IsMaximized)
+                {
+                    app.Window.Bounds = AppWorkArea(false);
+                }
+                if (app.ExternalProcess != null) ShowExternalWindow(app, app.IsMaximized ? SW_MAXIMIZE : SW_RESTORE);
+            }
+            UpdateWindowStateButtons(app);
+            SetActiveApp(app);
+        }
+
+        private void SetShellChromeVisible(bool visible)
+        {
+            if (leftRail != null) leftRail.Visible = visible;
+            if (taskbar != null) taskbar.Visible = visible;
+            if (heroStage != null) heroStage.Visible = visible;
+            if (startMenu != null) startMenu.Visible = false;
+        }
+
+        private void UpdateWindowStateButtons(FusionAppWindow app)
+        {
+            if (app.MaximizeButton != null)
+            {
+                app.MaximizeButton.Text = app.IsMaximized ? "[=]" : "[]";
+                windowToolTips.SetToolTip(app.MaximizeButton, app.IsMaximized ? "Restore" : "Maximize");
+            }
+            if (app.FullscreenButton != null)
+            {
+                app.FullscreenButton.BackColor = app.IsFullscreen ? Color.FromArgb(150, 34, 211, 238) : Color.FromArgb(108, 21, 35, 60);
+                windowToolTips.SetToolTip(app.FullscreenButton, app.IsFullscreen ? "Exit Fullscreen" : "Fullscreen");
+            }
+        }
+
+        private void OpenActiveDevTools()
+        {
+            FusionAppWindow app = GetActiveApp();
+            if (app != null)
+            {
+                OpenDevTools(app);
+                return;
+            }
+            if (carouselWebView != null && carouselWebView.CoreWebView2 != null)
+            {
+                carouselWebView.CoreWebView2.OpenDevToolsWindow();
+            }
+        }
+
+        private void OpenDevTools(FusionAppWindow app)
+        {
+            SetActiveApp(app);
+            if (app.WebView != null && app.WebView.CoreWebView2 != null)
+            {
+                app.WebView.CoreWebView2.Settings.AreDevToolsEnabled = true;
+                app.WebView.CoreWebView2.OpenDevToolsWindow();
+                return;
+            }
+
+            string status =
+                "Active app: " + app.Title + "\r\n" +
+                "Kind: " + app.Kind + "\r\n" +
+                "Zoom: " + Math.Round(app.ZoomFactor * 100) + "%\r\n" +
+                "Minimized: " + app.IsMinimized + "\r\n" +
+                "Maximized: " + app.IsMaximized + "\r\n" +
+                "Fullscreen: " + app.IsFullscreen + "\r\n" +
+                "WebView2: " + (app.WebView == null ? "unavailable" : "available") + "\r\n" +
+                "External process: " + (app.ExternalProcess == null ? "none" : (app.ExternalProcess.HasExited ? "exited" : "running"));
+            OpenSystemWindow(app.Title + " Status", status, app.AccentColor);
+        }
+
+        private void ZoomActiveApp(double delta)
+        {
+            FusionAppWindow app = GetActiveApp();
+            if (app == null) return;
+            SetAppZoom(app, app.ZoomFactor + delta);
+        }
+
+        private void ResetActiveAppZoom()
+        {
+            FusionAppWindow app = GetActiveApp();
+            if (app == null) return;
+            SetAppZoom(app, 1.0);
+        }
+
+        private void SetAppZoom(FusionAppWindow app, double zoom)
+        {
+            zoom = Math.Max(AppZoomMin, Math.Min(AppZoomMax, zoom));
+            app.ZoomFactor = zoom;
+            if (app.WebView != null)
+            {
+                app.WebView.ZoomFactor = zoom;
+            }
+            else if (app.ExternalProcess == null)
+            {
+                ApplyWinFormsZoom(app.Window, zoom);
+            }
+            else
+            {
+                ShowInlineStatus(app, "Zoom is unavailable for native external windows.");
+            }
+            ShowInlineStatus(app, "Zoom " + Math.Round(zoom * 100) + "%");
+        }
+
+        private void ApplyWinFormsZoom(Control root, double zoom)
+        {
+            RecordBaseFonts(root);
+            foreach (KeyValuePair<Control, float> item in new Dictionary<Control, float>(baseFontSizes))
+            {
+                if (item.Key == null || item.Key.IsDisposed || !IsChildOf(item.Key, root)) continue;
+                item.Key.Font = new Font(item.Key.Font.FontFamily, Math.Max(7F, item.Value * (float)zoom), item.Key.Font.Style);
+            }
+        }
+
+        private void RecordBaseFonts(Control root)
+        {
+            if (!baseFontSizes.ContainsKey(root)) baseFontSizes[root] = root.Font.Size;
+            foreach (Control child in root.Controls)
+            {
+                RecordBaseFonts(child);
+            }
+        }
+
+        private bool IsChildOf(Control child, Control root)
+        {
+            for (Control current = child; current != null; current = current.Parent)
+            {
+                if (object.ReferenceEquals(current, root)) return true;
+            }
+            return false;
+        }
+
+        private void ShowInlineStatus(FusionAppWindow app, string message)
+        {
+            if (app == null || app.TitleLabel == null || app.TitleLabel.IsDisposed) return;
+            app.TitleLabel.Text = app.Title + "    " + message;
+            var timer = new Timer { Interval = 1400 };
+            timer.Tick += delegate
+            {
+                timer.Stop();
+                timer.Dispose();
+                if (app.TitleLabel != null && !app.TitleLabel.IsDisposed) app.TitleLabel.Text = app.Title;
+            };
+            timer.Start();
+        }
+
+        private void BringExternalProcessToFront(FusionAppWindow app)
+        {
+            if (app == null || app.ExternalProcess == null || app.ExternalProcess.HasExited) return;
+            app.ExternalProcess.Refresh();
+            IntPtr handle = app.ExternalProcess.MainWindowHandle;
+            if (handle != IntPtr.Zero)
+            {
+                ShowWindow(handle, SW_RESTORE);
+                SetForegroundWindow(handle);
+            }
+        }
+
+        private void ShowExternalWindow(FusionAppWindow app, int command)
+        {
+            if (app == null || app.ExternalProcess == null || app.ExternalProcess.HasExited) return;
+            app.ExternalProcess.Refresh();
+            IntPtr handle = app.ExternalProcess.MainWindowHandle;
+            if (handle != IntPtr.Zero) ShowWindow(handle, command);
+        }
+
+        private void OpenExternalProcessWindow(string title, Process process, Color color, string exePath)
+        {
+            OpenSystemWindow(title, "Native WinForms app launched.\r\n\r\nExecutable:\r\n" + exePath + "\r\n\r\nUse this FusionOS frame to minimize, maximize, close, focus, or inspect the running app.", color);
+            FusionAppWindow app = activeApp;
+            if (app != null)
+            {
+                app.Kind = "external";
+                app.ExternalProcess = process;
+                app.ExternalPath = exePath;
+                process.EnableRaisingEvents = true;
+                process.Exited += delegate
+                {
+                    try
+                    {
+                        BeginInvoke((Action)delegate
+                        {
+                            if (app.Window != null && !app.Window.IsDisposed) ShowInlineStatus(app, "Process exited.");
+                        });
+                    }
+                    catch { }
+                };
+            }
+        }
+
         private void OpenSystemWindow(string title, string body, Color color)
         {
             windowOffset = (windowOffset + 30) % 180;
@@ -1390,23 +2053,7 @@ namespace WindowsFormsApp1
                 Padding = new Padding(18, 0, 0, 0)
             };
             header.Controls.Add(titleLabel);
-
-            var close = new Button
-            {
-                Dock = DockStyle.Right,
-                Width = 58,
-                Text = "✕",
-                FlatStyle = FlatStyle.Flat,
-                ForeColor = Color.White,
-                BackColor = Color.FromArgb(210, 220, 62, 91),
-                Font = new Font(Font.FontFamily, 12F, FontStyle.Bold),
-                Cursor = Cursors.Hand
-            };
-            close.FlatAppearance.BorderSize = 0;
-            close.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 255, 82, 120);
-            close.Click += delegate { CloseWindow(win); };
-            header.Controls.Add(close);
-            close.BringToFront();
+            var app = RegisterAppWindow(title, win, header, titleLabel, color, "system");
 
             var content = new TableLayoutPanel
             {
@@ -1444,6 +2091,7 @@ namespace WindowsFormsApp1
             actions.Controls.Add(WindowButton(L("Details")));
 
             CreateTaskButtonForWindow(title, win);
+            SetActiveApp(app);
         }
 
         private async void OpenWebAppWindow(string title, string url, Color color, bool ownsCamera = false)
@@ -1501,23 +2149,7 @@ namespace WindowsFormsApp1
                 Padding = new Padding(18, 0, 0, 0)
             };
             header.Controls.Add(titleLabel);
-
-            var close = new Button
-            {
-                Dock = DockStyle.Right,
-                Width = 58,
-                Text = "✕",
-                FlatStyle = FlatStyle.Flat,
-                ForeColor = Color.White,
-                BackColor = Color.FromArgb(210, 220, 62, 91),
-                Font = new Font(Font.FontFamily, 12F, FontStyle.Bold),
-                Cursor = Cursors.Hand
-            };
-            close.FlatAppearance.BorderSize = 0;
-            close.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 255, 82, 120);
-            close.Click += delegate { CloseWindow(win); };
-            header.Controls.Add(close);
-            close.BringToFront();
+            var app = RegisterAppWindow(title, win, header, titleLabel, color, "webview");
 
             var content = new Panel
             {
@@ -1548,6 +2180,7 @@ namespace WindowsFormsApp1
             webView.BringToFront();
 
             CreateTaskButtonForWindow(title, win);
+            SetActiveApp(app);
 
             try
             {
@@ -1578,7 +2211,8 @@ namespace WindowsFormsApp1
                 };
                 webView.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
                 webView.CoreWebView2.Settings.AreDevToolsEnabled = true;
-                ApplyWebViewBrowserShortcuts(webView);
+                app.WebView = webView;
+                ApplyWebViewBrowserShortcuts(app);
                 webView.NavigationCompleted += delegate (object eventSender, CoreWebView2NavigationCompletedEventArgs args)
                 {
                     if (!args.IsSuccess)
@@ -1616,13 +2250,27 @@ namespace WindowsFormsApp1
                 Cursor = Cursors.Hand
             };
             task.FlatAppearance.BorderSize = 0;
+            task.FlatAppearance.BorderColor = Color.FromArgb(36, 49, 78);
             task.Click += delegate
             {
-                win.Visible = true;
-                win.BringToFront();
-                if (startMenu.Visible) startMenu.BringToFront();
-                taskbar.BringToFront();
+                FusionAppWindow app;
+                if (appWindows.TryGetValue(win, out app))
+                {
+                    RestoreFromTaskbar(app);
+                }
+                else
+                {
+                    win.Visible = true;
+                    win.BringToFront();
+                    if (startMenu.Visible) startMenu.BringToFront();
+                    taskbar.BringToFront();
+                }
             };
+            FusionAppWindow registeredApp;
+            if (appWindows.TryGetValue(win, out registeredApp))
+            {
+                registeredApp.TaskButton = task;
+            }
             win.Tag = task;
             taskButtons.Controls.Add(task);
         }
@@ -1655,16 +2303,16 @@ namespace WindowsFormsApp1
             try
             {
                 var s = webView.CoreWebView2.Settings;
-                s.AreDevToolsEnabled = true;                 // F12 DevTools
-                s.IsZoomControlEnabled = true;               // Ctrl+wheel zoom
-                s.AreBrowserAcceleratorKeysEnabled = true;   // Ctrl +/-/0 zoom, F12, etc.
+                s.AreDevToolsEnabled = true;
+                s.IsZoomControlEnabled = true;
+                s.AreBrowserAcceleratorKeysEnabled = true;
             }
             catch { }
 
             try
             {
                 webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
-                    "document.addEventListener('keydown',function(e){if(e.key==='F11'){e.preventDefault();try{window.chrome.webview.postMessage('FUSION_FULLSCREEN');}catch(_){}}},true);");
+                    "document.addEventListener('keydown',function(e){if(e.key==='F11'){e.preventDefault();try{window.chrome.webview.postMessage('FUSION_HOST_FULLSCREEN');}catch(_){}}},true);");
             }
             catch { }
 
@@ -1673,13 +2321,67 @@ namespace WindowsFormsApp1
                 try
                 {
                     string msg = e.TryGetWebMessageAsString();
-                    if (msg == "FUSION_FULLSCREEN") BeginInvoke((Action)ToggleFullscreen);
+                    if (msg == "FUSION_HOST_FULLSCREEN") BeginInvoke((Action)ToggleHostFullscreen);
                 }
                 catch { }
             };
         }
 
-        private void ToggleFullscreen()
+        private void ApplyWebViewBrowserShortcuts(FusionAppWindow app)
+        {
+            WebView2 webView = app.WebView;
+            if (webView == null || webView.CoreWebView2 == null) return;
+            try
+            {
+                var s = webView.CoreWebView2.Settings;
+                s.AreDevToolsEnabled = true;                 // F12 DevTools
+                s.IsZoomControlEnabled = true;               // Ctrl+wheel zoom
+                s.AreBrowserAcceleratorKeysEnabled = true;   // Ctrl +/-/0 zoom, F12, etc.
+                webView.ZoomFactor = app.ZoomFactor;
+            }
+            catch { }
+
+            try
+            {
+                webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
+                    "document.addEventListener('keydown',function(e){if(e.key==='F11'||e.key==='F5'||e.key==='F12'||(e.ctrlKey&&(e.key==='+'||e.key==='='||e.key==='-'||e.key==='0'))){e.preventDefault();e.stopPropagation();try{window.chrome.webview.postMessage('FUSION_SHORTCUT:'+e.key+':'+(e.ctrlKey?'1':'0'));}catch(_){}}},true);");
+            }
+            catch { }
+
+            webView.CoreWebView2.WebMessageReceived += delegate (object sender, CoreWebView2WebMessageReceivedEventArgs e)
+            {
+                try
+                {
+                    string msg = e.TryGetWebMessageAsString();
+                    if (msg == "FUSION_FULLSCREEN")
+                    {
+                        BeginInvoke((Action)delegate { ToggleAppFullscreen(app); });
+                    }
+                    else if (msg != null && msg.StartsWith("FUSION_SHORTCUT:", StringComparison.Ordinal))
+                    {
+                        BeginInvoke((Action)delegate
+                        {
+                            SetActiveApp(app);
+                            string[] parts = msg.Split(':');
+                            if (parts.Length >= 3)
+                            {
+                                bool ctrl = parts[2] == "1";
+                                string key = parts[1];
+                                if (key == "F5") RefreshApp(app);
+                                else if (key == "F11") ToggleAppFullscreen(app);
+                                else if (key == "F12") OpenDevTools(app);
+                                else if (ctrl && (key == "+" || key == "=")) SetAppZoom(app, app.ZoomFactor + AppZoomStep);
+                                else if (ctrl && key == "-") SetAppZoom(app, app.ZoomFactor - AppZoomStep);
+                                else if (ctrl && key == "0") SetAppZoom(app, 1.0);
+                            }
+                        });
+                    }
+                }
+                catch { }
+            };
+        }
+
+        private void ToggleHostFullscreen()
         {
             if (!isFullscreen)
             {
@@ -1719,11 +2421,32 @@ namespace WindowsFormsApp1
 
         private void CloseWindow(Control win)
         {
-            var task = win.Tag as Button;
+            FusionAppWindow app;
+            appWindows.TryGetValue(win, out app);
+            if (app != null && app.IsFullscreen)
+            {
+                SetShellChromeVisible(true);
+            }
+
+            if (app != null && app.ExternalProcess != null && !app.ExternalProcess.HasExited)
+            {
+                try
+                {
+                    app.ExternalProcess.CloseMainWindow();
+                }
+                catch { }
+            }
+
+            var task = app == null ? win.Tag as Button : app.TaskButton;
             if (task != null)
             {
                 taskButtons.Controls.Remove(task);
                 task.Dispose();
+            }
+            if (app != null)
+            {
+                appWindows.Remove(win);
+                if (object.ReferenceEquals(activeApp, app)) activeApp = null;
             }
             openWindows.Remove(win);
             desktop.Controls.Remove(win);
@@ -2284,6 +3007,28 @@ namespace WindowsFormsApp1
         }
 
         public string NodeKey { get; private set; }
+    }
+
+    public sealed class FusionAppWindow
+    {
+        public string Title { get; set; }
+        public string Kind { get; set; }
+        public Control Window { get; set; }
+        public Panel Header { get; set; }
+        public Label TitleLabel { get; set; }
+        public Button TaskButton { get; set; }
+        public Button MaximizeButton { get; set; }
+        public Button FullscreenButton { get; set; }
+        public WebView2 WebView { get; set; }
+        public Process ExternalProcess { get; set; }
+        public string ExternalPath { get; set; }
+        public Color AccentColor { get; set; }
+        public Rectangle RestoreBounds { get; set; }
+        public double ZoomFactor { get; set; }
+        public bool IsMinimized { get; set; }
+        public bool IsMaximized { get; set; }
+        public bool IsFullscreen { get; set; }
+        public bool WasMaximizedBeforeFullscreen { get; set; }
     }
 
     public sealed class DesktopShortcutInfo

@@ -35,7 +35,7 @@ export default function App() {
   const [mode, setMode] = useState<SceneMode>("overview");
   const [menuCategory, setMenuCategory] = useState<CatalogCategory>(catalogById[initialId]?.category ?? "planet");
   const [infoTab, setInfoTab] = useState<InfoTab>("summary");
-  const [performanceMode, setPerformanceMode] = useState<PerformanceMode>("high");
+  const [performanceMode, setPerformanceMode] = useState<PerformanceMode>("auto");
   const [gestureEnabled, setGestureEnabled] = useState(hostMode);
   const [bloomEnabled, setBloomEnabled] = useState(true);
   const [orbitLinesEnabled, setOrbitLinesEnabled] = useState(true);
@@ -198,6 +198,11 @@ export default function App() {
           case "closedFist":
             exitEarthExplore();
             return;
+          case "number":
+            setEarthExplore(false);
+            selectEntry(numberGestureMap[event.value]);
+            controlsRef.current.lastGestureLabel = `數字 ${event.value}`;
+            return;
         }
         return;
       }
@@ -224,9 +229,19 @@ export default function App() {
         case "closedFist":
           exitCore();
           return;
+        case "number":
+          {
+            const targetId = numberGestureMap[event.value];
+            const target = catalogById[targetId];
+            selectEntry(targetId);
+            setMode("focus");
+            controlsRef.current.lastGestureLabel = `數字 ${event.value}`;
+            setNotice(target ? `切換到 ${target.name}` : `數字 ${event.value}`);
+          }
+          return;
       }
     },
-    [earthExplore, enterCore, exitCore, exitEarthExplore, navigateCategory, navigateObject]
+    [earthExplore, enterCore, exitCore, exitEarthExplore, navigateCategory, navigateObject, selectEntry]
   );
 
   useEffect(() => {
@@ -261,10 +276,10 @@ export default function App() {
 
   useEffect(() => {
     if (mode !== "inner") {
-      const id = window.setInterval(() => setCoreLevel((value) => Math.max(0, value - 0.045)), 30);
+    const id = window.setInterval(() => setCoreLevel((value) => Math.max(0, value - 0.065)), 50);
       return () => window.clearInterval(id);
     }
-    const id = window.setInterval(() => setCoreLevel((value) => Math.min(1, value + 0.018)), 30);
+    const id = window.setInterval(() => setCoreLevel((value) => Math.min(1, value + 0.034)), 50);
     return () => window.clearInterval(id);
   }, [mode]);
 
@@ -329,10 +344,10 @@ export default function App() {
       }}
     >
       <div className="scene-layer">
-        <Canvas camera={{ fov: 52, near: 0.05, far: 200, position: [0, 7, 24] }} dpr={[1, 1.7]} gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}>
+        <Canvas camera={{ fov: 52, near: 0.05, far: 200, position: [0, 7, 24] }} dpr={[1, 1.35]} gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}>
           <Suspense fallback={null}>
             <color attach="background" args={["#030611"]} />
-            <CosmicBackdrop controlsRef={controlsRef} density={performanceMode === "low" ? 0.4 : performanceMode === "medium" ? 0.7 : 1} />
+            <CosmicBackdrop controlsRef={controlsRef} density={backgroundDensity(performanceMode)} />
             {earthExplore ? (
               <EarthExploreScene controlsRef={controlsRef} particleScale={particleScale} bloomEnabled={bloomEnabled} onRegion={setEarthRegionId} />
             ) : isSolar ? (
@@ -423,6 +438,13 @@ function modeLabel(mode: SceneMode): string {
   if (mode === "overview") return "總覽模式";
   if (mode === "focus") return "聚焦模式";
   return "內部核心模式";
+}
+
+function backgroundDensity(mode: PerformanceMode): number {
+  if (mode === "low") return 0.18;
+  if (mode === "medium") return 0.42;
+  if (mode === "high") return 0.72;
+  return 0.5;
 }
 
 function clamp(value: number, min: number, max: number): number {

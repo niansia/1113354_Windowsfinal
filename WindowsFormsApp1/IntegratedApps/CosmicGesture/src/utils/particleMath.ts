@@ -23,14 +23,14 @@ export interface RingGeometryData {
 }
 
 export function performanceScale(mode: PerformanceMode): number {
-  if (mode === "low") return 0.38;
-  if (mode === "medium") return 0.66;
-  if (mode === "high") return 1;
+  if (mode === "low") return 0.26;
+  if (mode === "medium") return 0.5;
+  if (mode === "high") return 0.82;
   const cores = navigator.hardwareConcurrency || 6;
   const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory || 8;
-  if (cores >= 8 && memory >= 8) return 0.9;
-  if (cores >= 4) return 0.66;
-  return 0.42;
+  if (cores >= 8 && memory >= 8) return 0.62;
+  if (cores >= 4) return 0.46;
+  return 0.3;
 }
 
 export function createBodyParticles(body: CelestialBodyData, scale: number): ParticleGeometryData {
