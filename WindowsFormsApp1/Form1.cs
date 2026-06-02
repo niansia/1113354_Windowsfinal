@@ -1141,7 +1141,7 @@ namespace WindowsFormsApp1
                     Debug.WriteLine("[FusionOS NativeCameraSmokeTest Result] " + message);
                 }
 
-                if (string.IsNullOrEmpty(message)) message = e.TryGetWebMessageAsString();
+                if (string.IsNullOrEmpty(message)) message = TryReadStringWebMessage(e);
                 if (string.IsNullOrEmpty(message)) return;
 
                 string lower = message.ToLower();
@@ -2662,6 +2662,29 @@ namespace WindowsFormsApp1
         // Ctrl+wheel) and F12 DevTools are handled natively by WebView2's built-in
         // browser accelerator keys; F11 fullscreen is handled by a tiny injected
         // keydown listener that posts a message back to the host Form.
+        private static string TryReadStringWebMessage(CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            if (e == null) return null;
+
+            string json = null;
+            try { json = e.WebMessageAsJson; }
+            catch { return null; }
+
+            if (string.IsNullOrEmpty(json) || json.Length < 2 || json[0] != '"' || json[json.Length - 1] != '"')
+            {
+                return null;
+            }
+
+            string value = json.Substring(1, json.Length - 2);
+            return value
+                .Replace("\\\"", "\"")
+                .Replace("\\\\", "\\")
+                .Replace("\\/", "/")
+                .Replace("\\n", "\n")
+                .Replace("\\r", "\r")
+                .Replace("\\t", "\t");
+        }
+
         private void ApplyWebViewBrowserShortcuts(WebView2 webView)
         {
             if (webView == null || webView.CoreWebView2 == null) return;
@@ -2685,7 +2708,7 @@ namespace WindowsFormsApp1
             {
                 try
                 {
-                    string msg = e.TryGetWebMessageAsString();
+                    string msg = TryReadStringWebMessage(e);
                     if (msg == "FUSION_HOST_FULLSCREEN") BeginInvoke((Action)ToggleHostFullscreen);
                 }
                 catch { }
@@ -2717,7 +2740,7 @@ namespace WindowsFormsApp1
             {
                 try
                 {
-                    string msg = e.TryGetWebMessageAsString();
+                    string msg = TryReadStringWebMessage(e);
                     if (msg == "FUSION_FULLSCREEN")
                     {
                         BeginInvoke((Action)delegate { ToggleAppFullscreen(app); });

@@ -23,6 +23,34 @@ export type GestureStatus =
   | 'FALLBACK_MOUSE_MODE'
   | 'ERROR';
 
+let mediaPipeLoadPromise: Promise<void> | null = null;
+
+function loadScriptOnce(src: string, id: string): Promise<void> {
+  const existing = document.getElementById(id) as HTMLScriptElement | null;
+  if (existing?.dataset.loaded === 'true') return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    const script = existing ?? document.createElement('script');
+    script.id = id;
+    script.src = src;
+    script.async = true;
+    script.onload = () => {
+      script.dataset.loaded = 'true';
+      resolve();
+    };
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    if (!existing) document.head.appendChild(script);
+  });
+}
+
+function ensureMediaPipeScripts(): Promise<void> {
+  if (!mediaPipeLoadPromise) {
+    mediaPipeLoadPromise = loadScriptOnce('./mediapipe/hands/hands.js', 'fusion-mediapipe-hands')
+      .then(() => loadScriptOnce('./mediapipe/hands/camera_utils.js', 'fusion-mediapipe-camera-utils'));
+  }
+  return mediaPipeLoadPromise;
+}
+
 export interface GestureData {
   status: GestureStatus;
   gestureType: GestureType;
@@ -1039,6 +1067,7 @@ export const useHandGesture = (
     if (!video || video.readyState < 2) return;
     try {
       updateDebug({ mediapipeStatus: 'LOADING', reason: 'INIT_MEDIAPIPE' });
+      await ensureMediaPipeScripts();
       // @ts-ignore
       const { Hands, Camera } = window;
       if (!Hands || !Camera) throw new Error('MediaPipe scripts not found');

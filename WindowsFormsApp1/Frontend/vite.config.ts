@@ -8,6 +8,18 @@ export default defineConfig({
   build: {
     outDir: '../dist',
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (/[\\/]node_modules[\\/](react|react-dom)[\\/]/.test(id)) return 'vendor-react';
+          if (/[\\/]node_modules[\\/](three|@react-three|postprocessing)[\\/]/.test(id)) return 'vendor-three';
+          if (/[\\/]node_modules[\\/](lucide-react|framer-motion)[\\/]/.test(id)) return 'vendor-ui';
+          return 'vendor';
+        }
+      }
+    }
   },
   resolve: {
     alias: {

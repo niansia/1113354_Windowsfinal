@@ -105,9 +105,9 @@ function buildTasks(): BootTask[] {
     { id: 'piano', label: '鋼琴引擎預備', phase: 'runtime', weight: 1, minMs: 900, timeoutMs: 4000, run: async () => { fusionRuntimeCache.pianoManifest = buildPianoManifest(); return `${fusionRuntimeCache.pianoManifest.keys}-key mapping`; } },
     { id: 'preload-apps', label: '預載常用 App metadata', phase: 'runtime', weight: 1, minMs: 240, timeoutMs: 3000, run: preloadCommonApps },
     { id: 'bridge', label: 'WebView 橋接與快捷鍵', phase: 'runtime', weight: 1, minMs: 600, timeoutMs: 3000, run: async () => { const ok = typeof (window as unknown as { chrome?: { webview?: unknown } }).chrome?.webview !== 'undefined'; return ok ? 'Bridge linked' : 'Bridge (console fallback)'; } },
-    { id: 'apod', label: 'NASA 影像背景預熱', phase: 'runtime', weight: 1, minMs: 400, timeoutMs: 3500, optional: true, run: async () => {
+    { id: 'apod', label: 'NASA 影像背景預熱', phase: 'runtime', weight: 1, minMs: 140, timeoutMs: 1200, optional: true, run: async () => {
         const ctrl = new AbortController();
-        const t = window.setTimeout(() => ctrl.abort(), 3000);
+        const t = window.setTimeout(() => ctrl.abort(), 1000);
         try { fusionRuntimeCache.apod = await warmApod(ctrl.signal); return 'NASA APOD cached'; }
         finally { window.clearTimeout(t); }
       } },

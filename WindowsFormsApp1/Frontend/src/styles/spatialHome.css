@@ -53,7 +53,7 @@
   top: clamp(20px, 3vh, 34px);
   left: clamp(20px, 3vw, 48px);
   right: clamp(20px, 3vw, 34px);
-  bottom: clamp(104px, 12vh, 130px);
+  bottom: 144px;
   display: grid;
   grid-template-columns: minmax(210px, 240px) minmax(420px, 1fr) minmax(280px, 350px);
   gap: clamp(16px, 2vw, 24px);
@@ -256,7 +256,7 @@
 .fusion-main-panel {
   min-width: 0;
   display: grid;
-  grid-template-rows: minmax(300px, 1.1fr) minmax(180px, 0.85fr);
+  grid-template-rows: minmax(280px, 0.95fr) minmax(168px, 0.7fr);
   gap: clamp(16px, 2vw, 24px);
 }
 
@@ -289,19 +289,27 @@
 
 .fusion-hero-copy h1 {
   margin: 12px 0 0;
-  font-size: clamp(46px, 6vw, 82px);
-  line-height: 0.95;
-  letter-spacing: 10px;
+  font-size: 54px;
+  line-height: 1.02;
+  letter-spacing: 0;
   font-weight: 900;
   color: #ffffff;
   text-shadow: 0 0 28px rgba(108, 230, 255, 0.38);
+}
+
+.fusion-hero-copy h1 span {
+  display: inline;
+}
+
+.fusion-hero-copy h1 span + span {
+  margin-left: 0.18em;
 }
 
 .fusion-hero-copy p {
   margin: 18px 0 0;
   max-width: 660px;
   color: rgba(218, 231, 255, 0.70);
-  font-size: clamp(15px, 1.35vw, 18px);
+  font-size: 16px;
   line-height: 1.75;
 }
 
@@ -337,7 +345,7 @@
 .fusion-liquid-core {
   position: relative;
   z-index: 2;
-  min-height: 280px;
+  min-height: 300px;
   display: grid;
   place-items: center;
   filter:
@@ -396,7 +404,7 @@
   place-items: center;
   padding-inline: 12px;
   color: #ffffff;
-  font-size: clamp(22px, 3.1vw, 40px);
+  font-size: 36px;
   font-weight: 900;
   letter-spacing: 2px;
   background: rgba(4, 8, 20, 0.44);
@@ -543,7 +551,7 @@
 .fusion-widget-column {
   min-height: 0;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: clamp(14px, 1.6vw, 18px);
 }
 
@@ -555,7 +563,7 @@
 
 .time-widget strong {
   display: block;
-  font-size: clamp(34px, 4.5vw, 54px);
+  font-size: 48px;
   line-height: 1;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
@@ -750,6 +758,10 @@
   .fusion-liquid-core {
     min-height: 190px;
   }
+
+  .fusion-hero-copy h1 {
+    font-size: 44px;
+  }
 }
 
 @media (max-width: 980px) {
@@ -786,5 +798,235 @@
   .fusion-hero-actions button,
   .fusion-widget button {
     transition: none;
+  }
+}
+
+/* ---- HeroEnergyCore: small live WebGL ring + glyph ---- */
+.hero-core-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 260px;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-core-canvas {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+.hero-core-glow {
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(103, 232, 255, 0.2), transparent 42%),
+    radial-gradient(circle at 64% 62%, color-mix(in srgb, var(--accent, #9c7cff) 24%, transparent), transparent 58%);
+  filter: blur(34px);
+  pointer-events: none;
+}
+.hero-core-label {
+  position: relative;
+  z-index: 2;
+  padding: 18px 28px;
+  border-radius: 18px;
+  font-size: 68px;
+  font-weight: 200;
+  letter-spacing: 0;
+  color: white;
+  background: linear-gradient(180deg, rgba(15, 22, 40, 0.4), rgba(8, 12, 26, 0.5));
+  border: 1px solid color-mix(in srgb, var(--accent, #5cd7ff) 35%, transparent);
+  backdrop-filter: blur(6px);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--accent, #5cd7ff) 60%, transparent);
+}
+
+.fusion-stage,
+.fusion-stage * {
+  letter-spacing: 0 !important;
+}
+
+/* ==================================================================
+   LIQUID GLASS REFINEMENT LAYER  ·  iOS-style frosted / refractive glass
+   Appended last so single-class selectors win on equal specificity.
+   Goal: deeper stage, real specular rim highlights, blur+saturate
+   refraction, fine grain, and a richer hero core base glow.
+   ================================================================== */
+
+/* deeper stage + soft central glow column behind the hero */
+.fusion-os-home {
+  background:
+    radial-gradient(122% 90% at 62% 24%, rgba(86, 150, 255, 0.17), transparent 46%),
+    radial-gradient(92% 82% at 84% 66%, rgba(178, 92, 255, 0.12), transparent 44%),
+    radial-gradient(80% 80% at 14% 92%, rgba(42, 214, 210, 0.10), transparent 40%),
+    linear-gradient(180deg, #05080f 0%, #03050c 56%, #010308 100%);
+}
+
+/* fine film grain — kills gradient banding, adds a premium texture.
+   Sits above the background but BEHIND the glass shell (z-index 2 < shell 3). */
+.fusion-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+}
+
+/* ---- shared liquid-glass surface ---- */
+/* NOTE: .fusion-running-section, .fusion-module-card and .fusion-dock are
+   intentionally left out — that lower app/dock area keeps its ORIGINAL styling
+   (base rules above). Only the hero, sidebar and right-hand widgets get the
+   upgraded liquid-glass treatment. */
+.fusion-side-panel,
+.fusion-hero-card,
+.fusion-widget {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(150deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.045) 24%, rgba(255, 255, 255, 0) 50%),
+    radial-gradient(130% 92% at 50% -16%, rgba(126, 206, 255, 0.12), transparent 60%),
+    linear-gradient(180deg, rgba(24, 34, 66, 0.40), rgba(8, 12, 28, 0.32));
+  -webkit-backdrop-filter: blur(30px) saturate(175%);
+  backdrop-filter: blur(30px) saturate(175%);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.34),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 -28px 56px -26px rgba(3, 6, 18, 0.58),
+    0 30px 80px -28px rgba(0, 0, 0, 0.66),
+    0 8px 26px -14px rgba(0, 0, 0, 0.48);
+}
+
+/* static panels need a positioning context for the sheen pseudo-element
+   (hero-card is already relative, dock is already absolute) */
+.fusion-side-panel,
+.fusion-widget {
+  position: relative;
+}
+
+/* curved top sheen — Apple's signature bright glass edge */
+.fusion-side-panel::before,
+.fusion-widget::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 20%);
+  opacity: 0.85;
+}
+
+/* keep panel content above the sheen layer */
+.fusion-side-panel > *,
+.fusion-widget > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- hero card: brighter glass + animated specular sweep ---- */
+.fusion-hero-card {
+  border-color: color-mix(in srgb, var(--app-color, #60e7ff) 30%, rgba(255, 255, 255, 0.14));
+}
+
+.fusion-hero-card::before {
+  background:
+    radial-gradient(82% 62% at 72% 38%, color-mix(in srgb, var(--app-color, #60e7ff) 18%, transparent), transparent 60%),
+    linear-gradient(158deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 36%);
+  opacity: 1;
+}
+
+.fusion-hero-card::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -30%;
+  width: 46%;
+  height: 220%;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12) 50%, transparent);
+  filter: blur(7px);
+  transform: translateX(-40%) rotate(18deg);
+  animation: heroSheen 9s ease-in-out infinite;
+}
+
+@keyframes heroSheen {
+  0%, 16% { transform: translateX(-40%) rotate(18deg); opacity: 0; }
+  26% { opacity: 0.9; }
+  48%, 100% { transform: translateX(360%) rotate(18deg); opacity: 0; }
+}
+
+/* ---- glassy buttons (hero + right-hand widgets only) ---- */
+.fusion-hero-actions button,
+.fusion-widget button {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04) 62%),
+    linear-gradient(90deg, rgba(89, 213, 255, 0.22), rgba(150, 120, 255, 0.22));
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  backdrop-filter: blur(12px) saturate(160%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 10px 24px -12px rgba(0, 0, 0, 0.5);
+}
+
+.fusion-hero-actions button:first-child {
+  background:
+    linear-gradient(180deg, rgba(170, 235, 255, 0.36), rgba(140, 130, 255, 0.34)),
+    linear-gradient(90deg, rgba(120, 220, 255, 0.3), rgba(170, 130, 255, 0.3));
+  border-color: rgba(190, 240, 255, 0.5);
+}
+
+.fusion-quick-toggles button {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* ---- brand orb + user ring: glossier ---- */
+.fusion-side-orb {
+  box-shadow:
+    0 0 26px rgba(111, 231, 255, 0.6),
+    inset 0 0 20px rgba(255, 255, 255, 0.22),
+    inset -6px -8px 16px rgba(19, 11, 50, 0.7);
+}
+
+/* ---- hero core base glow + reflected floor (matches reference art) ---- */
+.fusion-liquid-core {
+  filter:
+    drop-shadow(0 0 30px rgba(95, 220, 255, 0.34))
+    drop-shadow(0 16px 72px rgba(170, 100, 255, 0.3));
+}
+
+.hero-core-glow {
+  filter: blur(40px);
+  background:
+    radial-gradient(circle at 38% 32%, rgba(120, 236, 255, 0.26), transparent 44%),
+    radial-gradient(circle at 64% 64%, color-mix(in srgb, var(--accent, #9c7cff) 30%, transparent), transparent 60%);
+}
+
+.hero-core-floor {
+  position: absolute;
+  left: 50%;
+  bottom: 3%;
+  width: 66%;
+  height: 26%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(150, 110, 255, 0.5), rgba(110, 90, 255, 0.18) 42%, transparent 72%);
+  filter: blur(28px);
+  opacity: 0.85;
+  animation: liquidPulse 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fusion-hero-card::after,
+  .hero-core-floor {
+    animation: none;
   }
 }
