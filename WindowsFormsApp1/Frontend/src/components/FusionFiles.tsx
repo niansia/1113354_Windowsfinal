@@ -19,6 +19,7 @@ import {
   X,
   type LucideIcon
 } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 interface FusionFilesProps {
   open: boolean;
@@ -95,6 +96,7 @@ function iconFor(name: string, isDir: boolean): LucideIcon {
 const supportsFSA = typeof window !== 'undefined' && typeof (window as any).showDirectoryPicker === 'function';
 
 export const FusionFiles: React.FC<FusionFilesProps> = ({ open, onClose, accent }) => {
+  const { t, tf } = useI18n();
   const [mode, setMode] = useState<'virtual' | 'real'>('virtual');
   const [vstack, setVstack] = useState<VNode[]>([VIRTUAL_ROOT]);
   const [rstack, setRstack] = useState<any[]>([]);
@@ -251,58 +253,58 @@ export const FusionFiles: React.FC<FusionFilesProps> = ({ open, onClose, accent 
             <header className="set-topbar">
               <div className="set-title">
                 <FolderOpen size={20} strokeWidth={1.9} />
-                <span>專案檔案</span>
+                <span>{t('專案檔案')}</span>
               </div>
-              <button type="button" className="files-open-btn" onClick={pickRealFolder} disabled={!supportsFSA} title={supportsFSA ? '瀏覽本機真實資料夾' : '此環境不支援'}>
-                <FolderOpen size={15} /> 開啟本機資料夾
+              <button type="button" className="files-open-btn" onClick={pickRealFolder} disabled={!supportsFSA} title={supportsFSA ? t('瀏覽本機真實資料夾') : t('此環境不支援')}>
+                <FolderOpen size={15} /> {t('開啟本機資料夾')}
               </button>
-              <button type="button" className="set-close" onClick={onClose} title="關閉">
+              <button type="button" className="set-close" onClick={onClose} title={t('關閉')}>
                 <X size={18} />
               </button>
             </header>
 
             <div className="files-body">
               <nav className="files-side">
-                <span className="files-side-label">快速存取</span>
+                <span className="files-side-label">{t('快速存取')}</span>
                 {sideItems.map((it) => {
                   const Icon = it.icon;
                   return (
                     <button key={it.label} type="button" className={it.active ? 'active' : ''} onClick={it.onClick}>
                       <Icon size={18} strokeWidth={1.8} />
-                      <span>{it.label}</span>
+                      <span>{t(it.label)}</span>
                     </button>
                   );
                 })}
                 {mode === 'real' && (
                   <button type="button" className="active">
                     <HardDrive size={18} strokeWidth={1.8} />
-                    <span>{rstack[0]?.name ?? '本機資料夾'}</span>
+                    <span>{rstack[0]?.name ?? t('本機資料夾')}</span>
                   </button>
                 )}
               </nav>
 
               <div className="files-main">
                 <div className="files-toolbar">
-                  <button type="button" className="files-back" onClick={goBack} disabled={crumbs.length <= 1 && mode === 'virtual'} title="返回">
+                  <button type="button" className="files-back" onClick={goBack} disabled={crumbs.length <= 1 && mode === 'virtual'} title={t('返回')}>
                     <ArrowLeft size={18} />
                   </button>
                   <div className="files-crumbs">
                     {crumbs.map((c, i) => (
                       <span key={`${c}-${i}`} className="files-crumb">
-                        <button type="button" onClick={() => goCrumb(i)}>{c}</button>
+                        <button type="button" onClick={() => goCrumb(i)}>{t(c)}</button>
                         {i < crumbs.length - 1 && <ChevronRight size={14} />}
                       </span>
                     ))}
                   </div>
                   <div className="files-tools">
-                    <button type="button" className={view === 'grid' ? 'active' : ''} onClick={() => setView('grid')} title="格狀檢視">
+                    <button type="button" className={view === 'grid' ? 'active' : ''} onClick={() => setView('grid')} title={t('格狀檢視')}>
                       <LayoutGrid size={17} />
                     </button>
-                    <button type="button" className={view === 'list' ? 'active' : ''} onClick={() => setView('list')} title="清單檢視">
+                    <button type="button" className={view === 'list' ? 'active' : ''} onClick={() => setView('list')} title={t('清單檢視')}>
                       <ListIcon size={17} />
                     </button>
                     {mode === 'real' && (
-                      <button type="button" onClick={() => setRstack((p) => [...p])} title="重新整理">
+                      <button type="button" onClick={() => setRstack((p) => [...p])} title={t('重新整理')}>
                         <RefreshCw size={16} />
                       </button>
                     )}
@@ -310,8 +312,8 @@ export const FusionFiles: React.FC<FusionFilesProps> = ({ open, onClose, accent 
                 </div>
 
                 <div className={`files-listing ${view}`}>
-                  {loading && <div className="files-empty">讀取中…</div>}
-                  {!loading && entries.length === 0 && <div className="files-empty">此資料夾是空的</div>}
+                  {loading && <div className="files-empty">{t('讀取中…')}</div>}
+                  {!loading && entries.length === 0 && <div className="files-empty">{t('此資料夾是空的')}</div>}
                   {!loading &&
                     entries.map((entry) => {
                       const Icon = iconFor(entry.name, entry.isDir);
@@ -326,16 +328,16 @@ export const FusionFiles: React.FC<FusionFilesProps> = ({ open, onClose, accent 
                           <span className="files-item-icon">
                             <Icon size={view === 'grid' ? 30 : 20} strokeWidth={1.7} />
                           </span>
-                          <span className="files-item-name">{entry.name}</span>
-                          <span className="files-item-meta">{entry.isDir ? '資料夾' : formatSize(entry.size)}</span>
+                          <span className="files-item-name">{t(entry.name)}</span>
+                          <span className="files-item-meta">{entry.isDir ? t('資料夾') : formatSize(entry.size)}</span>
                         </button>
                       );
                     })}
                 </div>
 
                 <div className="files-statusbar">
-                  <span>{entries.length} 個項目{selectedEntry ? ` · 已選取「${selectedEntry.name}」` : ''}</span>
-                  <span>{mode === 'real' ? '本機資料夾（真實）' : '範例專案（虛擬）'}{!supportsFSA && mode === 'virtual' ? ' · 此環境不支援開啟真實資料夾' : ''}</span>
+                  <span>{tf('{0} 個項目', entries.length)}{selectedEntry ? ` · ${tf('已選取「{0}」', selectedEntry.name)}` : ''}</span>
+                  <span>{mode === 'real' ? t('本機資料夾（真實）') : t('範例專案（虛擬）')}{!supportsFSA && mode === 'virtual' ? ` · ${t('此環境不支援開啟真實資料夾')}` : ''}</span>
                 </div>
               </div>
             </div>

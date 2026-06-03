@@ -349,16 +349,16 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
   const [active, setActive] = useState<CatId>('system');
   const [query, setQuery] = useState('');
   const sys = useSystemInfo();
-  const { t } = useI18n();
+  const { t, tf } = useI18n();
   const account = useAccount();
 
   const storageText = sys.storage
-    ? `已使用 ${sys.storage.usedGB.toFixed(1)} GB／可用約 ${sys.storage.totalGB.toFixed(0)} GB`
-    : '計算中…';
+    ? tf('已使用 {0} GB／可用約 {1} GB', sys.storage.usedGB.toFixed(1), sys.storage.totalGB.toFixed(0))
+    : t('計算中…');
   const audioOptions = sys.audioOutputs.length
     ? sys.audioOutputs.map((label, i) => ({ value: label || `device-${i}`, label }))
     : [
-        { value: 'fusion-speakers', label: '預設輸出裝置' }
+        { value: 'fusion-speakers', label: t('預設輸出裝置') }
       ];
 
   // Close on Escape (capture so it doesn't reach the desktop shortcut handler).
@@ -381,78 +381,78 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
       case 'system':
         return (
           <>
-            <Group title="顯示器">
-              <Row icon={Sun} title="亮度" desc="調整 FusionOS 桌面的整體明暗">
+            <Group title={t('顯示器')}>
+              <Row icon={Sun} title={t('亮度')} desc={t('調整 FusionOS 桌面的整體明暗')}>
                 <Slider value={s.brightness} onChange={(v) => set('brightness', v)} min={40} max={100} />
               </Row>
-              <Row icon={Moon} title="夜間模式" desc="為桌面套上暖色濾鏡，於夜晚保護眼睛">
+              <Row icon={Moon} title={t('夜間模式')} desc={t('為桌面套上暖色濾鏡，於夜晚保護眼睛')}>
                 <Toggle on={s.nightLight} onChange={(v) => set('nightLight', v)} />
               </Row>
-              <Row icon={Monitor} title="顯示解析度" desc={`偵測到的螢幕：${sys.screen}（實體 ${sys.physical}）`} />
-              <Row icon={Monitor} title="縮放與版面配置" desc={`系統偵測 ${sys.scalePercent}% · 此處調整僅縮放 FusionOS 介面`}>
+              <Row icon={Monitor} title={t('顯示解析度')} desc={tf('偵測到的螢幕：{0}（實體 {1}）', sys.screen, sys.physical)} />
+              <Row icon={Monitor} title={t('縮放與版面配置')} desc={tf('系統偵測 {0}% · 此處調整僅縮放 FusionOS 介面', sys.scalePercent)}>
                 <Picker
                   value={s.scale}
                   onChange={(v) => set('scale', v)}
                   options={[
                     { value: '90%', label: '90%' },
-                    { value: '100%', label: '100%（建議）' },
+                    { value: '100%', label: t('100%（建議）') },
                     { value: '110%', label: '110%' }
                   ]}
                 />
               </Row>
             </Group>
 
-            <Group title="音效">
-              <Row icon={Volume2} title="主音量" desc="FusionOS 介面音量（不影響系統音量）">
+            <Group title={t('音效')}>
+              <Row icon={Volume2} title={t('主音量')} desc={t('FusionOS 介面音量（不影響系統音量）')}>
                 <Slider value={s.muted ? 0 : s.volume} onChange={(v) => set('volume', v)} />
               </Row>
-              <Row icon={Volume2} title="靜音">
+              <Row icon={Volume2} title={t('靜音')}>
                 <Toggle on={s.muted} onChange={(v) => set('muted', v)} />
               </Row>
-              <Row icon={Volume2} title="輸出裝置" desc={sys.audioOutputs.length ? '偵測自本機' : '需要相機/麥克風權限才能讀取裝置名稱'}>
+              <Row icon={Volume2} title={t('輸出裝置')} desc={sys.audioOutputs.length ? t('偵測自本機') : t('需要相機/麥克風權限才能讀取裝置名稱')}>
                 <Picker value={s.output} onChange={(v) => set('output', v)} options={audioOptions} />
               </Row>
             </Group>
 
-            <Group title="電源與電池">
+            <Group title={t('電源與電池')}>
               <Row
                 icon={Battery}
-                title="電池"
-                desc={sys.battery ? `${sys.battery.level}% · ${sys.battery.charging ? '充電中' : '使用電池'}` : '無電池或無法讀取'}
+                title={t('電池')}
+                desc={sys.battery ? `${sys.battery.level}% · ${sys.battery.charging ? t('充電中') : t('使用電池')}` : t('無電池或無法讀取')}
               />
-              <Row icon={Battery} title="電源模式" desc="在效能與續航之間取得平衡">
+              <Row icon={Battery} title={t('電源模式')} desc={t('在效能與續航之間取得平衡')}>
                 <Picker
                   value={s.powerMode}
                   onChange={(v) => set('powerMode', v)}
                   options={[
-                    { value: 'saver', label: '省電' },
-                    { value: 'balanced', label: '平衡' },
-                    { value: 'performance', label: '最佳效能' }
+                    { value: 'saver', label: t('省電') },
+                    { value: 'balanced', label: t('平衡') },
+                    { value: 'performance', label: t('最佳效能') }
                   ]}
                 />
               </Row>
-              <Row icon={Monitor} title="閒置後關閉螢幕">
+              <Row icon={Monitor} title={t('閒置後關閉螢幕')}>
                 <Picker
                   value={s.screenOff}
                   onChange={(v) => set('screenOff', v)}
                   options={[
-                    { value: '5', label: '5 分鐘' },
-                    { value: '10', label: '10 分鐘' },
-                    { value: '30', label: '30 分鐘' },
-                    { value: 'never', label: '永不' }
+                    { value: '5', label: t('5 分鐘') },
+                    { value: '10', label: t('10 分鐘') },
+                    { value: '30', label: t('30 分鐘') },
+                    { value: 'never', label: t('永不') }
                   ]}
                 />
               </Row>
             </Group>
 
-            <Group title="關於（即時偵測自你的電腦）">
-              <Row icon={Info} title="作業系統" desc={`${sys.os} · ${sys.browser}`} />
-              <Row icon={Cpu} title="裝置" desc={`${sys.device}${sys.arch ? ` · ${sys.arch}` : ''}`} />
-              <Row icon={Cpu} title="處理器" desc={sys.cores ? `${sys.cores} 個邏輯核心` : '無法讀取'} />
-              <Row icon={Cpu} title="記憶體" desc={sys.memoryGB ? `約 ${sys.memoryGB} GB（瀏覽器回報）` : '無法讀取'} />
-              <Row icon={Monitor} title="螢幕" desc={`${sys.screen} · 縮放 ${sys.scalePercent}%`} />
-              <Row icon={HardDrive} title="儲存空間（估計）" desc={storageText} />
-              <Row icon={Languages} title="系統語言" desc={sys.language} />
+            <Group title={t('關於（即時偵測自你的電腦）')}>
+              <Row icon={Info} title={t('作業系統')} desc={`${sys.os} · ${sys.browser}`} />
+              <Row icon={Cpu} title={t('裝置')} desc={`${sys.device}${sys.arch ? ` · ${sys.arch}` : ''}`} />
+              <Row icon={Cpu} title={t('處理器')} desc={sys.cores ? tf('{0} 個邏輯核心', sys.cores) : t('無法讀取')} />
+              <Row icon={Cpu} title={t('記憶體')} desc={sys.memoryGB ? tf('約 {0} GB（瀏覽器回報）', sys.memoryGB) : t('無法讀取')} />
+              <Row icon={Monitor} title={t('螢幕')} desc={tf('{0} · 縮放 {1}%', sys.screen, sys.scalePercent)} />
+              <Row icon={HardDrive} title={t('儲存空間（估計）')} desc={storageText} />
+              <Row icon={Languages} title={t('系統語言')} desc={sys.language} />
             </Group>
           </>
         );
@@ -460,16 +460,16 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
       case 'devices':
         return (
           <>
-            <Group title="藍牙">
-              <Row icon={Bluetooth} title="藍牙" desc={s.bluetooth ? '可被探索為「LAPTOP-FUSION」' : '已關閉'}>
+            <Group title={t('藍牙與裝置')}>
+              <Row icon={Bluetooth} title="Bluetooth" desc={s.bluetooth ? t('可被探索為「LAPTOP-FUSION」') : t('已關閉')}>
                 <Toggle on={s.bluetooth} onChange={(v) => set('bluetooth', v)} />
               </Row>
             </Group>
-            <Group title="裝置">
-              <Row icon={MousePointer2} title="Cobra Pro" desc={s.bluetooth ? '已連線 · 電量 86%' : '未連線'} chevron />
-              <Row icon={Volume2} title="HECATE G5BT" desc={s.bluetooth ? '已連線' : '未連線'} chevron />
-              <Row icon={Monitor} title="ROG 外接螢幕" desc="已連線 · HDMI" chevron />
-              <Row icon={Bluetooth} title="新增裝置" desc="配對新的藍牙或無線裝置" onClick={() => undefined} chevron />
+            <Group title={t('裝置')}>
+              <Row icon={MousePointer2} title="Cobra Pro" desc={s.bluetooth ? t('已連線 · 電量 86%') : t('未連線')} chevron />
+              <Row icon={Volume2} title="HECATE G5BT" desc={s.bluetooth ? t('已連線') : t('未連線')} chevron />
+              <Row icon={Monitor} title={t('ROG 外接螢幕')} desc={t('已連線 · HDMI')} chevron />
+              <Row icon={Bluetooth} title={t('新增裝置')} desc={t('配對新的藍牙或無線裝置')} onClick={() => undefined} chevron />
             </Group>
           </>
         );
@@ -477,25 +477,25 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
       case 'network':
         return (
           <>
-            <Group title="網路（即時偵測）">
+            <Group title={t('網路（即時偵測）')}>
               <Row
                 icon={Globe2}
-                title="連線狀態"
-                desc={sys.online ? `已連線上網${sys.connection ? ` · ${sys.connection.toUpperCase()}` : ''}` : '離線'}
+                title={t('連線狀態')}
+                desc={sys.online ? `${t('已連線上網')}${sys.connection ? ` · ${sys.connection.toUpperCase()}` : ''}` : t('離線')}
               />
-              <Row icon={Wifi} title="Wi-Fi" desc={s.wifi && !s.airplane ? '已啟用' : '已關閉'}>
+              <Row icon={Wifi} title="Wi-Fi" desc={s.wifi && !s.airplane ? t('已啟用') : t('已關閉')}>
                 <Toggle on={s.wifi && !s.airplane} onChange={(v) => set('wifi', v)} />
               </Row>
-              <Row icon={Plane} title="飛航模式" desc="關閉所有無線通訊（FusionOS 模擬）">
+              <Row icon={Plane} title={t('飛航模式')} desc={t('關閉所有無線通訊（FusionOS 模擬）')}>
                 <Toggle on={s.airplane} onChange={(v) => set('airplane', v)} />
               </Row>
             </Group>
-            <Group title="進階">
-              <Row icon={Globe2} title="VPN" desc="未設定" chevron />
-              <Row icon={Wifi} title="行動熱點" desc="分享此裝置的網路連線">
+            <Group title={t('進階')}>
+              <Row icon={Globe2} title="VPN" desc={t('未設定')} chevron />
+              <Row icon={Wifi} title={t('行動熱點')} desc={t('分享此裝置的網路連線')}>
                 <Toggle on={false} onChange={() => undefined} />
               </Row>
-              <Row icon={Globe2} title="Proxy 代理伺服器" chevron />
+              <Row icon={Globe2} title={t('Proxy 代理伺服器')} chevron />
             </Group>
           </>
         );
@@ -559,18 +559,18 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
       case 'apps':
         return (
           <>
-            <Group title="預設應用程式">
-              <Row icon={Globe2} title="網頁瀏覽器" desc="網頁區" chevron />
-              <Row icon={AppWindow} title="檔案總管" desc="專案檔案" chevron />
+            <Group title={t('預設應用程式')}>
+              <Row icon={Globe2} title={t('網頁瀏覽器')} desc={t('網頁區')} chevron />
+              <Row icon={AppWindow} title={t('檔案總管')} desc={t('專案檔案')} chevron />
             </Group>
-            <Group title="啟動應用程式">
-              <Row icon={Cpu} title="本機" desc="登入時自動啟動">
+            <Group title={t('啟動應用程式')}>
+              <Row icon={Cpu} title={t('本機')} desc={t('登入時自動啟動')}>
                 <Toggle on onChange={() => undefined} />
               </Row>
-              <Row icon={Bell} title="通知中心" desc="登入時自動啟動">
+              <Row icon={Bell} title={t('通知中心')} desc={t('登入時自動啟動')}>
                 <Toggle on={s.notifications} onChange={(v) => set('notifications', v)} />
               </Row>
-              <Row icon={Gamepad2} title="遊戲室" desc="登入時自動啟動">
+              <Row icon={Gamepad2} title={t('遊戲室')} desc={t('登入時自動啟動')}>
                 <Toggle on={false} onChange={() => undefined} />
               </Row>
             </Group>
@@ -614,11 +614,11 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
 
       case 'gaming':
         return (
-          <Group title="遊戲">
-            <Row icon={Gamepad2} title="遊戲模式" desc="最佳化系統資源以提升遊戲效能">
+          <Group title={t('遊戲')}>
+            <Row icon={Gamepad2} title={t('遊戲模式')} desc={t('最佳化系統資源以提升遊戲效能')}>
               <Toggle on={s.gameMode} onChange={(v) => set('gameMode', v)} />
             </Row>
-            <Row icon={Monitor} title="背景錄製" desc="自動保留最近的精彩遊戲片段">
+            <Row icon={Monitor} title={t('背景錄製')} desc={t('自動保留最近的精彩遊戲片段')}>
               <Toggle on={s.captureBg} onChange={(v) => set('captureBg', v)} />
             </Row>
           </Group>
@@ -627,16 +627,16 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
       case 'accessibility':
         return (
           <>
-            <Group title="視覺">
-              <Row icon={Accessibility} title="文字大小" desc="放大或縮小桌面介面文字">
+            <Group title={t('視覺')}>
+              <Row icon={Accessibility} title={t('文字大小')} desc={t('放大或縮小桌面介面文字')}>
                 <Slider value={s.textSize} min={85} max={130} onChange={(v) => set('textSize', v)} />
               </Row>
-              <Row icon={Sun} title="高對比" desc="提高文字與背景的對比度">
+              <Row icon={Sun} title={t('高對比')} desc={t('提高文字與背景的對比度')}>
                 <Toggle on={s.highContrast} onChange={(v) => set('highContrast', v)} />
               </Row>
             </Group>
-            <Group title="動態效果">
-              <Row icon={Accessibility} title="動畫效果" desc="關閉可降低動態與眩光">
+            <Group title={t('動態效果')}>
+              <Row icon={Accessibility} title={t('動畫效果')} desc={t('關閉可降低動態與眩光')}>
                 <Toggle on={s.animations} onChange={(v) => set('animations', v)} />
               </Row>
             </Group>
@@ -645,14 +645,14 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
 
       case 'privacy':
         return (
-          <Group title="應用程式權限">
-            <Row icon={Monitor} title="相機存取" desc="允許應用程式使用相機（手勢控制需要）">
+          <Group title={t('應用程式權限')}>
+            <Row icon={Monitor} title={t('相機存取')} desc={t('允許應用程式使用相機（手勢控制需要）')}>
               <Toggle on={s.camera} onChange={(v) => set('camera', v)} />
             </Row>
-            <Row icon={Volume2} title="麥克風" desc="允許應用程式使用麥克風">
+            <Row icon={Volume2} title={t('麥克風')} desc={t('允許應用程式使用麥克風')}>
               <Toggle on={s.microphone} onChange={(v) => set('microphone', v)} />
             </Row>
-            <Row icon={Globe2} title="位置" desc="允許應用程式存取你的位置">
+            <Row icon={Globe2} title={t('位置')} desc={t('允許應用程式存取你的位置')}>
               <Toggle on={s.location} onChange={(v) => set('location', v)} />
             </Row>
           </Group>
@@ -667,20 +667,20 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
                   <Check size={26} strokeWidth={2.4} />
                 </span>
                 <div className="set-update-text">
-                  <strong>你的系統是最新的</strong>
-                  <span>上次檢查時間：今天 09:24</span>
+                  <strong>{t('你的系統是最新的')}</strong>
+                  <span>{t('上次檢查時間：今天 09:24')}</span>
                 </div>
                 <button type="button" className="set-btn">
-                  <RefreshCw size={16} /> 檢查更新
+                  <RefreshCw size={16} /> {t('檢查更新')}
                 </button>
               </div>
             </Group>
-            <Group title="更新選項">
-              <Row icon={RefreshCw} title="自動下載並安裝更新">
+            <Group title={t('更新選項')}>
+              <Row icon={RefreshCw} title={t('自動下載並安裝更新')}>
                 <Toggle on={s.autoUpdate} onChange={(v) => set('autoUpdate', v)} />
               </Row>
-              <Row icon={Clock} title="使用中時間" desc="08:00 – 23:00 不會自動重新啟動" chevron />
-              <Row icon={Info} title="更新紀錄" chevron />
+              <Row icon={Clock} title={t('使用中時間')} desc={t('08:00 – 23:00 不會自動重新啟動')} chevron />
+              <Row icon={Info} title={t('更新紀錄')} chevron />
             </Group>
           </>
         );

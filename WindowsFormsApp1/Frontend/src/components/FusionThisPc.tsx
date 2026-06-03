@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useSystemInfo } from '../hooks/useSystemInfo';
 import { useSystemMetrics } from '../hooks/useSystemMetrics';
+import { useI18n } from '../i18n/I18nContext';
 
 // Task-Manager-style live area graph.
 function Sparkline({ values, max, color }: { values: number[]; max: number; color: string }) {
@@ -115,6 +116,7 @@ function SpecCard({
 export const FusionThisPc: React.FC<FusionThisPcProps> = ({ open, onClose, accent, onOpenFiles }) => {
   const sys = useSystemInfo();
   const metrics = useSystemMetrics(open);
+  const { t, tf } = useI18n();
 
   useEffect(() => {
     if (!open) return;
@@ -163,9 +165,9 @@ export const FusionThisPc: React.FC<FusionThisPcProps> = ({ open, onClose, accen
             <header className="set-topbar">
               <div className="set-title">
                 <Server size={20} strokeWidth={1.9} />
-                <span>本機</span>
+                <span>{t('本機')}</span>
               </div>
-              <button type="button" className="set-close" onClick={onClose} title="關閉">
+              <button type="button" className="set-close" onClick={onClose} title={t('關閉')}>
                 <X size={18} />
               </button>
             </header>
@@ -182,58 +184,58 @@ export const FusionThisPc: React.FC<FusionThisPcProps> = ({ open, onClose, accen
                   <small>{sys.arch ? `${sys.arch} · ` : ''}{sys.browser}</small>
                 </div>
                 <button type="button" className="pc-hero-action" onClick={onOpenFiles}>
-                  <Folder size={16} /> 開啟專案檔案
+                  <Folder size={16} /> {t('開啟專案檔案')}
                 </button>
               </section>
 
               {/* live specs */}
-              <h3 className="pc-section-title">系統資訊（即時偵測）</h3>
+              <h3 className="pc-section-title">{t('系統資訊（即時偵測）')}</h3>
               <div className="pc-spec-grid">
-                <SpecCard icon={Cpu} label="處理器" value={sys.cores ? `${sys.cores} 核心` : '—'} sub="邏輯處理器" />
-                <SpecCard icon={MemoryStick} label="記憶體" value={sys.memoryGB ? `${sys.memoryGB} GB` : '—'} sub="瀏覽器回報" />
-                <SpecCard icon={Monitor} label="螢幕" value={sys.screen} sub={`縮放 ${sys.scalePercent}%`} />
+                <SpecCard icon={Cpu} label={t('處理器')} value={sys.cores ? tf('{0} 核心', sys.cores) : '—'} sub={t('邏輯處理器')} />
+                <SpecCard icon={MemoryStick} label={t('記憶體')} value={sys.memoryGB ? `${sys.memoryGB} GB` : '—'} sub={t('瀏覽器回報')} />
+                <SpecCard icon={Monitor} label={t('螢幕')} value={sys.screen} sub={tf('縮放 {0}%', sys.scalePercent)} />
                 <SpecCard
                   icon={Battery}
-                  label="電池"
+                  label={t('電池')}
                   value={sys.battery ? `${sys.battery.level}%` : '—'}
-                  sub={sys.battery ? (sys.battery.charging ? '充電中' : '使用電池') : '無法讀取'}
+                  sub={sys.battery ? (sys.battery.charging ? t('充電中') : t('使用電池')) : t('無法讀取')}
                   bar={sys.battery ? sys.battery.level : undefined}
                 />
-                <SpecCard icon={Info} label="作業系統" value={sys.os} sub={sys.browser} />
+                <SpecCard icon={Info} label={t('作業系統')} value={sys.os} sub={sys.browser} />
                 <SpecCard
                   icon={sys.online ? Wifi : Globe2}
-                  label="網路"
-                  value={sys.online ? '已連線' : '離線'}
+                  label={t('網路')}
+                  value={sys.online ? t('已連線') : t('離線')}
                   sub={sys.connection ? sys.connection.toUpperCase() : '—'}
                 />
               </div>
 
               {/* live performance (Task-Manager style) */}
-              <h3 className="pc-section-title">效能（即時更新）{metrics.hasHost ? ' · 主機真實數據' : ''}</h3>
+              <h3 className="pc-section-title">{t('效能（即時更新）')}{metrics.hasHost ? ` · ${t('主機真實數據')}` : ''}</h3>
               <div className="pc-perf">
                 <PerfCard
                   icon={Cpu}
-                  label="CPU 使用率"
+                  label={t('CPU 使用率')}
                   value={metrics.cpu != null ? `${metrics.cpu.toFixed(0)}%` : '—'}
-                  sub={metrics.hasHost ? `${sys.cores ?? ''} 核心 · 即時` : '需主機支援'}
+                  sub={metrics.hasHost ? tf('{0} 核心 · 即時', sys.cores ?? '') : t('需主機支援')}
                   values={metrics.cpuHistory}
                   max={100}
                   color={accent}
                 />
                 <PerfCard
                   icon={MemoryStick}
-                  label="記憶體"
+                  label={t('記憶體')}
                   value={metrics.ram ? `${metrics.ram.pct.toFixed(0)}%` : metrics.heapMB != null ? `${metrics.heapMB.toFixed(0)} MB` : '—'}
-                  sub={metrics.ram ? `${metrics.ram.usedGB.toFixed(1)}／${metrics.ram.totalGB.toFixed(1)} GB` : '應用程式記憶體'}
+                  sub={metrics.ram ? `${metrics.ram.usedGB.toFixed(1)}／${metrics.ram.totalGB.toFixed(1)} GB` : t('應用程式記憶體')}
                   values={metrics.ramHistory}
                   max={100}
                   color="#b65cff"
                 />
                 <PerfCard
                   icon={Activity}
-                  label="畫面更新率"
+                  label={t('畫面更新率')}
                   value={`${metrics.fps} FPS`}
-                  sub="即時繪製效能"
+                  sub={t('即時繪製效能')}
                   values={metrics.fpsHistory}
                   max={120}
                   color="#36efc5"
@@ -241,17 +243,18 @@ export const FusionThisPc: React.FC<FusionThisPcProps> = ({ open, onClose, accen
               </div>
 
               {/* storage */}
-              <h3 className="pc-section-title">儲存空間</h3>
+              <h3 className="pc-section-title">{t('儲存空間')}</h3>
               <div className="pc-drives">
                 <div className="pc-drive">
                   <span className="pc-drive-icon"><HardDrive size={22} /></span>
                   <div className="pc-drive-body">
                     <div className="pc-drive-head">
-                      <strong>本機磁碟 (C:)</strong>
+                      <strong>{t('本機磁碟 (C:)')}</strong>
                       <span>
                         {diskTotal > 0
-                          ? `可用 ${(diskTotal - diskUsed).toFixed(0)} GB／共 ${diskTotal.toFixed(0)} GB${metrics.hasHost ? '（真實）' : '（估計）'}`
-                          : '計算中…'}
+                          ? tf('可用 {0} GB／共 {1} GB', (diskTotal - diskUsed).toFixed(0), diskTotal.toFixed(0)) +
+                            (metrics.hasHost ? t('（真實）') : t('（估計）'))
+                          : t('計算中…')}
                       </span>
                     </div>
                     <span className="pc-bar">
@@ -262,14 +265,14 @@ export const FusionThisPc: React.FC<FusionThisPcProps> = ({ open, onClose, accen
               </div>
 
               {/* folders */}
-              <h3 className="pc-section-title">資料夾</h3>
+              <h3 className="pc-section-title">{t('資料夾')}</h3>
               <div className="pc-folders">
                 {folders.map((f) => {
                   const Icon = f.icon;
                   return (
                     <button key={f.label} type="button" className="pc-folder" onClick={f.onClick}>
                       <Icon size={26} strokeWidth={1.7} />
-                      <span>{f.label}</span>
+                      <span>{t(f.label)}</span>
                     </button>
                   );
                 })}

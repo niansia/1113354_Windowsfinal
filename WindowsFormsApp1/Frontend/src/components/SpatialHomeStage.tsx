@@ -34,6 +34,8 @@ import { HeroEnergyCore } from './HeroEnergyCore';
 import { FusionSettings } from './FusionSettings';
 import { FusionThisPc } from './FusionThisPc';
 import { FusionFiles } from './FusionFiles';
+import { FusionToolbox } from './FusionToolbox';
+import { FusionDatabase } from './FusionDatabase';
 import { WALLPAPERS } from '../hooks/useFusionSettings';
 import { useSettings } from '../state/SettingsContext';
 import { useI18n } from '../i18n/I18nContext';
@@ -155,8 +157,8 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   }, [apps.length, onIndexChange, onQueueChange]);
 
   const launchFusionApp = useCallback((app: FusionApp) => {
-    // 系統設定 / 本機 / 專案檔案 改為在桌面內開啟 React 頁面，而非請主機彈出預留視窗。
-    if (app.id === 'set' || app.id === 'pc' || app.id === 'dir') {
+    // 系統設定 / 本機 / 專案檔案 / 工具箱 / 資料庫 改為在桌面內開啟 React 頁面，而非請主機彈出預留視窗。
+    if (app.id === 'set' || app.id === 'pc' || app.id === 'dir' || app.id === 'tool' || app.id === 'db') {
       setOverlayApp(app.id);
       setLastLaunchMessage(tf('已開啟「{0}」。', t(app.title)));
       return;
@@ -654,6 +656,16 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       />
       <FusionFiles
         open={overlayApp === 'dir'}
+        onClose={() => setOverlayApp(null)}
+        accent={settings.accent}
+      />
+      <FusionToolbox
+        open={overlayApp === 'tool'}
+        onClose={() => setOverlayApp(null)}
+        accent={settings.accent}
+      />
+      <FusionDatabase
+        open={overlayApp === 'db'}
         onClose={() => setOverlayApp(null)}
         accent={settings.accent}
       />
