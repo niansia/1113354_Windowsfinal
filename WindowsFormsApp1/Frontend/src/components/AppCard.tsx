@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { AppConfig } from '../types';
 import { Monitor, Folder, Piano, Clapperboard, AudioWaveform, Hand, FileUser, Plus, Code, Wrench, Database, Globe, Gamepad2, Terminal, Settings } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 const ICON_MAP: Record<string, any> = {
   PC: Monitor,
@@ -31,6 +32,7 @@ interface AppCardProps {
 
 export const AppCard: React.FC<AppCardProps> = ({ app, isActive, position, status, onClick }) => {
   const Icon = ICON_MAP[app.glyph] || Monitor;
+  const { t } = useI18n();
   
   const isGestureActive = status === 'PINCH_CONTROL' || status === 'PALM_SWIPE' || status === 'INDEX_SWIPE';
 
@@ -86,12 +88,12 @@ export const AppCard: React.FC<AppCardProps> = ({ app, isActive, position, statu
 
       {/* Info Section */}
       <div className="text-center space-y-2">
-        <h3 className="text-2xl font-black text-white tracking-tight">{app.title}</h3>
+        <h3 className="text-2xl font-black text-white tracking-tight">{t(app.title)}</h3>
         <p className="text-[10px] font-bold text-fusion-accent tracking-[0.2em] uppercase opacity-60">
-          {isActive && isGestureActive ? 'Target Locked' : 'Node Protocol Active'}
+          {isActive && isGestureActive ? t('目標已鎖定') : t('節點協定作用中')}
         </p>
         <p className="text-xs text-slate-400 mt-4 leading-relaxed px-2 line-clamp-3">
-          {app.description}
+          {t(app.description)}
         </p>
       </div>
 
@@ -104,7 +106,7 @@ export const AppCard: React.FC<AppCardProps> = ({ app, isActive, position, statu
         >
           <div className={`w-1 h-1 bg-fusion-accent rounded-full animate-bounce mb-1 ${isGestureActive ? 'scale-150 shadow-[0_0_10px_#22d3ee]' : ''}`} />
           <span className="text-[9px] font-black text-fusion-accent tracking-[0.3em] uppercase">
-            {isGestureActive ? 'Air Control Active' : 'Ready to Launch'}
+            {isGestureActive ? t('空中控制啟用') : t('準備啟動')}
           </span>
         </motion.div>
       )}

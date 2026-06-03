@@ -870,7 +870,7 @@ namespace WindowsFormsApp1
             AddDesktopIcon(L("ToolBox"), "TOOL", L("ToolBoxDesc"), Color.FromArgb(255, 129, 142));
             AddDesktopIcon(L("Database"), "DB", L("DatabaseDesc"), Color.FromArgb(255, 206, 138));
             AddDesktopIcon(L("WebZone"), "WEB", L("WebZoneDesc"), Color.FromArgb(119, 187, 255));
-            AddDesktopIcon(L("GameRoom"), "GAME", L("GameRoomDesc"), accent2);
+            AddDesktopIcon(L("GameRoom"), "GAME", L("GameRoomDesc"), accent2, LaunchFusionRPG);
             AddDesktopIcon(L("Terminal"), "CMD", L("TerminalDesc"), Color.FromArgb(112, 226, 188), OpenFusionTerminal);
             AddDesktopIcon(L("Settings"), "SET", L("SettingsDesc"), Color.FromArgb(163, 133, 255), OpenSettingsWindow);
             UpdateShelfScrollSize();
@@ -1016,6 +1016,7 @@ namespace WindowsFormsApp1
             apps.Controls.Add(StartItem(L("MultimediaStudio"), L("StartMultimediaDesc"), Color.FromArgb(88, 220, 255)));
             apps.Controls.Add(StartItem(L("WaveStudio"), L("StartWaveDesc"), Color.FromArgb(120, 235, 218)));
             apps.Controls.Add(StartItem(L("CosmicGesture"), L("StartCosmicDesc"), accent3));
+            apps.Controls.Add(StartItem(L("GameRoom"), L("StartGameDesc"), accent2));
             apps.Controls.Add(StartItem(L("LanguageLab"), L("StartLanguageDesc"), accent));
             apps.Controls.Add(StartItem(L("SystemSettings"), L("SystemSettingsDesc"), Color.FromArgb(163, 133, 255)));
             apps.Controls.Add(StartItem(L("AboutSystem"), L("AboutSystemDesc"), Color.FromArgb(100, 220, 145)));
@@ -1412,6 +1413,7 @@ namespace WindowsFormsApp1
                     else if (lower.Contains("\"media\"") || lower.Contains("\"vid\"")) LaunchMultimediaStudio();
                     else if (lower.Contains("\"wav\"") || lower.Contains("\"wave\"")) LaunchWaveStudio();
                     else if (lower.Contains("\"cosmic\"") || lower.Contains("\"cos\"")) LaunchCosmicGesture();
+                    else if (lower.Contains("\"game\"") || lower.Contains("\"fusionrpg\"") || lower.Contains("\"rpg\"")) LaunchFusionRPG();
                     else if (lower.Contains("\"cmd\"") || lower.Contains("\"terminal\"")) OpenFusionTerminal();
                     else if (lower.Contains("\"settings\"") || lower.Contains("\"set\"")) OpenSettingsWindow();
                     else 
@@ -1828,6 +1830,11 @@ namespace WindowsFormsApp1
                     LaunchCosmicGesture();
                     return;
                 }
+                if (name == L("GameRoom"))
+                {
+                    LaunchFusionRPG();
+                    return;
+                }
                 if (name == L("Terminal"))
                 {
                     OpenFusionTerminal();
@@ -2076,6 +2083,10 @@ namespace WindowsFormsApp1
             if (info.Glyph == "COS")
             {
                 return FindProjectDirectory(Path.Combine("IntegratedApps", "CosmicGesture"));
+            }
+            if (info.Glyph == "GAME")
+            {
+                return FindProjectDirectory(Path.Combine("IntegratedApps", "FusionRPG"));
             }
 
             return null;
@@ -2345,10 +2356,18 @@ namespace WindowsFormsApp1
             LaunchIntegratedExeApp("wav", "WaveStudio", "WaveStudio", Color.FromArgb(120, 235, 218));
         }
 
-        private void LaunchIntegratedExeApp(string appId, string titleKey, string folderName, Color color)
+        private void LaunchFusionRPG()
+        {
+            string preferredExe = FindProjectFile(Path.Combine("IntegratedApps", "FusionRPG", "Build", "FusionRPG.exe"));
+            LaunchIntegratedExeApp("game", "GameRoom", "FusionRPG", accent2, preferredExe);
+        }
+
+        private void LaunchIntegratedExeApp(string appId, string titleKey, string folderName, Color color, string preferredExePath = null)
         {
             string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", folderName));
-            string exePath = appRoot == null ? null : FindFirstExe(appRoot);
+            string exePath = !string.IsNullOrEmpty(preferredExePath) && File.Exists(preferredExePath)
+                ? preferredExePath
+                : appRoot == null ? null : FindFirstExe(appRoot);
             if (exePath == null)
             {
                 ShowToast(L(titleKey) + " 找不到執行檔", color);
@@ -4202,7 +4221,7 @@ namespace WindowsFormsApp1
                 case "ToolBoxDesc": return zh ? "自動化、爬蟲、API、轉檔、計算與資料工具。" : "Automation, crawler, API, converter, calculator, and data tools.";
                 case "DatabaseDesc": return zh ? "預留 SQL、SQLite、資料表與分析專案。" : "Reserved space for SQL and data projects.";
                 case "WebZoneDesc": return zh ? "預留 WebView、HTML、CSS、JavaScript 與網頁作品。" : "Reserved space for web pages and HTML/CSS/JS work.";
-                case "GameRoomDesc": return zh ? "預留 Unity、Unreal、WinForms 小遊戲與視覺展示。" : "Reserved space for games and visual demos.";
+                case "GameRoomDesc": return zh ? "啟動 Fusion RPG：櫻花學院第三人稱 Unity 原型。" : "Launch Fusion RPG, a third-person Unity prototype.";
                 case "TerminalDesc": return zh ? "未來用來啟動腳本與外部程式的命令面板。" : "Future command panel for scripts and external programs.";
                 case "SettingsDesc": return zh ? "管理系統語言、主題、路徑、應用登錄與啟動設定。" : "System theme, language, and launch settings.";
 
@@ -4214,6 +4233,7 @@ namespace WindowsFormsApp1
                 case "StartMultimediaDesc": return zh ? "從系統啟動 1113354_multimedia。" : "Launch 1113354_multimedia from the system.";
                 case "StartWaveDesc": return zh ? "從系統啟動 1113354_wav。" : "Launch 1113354_wav from the system.";
                 case "StartCosmicDesc": return zh ? "啟動手勢控制的 3D 宇宙。" : "Launch the gesture-controlled 3D universe.";
+                case "StartGameDesc": return zh ? "啟動 Fusion RPG Unity 原型。" : "Launch the Fusion RPG Unity prototype.";
                 case "StartLanguageDesc": return zh ? "開啟語言整合工作區。" : "Open language integration workspace.";
                 case "SystemSettings": return zh ? "系統設定" : "System Settings";
                 case "SystemSettingsDesc": return zh ? "語言、主題、啟動、資料夾與路徑。" : "Theme, startup, folders, and paths.";

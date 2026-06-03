@@ -1,6 +1,7 @@
 import React from 'react';
 import { Monitor, Folder, Piano, Clapperboard, AudioWaveform, Hand, FileUser, Plus, Code, Wrench, Database, Globe, Gamepad2, Terminal, Settings } from 'lucide-react';
 import type { FusionApp } from '../data/fusionApps';
+import { useI18n } from '../i18n/I18nContext';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   PC: Monitor,
@@ -37,7 +38,10 @@ interface HolographicAppCardProps {
 // (position / isActive) change — NOT on every gesture frame.
 const HolographicAppCardImpl: React.FC<HolographicAppCardProps> = ({ app, index, position, isActive, spread, onSelect }) => {
   const Icon = ICON_MAP[app.glyph] || Monitor;
+  const { t } = useI18n();
   const abs = Math.abs(position);
+  const title = t(app.title);
+  const subtitle = t(app.subtitle);
 
   const translateX = position * spread;
   const translateZ = -abs * 240;
@@ -63,7 +67,7 @@ const HolographicAppCardImpl: React.FC<HolographicAppCardProps> = ({ app, index,
       onClick={() => onSelect(index)}
       role="button"
       tabIndex={isActive ? 0 : -1}
-      aria-label={`${app.title} ${app.subtitle}`}
+      aria-label={`${title} ${subtitle}`}
     >
       <div className="holo-card-sheen" />
       {isActive && <div className="holo-card-ring" />}
@@ -72,13 +76,13 @@ const HolographicAppCardImpl: React.FC<HolographicAppCardProps> = ({ app, index,
         <div className="holo-glyph" style={{ background: `radial-gradient(circle at 30% 30%, ${app.color}55, ${app.color}11)`, borderColor: `${app.color}66` }}>
           <Icon className="holo-glyph-icon" style={{ color: app.color }} />
         </div>
-        <span className="holo-status" style={{ color: app.color, borderColor: `${app.color}55` }}>{app.status}</span>
+        <span className="holo-status" style={{ color: app.color, borderColor: `${app.color}55` }}>{t(app.status)}</span>
       </div>
 
       <div className="holo-card-body">
-        <h3 className="holo-title">{app.title}</h3>
-        <p className="holo-subtitle" style={{ color: app.color }}>{app.subtitle}</p>
-        {isActive && <p className="holo-desc">{app.description}</p>}
+        <h3 className="holo-title">{title}</h3>
+        <p className="holo-subtitle" style={{ color: app.color }}>{subtitle}</p>
+        {isActive && <p className="holo-desc">{t(app.description)}</p>}
       </div>
 
       <div className="holo-card-foot">
@@ -90,7 +94,7 @@ const HolographicAppCardImpl: React.FC<HolographicAppCardProps> = ({ app, index,
         {isActive && (
           <div className="holo-launch" style={{ color: app.color }}>
             <span className="holo-launch-dot" style={{ background: app.color }} />
-            開啟 · ENTER / 點擊 / 握拳
+            {t('開啟 · ENTER / 點擊 / 握拳')}
           </div>
         )}
       </div>

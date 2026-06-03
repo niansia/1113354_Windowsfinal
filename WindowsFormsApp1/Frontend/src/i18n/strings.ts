@@ -20,6 +20,120 @@ export const LANG_LABELS: Record<Lang, string> = {
 type Entry = Partial<Record<Exclude<Lang, 'zh-TW'>, string>>;
 
 export const TRANSLATIONS: Record<string, Entry> = {
+  // ---------- Fusion OS home app registry ----------
+  '工作區': { 'zh-CN': '工作区', en: 'Workspace', ja: 'ワークスペース', ko: '작업 공간' },
+  '系統總覽': { 'zh-CN': '系统总览', en: 'System Overview', ja: 'システム概要', ko: '시스템 개요' },
+  'Fusion OS 空間指揮中心與目前工作區。': {
+    'zh-CN': 'Fusion OS 空间指挥中心与当前工作区。',
+    en: 'Fusion OS spatial command center and active workspace.',
+    ja: 'Fusion OS の空間コマンドセンターと現在のワークスペース。',
+    ko: 'Fusion OS 공간 지휘 센터와 현재 작업 공간입니다.'
+  },
+  '本機工作區': { 'zh-CN': '本机工作区', en: 'Local Workspace', ja: 'ローカルワークスペース', ko: '로컬 작업 공간' },
+  '瀏覽專案資料夾、參考素材、建置檔與匯入檔案。': {
+    'zh-CN': '浏览项目文件夹、参考素材、构建文件与导入文件。',
+    en: 'Browse project folders, references, builds, and imported files.',
+    ja: 'プロジェクトフォルダー、参考素材、ビルド、インポート済みファイルを閲覧します。',
+    ko: '프로젝트 폴더, 참고 자료, 빌드, 가져온 파일을 탐색합니다.'
+  },
+  '啟動內建鋼琴學習與音樂工作區。': {
+    'zh-CN': '启动内置钢琴学习与音乐工作区。',
+    en: 'Launch the bundled piano learning and music workspace.',
+    ja: '内蔵のピアノ学習と音楽ワークスペースを起動します。',
+    ko: '내장 피아노 학습 및 음악 작업 공간을 실행합니다.'
+  },
+  'AURORA 影院': { 'zh-CN': 'AURORA 影院', en: 'AURORA Cinema', ja: 'AURORA シネマ', ko: 'AURORA 시네마' },
+  '啟動內建影院與多媒體播放空間。': {
+    'zh-CN': '启动内置影院与多媒体播放空间。',
+    en: 'Launch the bundled cinema and multimedia player.',
+    ja: '内蔵のシネマとマルチメディアプレイヤーを起動します。',
+    ko: '내장 시네마 및 멀티미디어 플레이어를 실행합니다.'
+  },
+  '啟動 WAV 播放、音訊收藏與波形工具。': {
+    'zh-CN': '启动 WAV 播放、音频收藏与波形工具。',
+    en: 'Launch WAV playback, audio library, and waveform tools.',
+    ja: 'WAV 再生、オーディオライブラリ、波形ツールを起動します。',
+    ko: 'WAV 재생, 오디오 라이브러리, 파형 도구를 실행합니다.'
+  },
+  'WebGL 實驗室': { 'zh-CN': 'WebGL 实验室', en: 'WebGL Lab', ja: 'WebGL ラボ', ko: 'WebGL 연구실' },
+  '開啟手勢控制的 3D 宇宙體驗。': {
+    'zh-CN': '开启手势控制的 3D 宇宙体验。',
+    en: 'Open the gesture-controlled 3D universe experience.',
+    ja: 'ジェスチャー操作の 3D 宇宙体験を開きます。',
+    ko: '제스처로 제어하는 3D 우주 경험을 엽니다.'
+  },
+  '使用者空間': { 'zh-CN': '用户空间', en: 'User Space', ja: 'ユーザースペース', ko: '사용자 공간' },
+  '集中放置執行捷徑與使用者選取的檔案。': {
+    'zh-CN': '集中放置运行快捷方式与用户选取的文件。',
+    en: 'Keep runtime shortcuts and user-selected files close at hand.',
+    ja: '実行ショートカットとユーザー選択ファイルをまとめて配置します。',
+    ko: '실행 바로가기와 사용자가 선택한 파일을 가까이 둡니다.'
+  },
+  '選取本機檔案並建立 Fusion OS 捷徑。': {
+    'zh-CN': '选择本机文件并创建 Fusion OS 快捷方式。',
+    en: 'Select a local file and create a Fusion OS shortcut.',
+    ja: 'ローカルファイルを選択して Fusion OS ショートカットを作成します。',
+    ko: '로컬 파일을 선택하고 Fusion OS 바로가기를 만듭니다.'
+  },
+  '開啟混合語言開發工作區。': {
+    'zh-CN': '开启混合语言开发工作区。',
+    en: 'Open the mixed-language development workspace.',
+    ja: '複数言語の開発ワークスペースを開きます。',
+    ko: '혼합 언어 개발 작업 공간을 엽니다.'
+  },
+  '規劃中': { 'zh-CN': '规划中', en: 'Planned', ja: '計画中', ko: '계획 중' },
+  '自動化、轉換器、API 實驗與工具啟動器。': {
+    'zh-CN': '自动化、转换器、API 实验与工具启动器。',
+    en: 'Automation, converters, API experiments, and utility launchers.',
+    ja: '自動化、変換ツール、API 実験、ユーティリティランチャーです。',
+    ko: '자동화, 변환기, API 실험, 유틸리티 실행기입니다.'
+  },
+  '資料工作區': { 'zh-CN': '数据工作区', en: 'Data Workspace', ja: 'データワークスペース', ko: '데이터 작업 공간' },
+  'SQL、SQLite 與結構化資料專案的預留空間。': {
+    'zh-CN': 'SQL、SQLite 与结构化数据项目的预留空间。',
+    en: 'Reserved space for SQL, SQLite, and structured data projects.',
+    ja: 'SQL、SQLite、構造化データプロジェクト用の予約スペースです。',
+    ko: 'SQL, SQLite, 구조화 데이터 프로젝트를 위한 예약 공간입니다.'
+  },
+  '瀏覽器表面': { 'zh-CN': '浏览器表面', en: 'Browser Surface', ja: 'ブラウザーサーフェス', ko: '브라우저 표면' },
+  'WebView、HTML、CSS 與 JavaScript 實驗工作區。': {
+    'zh-CN': 'WebView、HTML、CSS 与 JavaScript 实验工作区。',
+    en: 'Workspace for WebView, HTML, CSS, and JavaScript experiments.',
+    ja: 'WebView、HTML、CSS、JavaScript 実験用のワークスペースです。',
+    ko: 'WebView, HTML, CSS, JavaScript 실험을 위한 작업 공간입니다.'
+  },
+  'Unity 原型': { 'zh-CN': 'Unity 原型', en: 'Unity Prototype', ja: 'Unity プロトタイプ', ko: 'Unity 프로토타입' },
+  '啟動櫻花學院第三人稱動作 RPG 原型。': {
+    'zh-CN': '启动樱花学院第三人称动作 RPG 原型。',
+    en: 'Launch the Sakura Academy third-person action RPG prototype.',
+    ja: '桜花学園の三人称アクション RPG プロトタイプを起動します。',
+    ko: '사쿠라 아카데미 3인칭 액션 RPG 프로토타입을 실행합니다.'
+  },
+  '可遊玩': { 'zh-CN': '可游玩', en: 'Playable', ja: 'プレイ可能', ko: '플레이 가능' },
+  '開啟 Fusion OS 指令面板，用於腳本與診斷。': {
+    'zh-CN': '开启 Fusion OS 命令面板，用于脚本与诊断。',
+    en: 'Open the Fusion OS command panel for scripts and diagnostics.',
+    ja: 'スクリプトと診断用の Fusion OS コマンドパネルを開きます。',
+    ko: '스크립트와 진단을 위한 Fusion OS 명령 패널을 엽니다.'
+  },
+  '系統控制': { 'zh-CN': '系统控制', en: 'System Control', ja: 'システム制御', ko: '시스템 제어' },
+  '管理語言、主題、路徑、啟動設定與偏好。': {
+    'zh-CN': '管理语言、主题、路径、启动设置与偏好。',
+    en: 'Manage language, theme, paths, launch settings, and preferences.',
+    ja: '言語、テーマ、パス、起動設定、環境設定を管理します。',
+    ko: '언어, 테마, 경로, 실행 설정, 기본 설정을 관리합니다.'
+  },
+  '開啟 · ENTER / 點擊 / 握拳': {
+    'zh-CN': '开启 · ENTER / 点击 / 握拳',
+    en: 'Open · ENTER / Click / Fist',
+    ja: '開く · ENTER / クリック / グー',
+    ko: '열기 · ENTER / 클릭 / 주먹'
+  },
+  '目標已鎖定': { 'zh-CN': '目标已锁定', en: 'Target Locked', ja: 'ターゲット固定', ko: '대상 고정됨' },
+  '節點協定作用中': { 'zh-CN': '节点协议作用中', en: 'Node Protocol Active', ja: 'ノードプロトコル有効', ko: '노드 프로토콜 활성' },
+  '空中控制啟用': { 'zh-CN': '空中控制启用', en: 'Air Control Active', ja: '空中操作有効', ko: '공중 제어 활성' },
+  '準備啟動': { 'zh-CN': '准备启动', en: 'Ready to Launch', ja: '起動準備完了', ko: '실행 준비됨' },
+
   // ---------- App names (fusionApps titles) ----------
   '本機': { 'zh-CN': '本机', en: 'This PC', ja: 'PC', ko: '내 PC' },
   '專案檔案': { 'zh-CN': '项目文件', en: 'Project Files', ja: 'プロジェクトファイル', ko: '프로젝트 파일' },

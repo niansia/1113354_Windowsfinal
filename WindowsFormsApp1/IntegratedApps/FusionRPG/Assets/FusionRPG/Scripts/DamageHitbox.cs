@@ -12,12 +12,18 @@ namespace FusionRPG
 
         public int Apply(Vector3 center)
         {
+            return Apply(center, null);
+        }
+
+        public int Apply(Vector3 center, Transform ignoredRoot)
+        {
             var count = Physics.OverlapSphereNonAlloc(center, radius, hits, targetLayers, QueryTriggerInteraction.Ignore);
             var damaged = new HashSet<Health>();
             for (var i = 0; i < count; i++)
             {
                 var health = hits[i].GetComponentInParent<Health>();
                 if (health == null || damaged.Contains(health)) continue;
+                if (ignoredRoot != null && (health.transform == ignoredRoot || health.transform.IsChildOf(ignoredRoot))) continue;
                 health.ApplyDamage(damage);
                 damaged.Add(health);
             }

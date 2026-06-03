@@ -24,13 +24,12 @@ export interface FusionApp {
   status: string;
 }
 
-// 名稱與 WinForms 主機實際開啟的視窗一致（id ↔ glyph 不變，啟動路由不受影響）。
 export const FUSION_APPS: FusionApp[] = [
   {
     id: 'pc',
-    title: '本機',
-    subtitle: '系統資訊',
-    description: '系統檔案管理與電腦資訊入口。',
+    title: '工作區',
+    subtitle: '系統總覽',
+    description: 'Fusion OS 空間指揮中心與目前工作區。',
     glyph: 'OS',
     color: '#67e8ff',
     category: 'system',
@@ -40,19 +39,19 @@ export const FUSION_APPS: FusionApp[] = [
   {
     id: 'dir',
     title: '專案檔案',
-    subtitle: '檔案空間',
-    description: '存放舊作品與新作品的預設資料夾。',
+    subtitle: '本機工作區',
+    description: '瀏覽專案資料夾、參考素材、建置檔與匯入檔案。',
     glyph: 'DIR',
     color: '#6aa8ff',
     category: 'files',
     tags: ['files', 'folders', 'sync'],
-    status: '已同步'
+    status: '就緒'
   },
   {
     id: 'piano',
     title: '鋼琴工作室',
     subtitle: '內建應用程式',
-    description: '啟動鋼琴學習與音樂工具（IntegratedApps/PianoStudio）。',
+    description: '啟動內建鋼琴學習與音樂工作區。',
     glyph: '88',
     color: '#d56bff',
     category: 'creative',
@@ -61,9 +60,9 @@ export const FUSION_APPS: FusionApp[] = [
   },
   {
     id: 'media',
-    title: '影音中心',
+    title: 'AURORA 影院',
     subtitle: '內建應用程式',
-    description: '啟動 AURORA Cinema 多媒體播放器（IntegratedApps/MultimediaStudio）。',
+    description: '啟動內建影院與多媒體播放空間。',
     glyph: 'VID',
     color: '#58dcff',
     category: 'creative',
@@ -74,7 +73,7 @@ export const FUSION_APPS: FusionApp[] = [
     id: 'wav',
     title: '音訊工作室',
     subtitle: '內建應用程式',
-    description: '啟動 WAV 與音訊播放工具（IntegratedApps/WaveStudio）。',
+    description: '啟動 WAV 播放、音訊收藏與波形工具。',
     glyph: 'WAV',
     color: '#78ebda',
     category: 'creative',
@@ -84,19 +83,19 @@ export const FUSION_APPS: FusionApp[] = [
   {
     id: 'cosmic',
     title: '宇宙手勢',
-    subtitle: '內建應用程式',
-    description: 'Python + JavaScript 的 WebGL 宇宙手勢系統。',
+    subtitle: 'WebGL 實驗室',
+    description: '開啟手勢控制的 3D 宇宙體驗。',
     glyph: 'COS',
     color: '#9c7cff',
     category: 'creative',
     tags: ['gesture', 'webgl', 'motion'],
-    status: '已連結'
+    status: '就緒'
   },
   {
     id: 'user',
-    title: '使用者檔案',
+    title: '使用者空間',
     subtitle: '個人檔案',
-    description: '執行時由使用者加入的檔案捷徑區。',
+    description: '集中放置執行捷徑與使用者選取的檔案。',
     glyph: 'USR',
     color: '#7ef6c8',
     category: 'files',
@@ -107,7 +106,7 @@ export const FUSION_APPS: FusionApp[] = [
     id: 'add',
     title: '新增檔案',
     subtitle: '匯入',
-    description: '選擇本機檔案並建立桌面捷徑。',
+    description: '選取本機檔案並建立 Fusion OS 捷徑。',
     glyph: '+',
     color: '#68a5ff',
     category: 'tools',
@@ -118,18 +117,18 @@ export const FUSION_APPS: FusionApp[] = [
     id: 'dev',
     title: '語言實驗室',
     subtitle: '開發實驗室',
-    description: '預留 C#、Python、JavaScript、SQL、C++ 與多語言融合實驗區。',
+    description: '開啟混合語言開發工作區。',
     glyph: 'DEV',
     color: '#22d3ee',
     category: 'dev',
     tags: ['code', 'tools', 'terminal'],
-    status: '可用'
+    status: '規劃中'
   },
   {
     id: 'tool',
     title: '工具箱',
     subtitle: '工具',
-    description: '自動化、爬蟲、API、轉檔、計算與資料工具。',
+    description: '自動化、轉換器、API 實驗與工具啟動器。',
     glyph: 'APP',
     color: '#ff6a9e',
     category: 'tools',
@@ -139,19 +138,19 @@ export const FUSION_APPS: FusionApp[] = [
   {
     id: 'db',
     title: '資料庫',
-    subtitle: '資料',
-    description: '預留 SQL、SQLite、資料表與分析專案。',
+    subtitle: '資料工作區',
+    description: 'SQL、SQLite 與結構化資料專案的預留空間。',
     glyph: 'DB',
     color: '#55d7d0',
     category: 'data',
     tags: ['data', 'sql', 'storage'],
-    status: '已連線'
+    status: '規劃中'
   },
   {
     id: 'web',
     title: '網頁區',
-    subtitle: '網路空間',
-    description: '預留 WebView、HTML、CSS、JavaScript 與網頁作品。',
+    subtitle: '瀏覽器表面',
+    description: 'WebView、HTML、CSS 與 JavaScript 實驗工作區。',
     glyph: 'WEB',
     color: '#7aa7ff',
     category: 'web',
@@ -160,20 +159,20 @@ export const FUSION_APPS: FusionApp[] = [
   },
   {
     id: 'game',
-    title: '遊戲室',
-    subtitle: '遊戲空間',
-    description: '預留 Unity、Unreal、WinForms 小遊戲與視覺展示。',
+    title: 'Fusion RPG',
+    subtitle: 'Unity 原型',
+    description: '啟動櫻花學院第三人稱動作 RPG 原型。',
     glyph: 'GAME',
     color: '#c35cff',
     category: 'play',
-    tags: ['games', '3d', 'play'],
-    status: '就緒'
+    tags: ['unity', 'rpg', 'sakura', '3d'],
+    status: '可遊玩'
   },
   {
     id: 'cmd',
     title: '終端機',
     subtitle: '命令列',
-    description: '未來用來啟動腳本與外部程式的命令面板。',
+    description: '開啟 Fusion OS 指令面板，用於腳本與診斷。',
     glyph: 'CMD',
     color: '#70e2bc',
     category: 'tools',
@@ -182,9 +181,9 @@ export const FUSION_APPS: FusionApp[] = [
   },
   {
     id: 'set',
-    title: '系統設定',
-    subtitle: '設定',
-    description: '管理系統語言、主題、強調色、桌布與啟動設定。',
+    title: '設定',
+    subtitle: '系統控制',
+    description: '管理語言、主題、路徑、啟動設定與偏好。',
     glyph: 'SET',
     color: '#a385ff',
     category: 'settings',

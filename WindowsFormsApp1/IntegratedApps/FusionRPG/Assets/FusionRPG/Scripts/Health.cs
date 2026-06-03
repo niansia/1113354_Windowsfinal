@@ -39,6 +39,11 @@ namespace FusionRPG
 
         public void SetMaxHealthForTests(int value)
         {
+            ConfigureMaxHealth(value);
+        }
+
+        public void ConfigureMaxHealth(int value)
+        {
             maxHealth = Mathf.Max(1, value);
             current = maxHealth;
             died = false;
