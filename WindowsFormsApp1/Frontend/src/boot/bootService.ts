@@ -1,4 +1,5 @@
 import { fusionRuntimeCache } from './runtimeCache';
+import { warmGestureModel } from './gestureWarmup';
 import {
   buildAppRegistry,
   buildCosmicSummary,
@@ -83,6 +84,11 @@ function buildTasks(): BootTask[] {
     { id: 'registry', label: 'App registry indexing', phase: 'shell', weight: 2, timeoutMs: 4000, run: async () => { fusionRuntimeCache.appRegistry = buildAppRegistry(); return `Registry ${fusionRuntimeCache.appRegistry.apps.length} apps`; } },
     { id: 'shell', label: 'Spatial layout precompute', phase: 'shell', weight: 1, timeoutMs: 4000, run: warmShellLayout },
     { id: 'gesture', label: 'Gesture state gate', phase: 'gesture', weight: 1, timeoutMs: 4000, run: async () => { fusionRuntimeCache.gestureConfig = buildGestureConfig(); return 'Safe gesture gate armed'; } },
+    // The real heavy load: download + compile the MediaPipe hand model now so the Home
+    // shell doesn't freeze on first mount. Heavily weighted so the progress bar dwells
+    // here in proportion to the actual work. Optional: a timeout/failure falls back to a
+    // cold init in the gesture hook rather than blocking the desktop.
+    { id: 'gesture-engine', label: 'Gesture engine warm-up', phase: 'gesture', weight: 4, timeoutMs: 12000, optional: true, run: warmGestureModel },
     {
       id: 'starfield',
       label: 'Starfield node generation',

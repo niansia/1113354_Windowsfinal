@@ -3,24 +3,27 @@ import type { CSSProperties } from 'react';
 import { useBootSequence } from './hooks/useBootSequence';
 import { FusionBootSequence } from './components/boot/FusionBootSequence';
 import { FusionHome } from './components/FusionHome';
+import { FusionLogin } from './components/FusionLogin';
+import { useAccount } from './account/AccountContext';
 import { addHostMessageListener, sendMessageToHost } from './utils/bridge';
 import { fusionRuntimeCache } from './boot/runtimeCache';
 
 // FusionOS startup orchestrator.
 //
-// Clean single-reveal choreography (no intermediate "图2" state):
-//  1. boot.done  -> mount Home HIDDEN behind the still-opaque overlay; post
-//     FUSION_BOOT_DONE so the WinForms host reveals the shell and resizes the
-//     WebView from fullscreen-boot to the hero stage.
-//  2. The host posts FUSION_SHELL_READY once that layout is final. Only THEN do we
-//     crossfade: overlay out + Home in. Home is never shown in the wrong layout
-//     because it stays hidden while the WebView resizes / shell appears.
-//  3. A fallback timer reveals anyway if the host message never arrives.
+// Flow: Boot loader -> Login / first-run Setup -> Home.
+//  1. boot.done  -> post FUSION_BOOT_DONE so the WinForms host leaves boot mode and the
+//     WebView becomes the interactive login surface. The boot overlay fades once the
+//     account state has loaded (so there is no black flash before login appears).
+//  2. The login layer (z-50) sits over a hidden Home; on successful unlock/setup the
+//     account context flips to `authed`, Home mounts + reveals, and the login fades out.
 export default function App() {
   const boot = useBootSequence();
+  const { status, authed } = useAccount();
   const [showHome, setShowHome] = useState(false);
   const [revealHome, setRevealHome] = useState(false);
   const [overlayGone, setOverlayGone] = useState(false);
+  const [loginMounted, setLoginMounted] = useState(false);
+  const [loginExiting, setLoginExiting] = useState(false);
   const [hostFullscreen, setHostFullscreen] = useState(true);
   const bootDoneSentRef = useRef(false);
 
@@ -33,11 +36,10 @@ export default function App() {
     });
   }, []);
 
-  // Mount Home (hidden) + notify host exactly once when boot completes.
+  // Notify the host exactly once when boot completes (host leaves fullscreen-boot mode).
   useEffect(() => {
     if (!boot.done || bootDoneSentRef.current) return;
     bootDoneSentRef.current = true;
-    setShowHome(true);
 
     const diag = fusionRuntimeCache.bootDiagnostics;
     sendMessageToHost('FUSION_BOOT_DONE', {
@@ -48,28 +50,39 @@ export default function App() {
     });
   }, [boot.done]);
 
-  // Reveal only after the host confirms the final shell layout (or fallback).
+  // Fade the boot overlay out only after boot finished AND the account state resolved,
+  // so the login screen is ready underneath (no flash of empty desktop).
+  const bootReadyToLeave = boot.done && status !== 'loading';
+  useEffect(() => {
+    if (!bootReadyToLeave) return;
+    const timer = window.setTimeout(() => setOverlayGone(true), 420);
+    return () => window.clearTimeout(timer);
+  }, [bootReadyToLeave]);
+
+  // Mount the login layer when authentication is required.
+  useEffect(() => {
+    if (boot.done && !authed && (status === 'needsSetup' || status === 'locked')) {
+      setLoginMounted(true);
+      setLoginExiting(false);
+    }
+  }, [boot.done, authed, status]);
+
+  // Once authenticated: mount Home and fade the login layer out over it.
+  useEffect(() => {
+    if (!authed) return;
+    setShowHome(true);
+    if (loginMounted) {
+      setLoginExiting(true);
+      const timer = window.setTimeout(() => setLoginMounted(false), 400);
+      return () => window.clearTimeout(timer);
+    }
+  }, [authed, loginMounted]);
+
+  // Reveal Home shortly after it mounts (its own crossfade-in).
   useEffect(() => {
     if (!showHome) return;
-    let revealed = false;
-    const reveal = () => {
-      if (revealed) return;
-      revealed = true;
-      setRevealHome(true);
-      window.setTimeout(() => setOverlayGone(true), 360);
-    };
-
-    const disposeHostListener = addHostMessageListener((message) => {
-      if (message.type === 'FUSION_SHELL_READY') reveal();
-    });
-
-    // Fallback: reveal even if the host never reports shell-ready (e.g. browser).
-    const fallback = window.setTimeout(reveal, 520);
-
-    return () => {
-      disposeHostListener();
-      window.clearTimeout(fallback);
-    };
+    const timer = window.setTimeout(() => setRevealHome(true), 30);
+    return () => window.clearTimeout(timer);
   }, [showHome]);
 
   const shellStyle = {
@@ -88,7 +101,8 @@ export default function App() {
           <FusionHome />
         </div>
       )}
-      {!overlayGone && <FusionBootSequence state={boot} fadingOut={revealHome} onSkip={boot.skip} />}
+      {loginMounted && <FusionLogin exiting={loginExiting} />}
+      {!overlayGone && <FusionBootSequence state={boot} fadingOut={bootReadyToLeave} onSkip={boot.skip} />}
     </>
   );
 }

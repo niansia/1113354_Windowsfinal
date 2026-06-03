@@ -8,6 +8,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web.Script.Serialization;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
@@ -49,6 +50,9 @@ namespace WindowsFormsApp1
         private int shortcutSerial;
         private int windowOffset;
         private string currentLanguage = "zh-TW";
+        // Lazily-opened SQLite account store (profile + hashed password + language).
+        private AccountStore accountStore;
+        private AccountStore AccountDb { get { return accountStore ?? (accountStore = new AccountStore()); } }
         private Process cosmicServerProcess;
         private int cameraAppWindowCount = 0;
         private bool nativeWarmupStarted;
@@ -414,6 +418,21 @@ namespace WindowsFormsApp1
                     panel.Controls.Add(button, 1, 0);
                     panel.Controls.Add(output, 0, 1);
                     panel.PerformLayout();
+                }
+
+                // Warm the rounded window chrome itself (custom UserPaint control + the
+                // GraphicsPath/anti-alias paint path). This is paid on the FIRST window of
+                // ANY kind, so warming it here makes the terminal and every other app
+                // window open without that cold JIT/GDI hitch.
+                using (var chrome = new RoundedPanel { Radius = 22, Size = new Size(420, 300) })
+                using (var header = new Panel { Dock = DockStyle.Top, Height = 54 })
+                using (var titleLabel = new Label { Dock = DockStyle.Fill })
+                using (var bmp = new Bitmap(420, 300))
+                {
+                    header.Controls.Add(titleLabel);
+                    chrome.Controls.Add(header);
+                    chrome.PerformLayout();
+                    chrome.DrawToBitmap(bmp, new Rectangle(0, 0, 420, 300));
                 }
             }
             catch
@@ -1354,6 +1373,9 @@ namespace WindowsFormsApp1
 
                 string lower = message.ToLower();
 
+                // Account (SQLite) + language bridge messages are JSON objects we parse properly.
+                if (HandleAccountBridgeMessage(message, lower)) return;
+
                 if (lower.Contains("fusion_frontend_alive") || lower.Contains("fusion_frontend_dom_ready"))
                 {
                     Debug.WriteLine("[FusionOS Frontend] " + message);
@@ -1407,6 +1429,139 @@ namespace WindowsFormsApp1
                 }
             }
             catch { }
+        }
+
+        // ===================== Account + language bridge =====================
+        // Handles the SQLite-backed account messages and the live language switch.
+        // Returns true when the message was an account/language message (so the main
+        // receiver stops processing it).
+        private bool HandleAccountBridgeMessage(string json, string lower)
+        {
+            if (!(lower.Contains("fusion_account") || lower.Contains("fusion_set_language"))) return false;
+
+            Dictionary<string, object> msg;
+            try { msg = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json); }
+            catch { return false; }
+            if (msg == null || !msg.ContainsKey("type")) return false;
+            string type = Convert.ToString(msg["type"]);
+
+            try
+            {
+                switch (type)
+                {
+                    case "FUSION_ACCOUNT_GET":
+                        PostAccountState();
+                        return true;
+                    case "FUSION_ACCOUNT_SETUP":
+                    {
+                        string dn = Field(msg, "displayName");
+                        string em = Field(msg, "email");
+                        string pw = Field(msg, "password");
+                        string lang = Field(msg, "language");
+                        if (string.IsNullOrWhiteSpace(dn)) dn = "Fusion User";
+                        if (string.IsNullOrEmpty(lang)) lang = currentLanguage;
+                        AccountDb.CreateUser(dn, em, pw, lang);
+                        currentLanguage = NormalizeLang(lang);
+                        PostAccountResult("setup", true, null);
+                        PostAccountState();
+                        return true;
+                    }
+                    case "FUSION_ACCOUNT_VERIFY":
+                    {
+                        bool ok = AccountDb.VerifyPassword(Field(msg, "password"));
+                        PostAccountResult("verify", ok, ok ? null : "INVALID_PASSWORD");
+                        return true;
+                    }
+                    case "FUSION_ACCOUNT_UPDATE_PROFILE":
+                    {
+                        bool ok = AccountDb.UpdateProfile(Field(msg, "displayName"), Field(msg, "email"));
+                        PostAccountResult("updateProfile", ok, null);
+                        PostAccountState();
+                        return true;
+                    }
+                    case "FUSION_ACCOUNT_CHANGE_PASSWORD":
+                    {
+                        bool ok = AccountDb.ChangePassword(Field(msg, "current"), Field(msg, "next"));
+                        PostAccountResult("changePassword", ok, ok ? null : "INVALID_PASSWORD");
+                        return true;
+                    }
+                    case "FUSION_ACCOUNT_RESET":
+                        AccountDb.ResetAll();
+                        PostAccountResult("reset", true, null);
+                        PostAccountState();
+                        return true;
+                    case "FUSION_SET_LANGUAGE":
+                    {
+                        string lang = NormalizeLang(Field(msg, "language"));
+                        currentLanguage = lang;
+                        try { AccountDb.SetLanguage(lang); } catch { }
+                        PostAccountResult("setLanguage", true, null);
+                        return true;
+                    }
+                    default:
+                        return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("[FusionOS Account] " + ex.Message);
+                PostAccountResult(type, false, "ERROR");
+                return true;
+            }
+        }
+
+        private static string Field(Dictionary<string, object> d, string key)
+        {
+            object v;
+            if (d != null && d.TryGetValue(key, out v) && v != null) return Convert.ToString(v);
+            return null;
+        }
+
+        private static string NormalizeLang(string lang)
+        {
+            switch ((lang ?? string.Empty).Trim())
+            {
+                case "zh-TW":
+                case "zh-CN":
+                case "en":
+                case "ja":
+                case "ko":
+                    return lang.Trim();
+                default:
+                    return "zh-TW";
+            }
+        }
+
+        private void PostAccountState()
+        {
+            if (carouselWebView == null || carouselWebView.CoreWebView2 == null) return;
+            FusionUser user = null;
+            try { user = AccountDb.GetPrimaryUser(); } catch { }
+            bool exists = user != null;
+            string dn = exists ? user.DisplayName : string.Empty;
+            string em = exists ? (user.Email ?? string.Empty) : string.Empty;
+            string lang = exists && !string.IsNullOrEmpty(user.Language) ? user.Language : currentLanguage;
+            string jsonOut =
+                "{\"type\":\"FUSION_ACCOUNT_STATE\",\"payload\":{" +
+                "\"exists\":" + (exists ? "true" : "false") + "," +
+                "\"needsSetup\":" + (exists ? "false" : "true") + "," +
+                "\"displayName\":\"" + JsonEscape(dn) + "\"," +
+                "\"email\":\"" + JsonEscape(em) + "\"," +
+                "\"language\":\"" + JsonEscape(lang) + "\"" +
+                "}}";
+            try { carouselWebView.CoreWebView2.PostWebMessageAsString(jsonOut); } catch { }
+        }
+
+        private void PostAccountResult(string op, bool ok, string message)
+        {
+            if (carouselWebView == null || carouselWebView.CoreWebView2 == null) return;
+            string jsonOut =
+                "{\"type\":\"FUSION_ACCOUNT_RESULT\",\"payload\":{" +
+                "\"op\":\"" + JsonEscape(op) + "\"," +
+                "\"ok\":" + (ok ? "true" : "false") + "," +
+                "\"message\":\"" + JsonEscape(message ?? string.Empty) + "\"" +
+                "}}";
+            try { carouselWebView.CoreWebView2.PostWebMessageAsString(jsonOut); } catch { }
         }
 
         private void HeroStage_NodeClicked(object sender, HeroNodeEventArgs e)
@@ -4008,7 +4163,10 @@ namespace WindowsFormsApp1
 
         private string L(string key)
         {
-            bool zh = currentLanguage == "zh-TW";
+            // Native pop-up windows (terminal chrome, dialogs, toasts) are a secondary
+            // surface under ReactOwnsShell. Chinese variants share the zh table; en/ja/ko
+            // use the English table. The full FusionOS desktop is translated in React.
+            bool zh = currentLanguage == "zh-TW" || currentLanguage == "zh-CN";
             switch (key)
             {
                 case "WindowTitle": return zh ? "FusionOS - 期末專案系統" : "FusionOS - Final Project Hub";

@@ -54,6 +54,10 @@ export interface FusionRuntimeCache {
   cosmicSummary: CosmicSummary | null;
   pianoManifest: PianoManifest | null;
   gestureConfig: GestureConfig | null;
+  // Warmed MediaPipe Hands instance, parked by the boot sequence for the Home gesture
+  // hook to claim once (one-shot handoff — the hook nulls it after taking it).
+  gestureHands: any | null;
+  gestureEngineWarm: boolean;
   apod: unknown | null;
   preloadedApps: string[];
   bootDiagnostics: BootDiagnostics | null;
@@ -68,6 +72,8 @@ export const fusionRuntimeCache: FusionRuntimeCache = {
   cosmicSummary: null,
   pianoManifest: null,
   gestureConfig: null,
+  gestureHands: null,
+  gestureEngineWarm: false,
   apod: null,
   preloadedApps: [],
   bootDiagnostics: null,

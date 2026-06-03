@@ -34,7 +34,10 @@ import { HeroEnergyCore } from './HeroEnergyCore';
 import { FusionSettings } from './FusionSettings';
 import { FusionThisPc } from './FusionThisPc';
 import { FusionFiles } from './FusionFiles';
-import { useFusionSettings, WALLPAPERS } from '../hooks/useFusionSettings';
+import { WALLPAPERS } from '../hooks/useFusionSettings';
+import { useSettings } from '../state/SettingsContext';
+import { useI18n } from '../i18n/I18nContext';
+import { useAccount } from '../account/AccountContext';
 import { getPerformanceProfile } from '../utils/performanceProfile';
 import { addHostMessageListener, launchApp, sendMessageToHost } from '../utils/bridge';
 
@@ -116,7 +119,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [runningApps, setRunningApps] = useState<Set<AppId>>(() => new Set());
   const [launchStates, setLaunchStates] = useState<Partial<Record<AppId, LaunchState>>>({});
-  const [lastLaunchMessage, setLastLaunchMessage] = useState('工作區已上線。選擇應用程式，或按 Enter 啟動。');
+  const [lastLaunchMessage, setLastLaunchMessage] = useState('');
   const [now, setNow] = useState(() => new Date());
   // In-shell app overlays (React pages instead of the host's placeholder windows).
   const [overlayApp, setOverlayApp] = useState<AppId | null>(null);
@@ -132,7 +135,9 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   const lastActivateIdRef = useRef(0);
 
   // Sandboxed FusionOS preferences (localStorage only — never touches the host OS).
-  const { settings, update } = useFusionSettings();
+  const { settings, update } = useSettings();
+  const { t, tf } = useI18n();
+  const { profile: userProfile } = useAccount();
 
   const profile = useMemo(() => getPerformanceProfile(), []);
   const selectedApp = apps[selectedIndex] ?? apps[0] ?? FUSION_APPS[0];
@@ -153,18 +158,18 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
     // 系統設定 / 本機 / 專案檔案 改為在桌面內開啟 React 頁面，而非請主機彈出預留視窗。
     if (app.id === 'set' || app.id === 'pc' || app.id === 'dir') {
       setOverlayApp(app.id);
-      setLastLaunchMessage(`已開啟「${app.title}」。`);
+      setLastLaunchMessage(tf('已開啟「{0}」。', t(app.title)));
       return;
     }
     launchApp(app.id);
-    setLastLaunchMessage(`已將「${app.title}」的啟動要求送至 Fusion 主機。`);
+    setLastLaunchMessage(tf('已將「{0}」的啟動要求送至 Fusion 主機。', t(app.title)));
     setLaunchStates((prev) => ({ ...prev, [app.id]: 'open' }));
     setRunningApps((prev) => {
       const next = new Set(prev);
       next.add(app.id);
       return next;
     });
-  }, []);
+  }, [t, tf]);
 
   const selectApp = useCallback((appId: AppId, shouldLaunch = false) => {
     const index = apps.findIndex((app) => app.id === appId);
@@ -380,13 +385,13 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
               type="button"
               className="fusion-side-toggle"
               onClick={() => setSidebarCollapsed((value) => !value)}
-              title={sidebarCollapsed ? '展開側欄' : '收合側欄'}
+              title={sidebarCollapsed ? t('展開側欄') : t('收合側欄')}
             >
               <Menu size={18} strokeWidth={1.9} />
             </button>
           </div>
 
-          <nav className="fusion-side-nav" aria-label="Fusion OS 導覽">
+          <nav className="fusion-side-nav" aria-label={t('Fusion OS 導覽')}>
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
               const selected = item.appId === selectedApp.id;
@@ -396,10 +401,10 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
                   type="button"
                   className={selected ? 'is-selected' : ''}
                   onClick={() => selectApp(item.appId, item.launch)}
-                  title={item.label}
+                  title={t(item.label)}
                 >
                   <Icon size={19} strokeWidth={1.8} />
-                  <span>{item.label}</span>
+                  <span>{t(item.label)}</span>
                 </button>
               );
             })}
@@ -408,8 +413,8 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
           <div className="fusion-user-pill">
             <span className="fusion-user-ring" />
             <div>
-              <strong>Avery</strong>
-              <span>專業使用者</span>
+              <strong>{userProfile.displayName || 'Avery'}</strong>
+              <span>{t('專業使用者')}</span>
             </div>
           </div>
         </aside>
@@ -417,15 +422,15 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
         <main className="fusion-main-panel">
           <section className="fusion-hero-card" style={{ ['--app-color' as string]: selectedApp.color } as React.CSSProperties}>
             <div className="fusion-hero-copy">
-              <span className="fusion-eyebrow">空間工作區</span>
+              <span className="fusion-eyebrow">{t('空間工作區')}</span>
               <h1>FUSION OS</h1>
-              <p>歡迎來到全新的清晰境界。</p>
+              <p>{t('歡迎來到全新的清晰境界。')}</p>
               <div className="fusion-hero-actions">
                 <button type="button" onClick={launchSelectedApp}>
-                  開始探索
+                  {t('開始探索')}
                 </button>
                 <button type="button" onClick={() => selectApp('tool')}>
-                  瀏覽應用程式
+                  {t('瀏覽應用程式')}
                 </button>
               </div>
             </div>
@@ -438,10 +443,10 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
           <section className="fusion-running-section">
             <div className="fusion-section-head">
               <div>
-                <span>執行中</span>
-                <strong>{selectedApp.title}</strong>
+                <span>{t('執行中')}</span>
+                <strong>{t(selectedApp.title)}</strong>
               </div>
-              <small>{runningCount} 個應用程式執行中</small>
+              <small>{tf('{0} 個應用程式執行中', runningCount)}</small>
             </div>
 
             <div
@@ -487,10 +492,10 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
                       <span className="fusion-module-icon">
                         <Icon size={22} strokeWidth={1.8} />
                       </span>
-                      <span className="fusion-module-title">{app.title}</span>
-                      <span className="fusion-module-subtitle">{app.subtitle}</span>
+                      <span className="fusion-module-title">{t(app.title)}</span>
+                      <span className="fusion-module-subtitle">{t(app.subtitle)}</span>
                       <span className={`fusion-module-status ${launchState}`}>
-                        {launchState === 'open' ? '執行中' : app.status}
+                        {launchState === 'open' ? t('執行中') : t(app.status)}
                       </span>
                     </button>
                   );
@@ -520,33 +525,33 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
           <section className="fusion-widget active-widget">
             <div className="fusion-widget-title">
               {React.createElement(selectedIcon, { size: 20, strokeWidth: 1.8 })}
-              <span>已選取應用程式</span>
+              <span>{t('已選取應用程式')}</span>
             </div>
-            <h2>{selectedApp.title}</h2>
-            <p>{selectedApp.description}</p>
+            <h2>{t(selectedApp.title)}</h2>
+            <p>{t(selectedApp.description)}</p>
             <button type="button" onClick={launchSelectedApp}>
-              啟動 {selectedApp.subtitle}
+              {tf('啟動 {0}', t(selectedApp.subtitle))}
             </button>
           </section>
 
           <section className="fusion-widget task-widget">
             <div className="fusion-widget-title">
               <Activity size={20} strokeWidth={1.8} />
-              <span>任務</span>
+              <span>{t('任務')}</span>
             </div>
             <ul>
-              <li><CheckCircle2 size={16} /> 設計審查已同步</li>
-              <li><CheckCircle2 size={16} /> 系統模組就緒</li>
-              <li><Circle size={16} /> {runningCount} 個應用程式執行中</li>
-              <li><Circle size={16} /> 手勢狀態：{gestureStatusLabel(status, gestureData)}</li>
+              <li><CheckCircle2 size={16} /> {t('設計審查已同步')}</li>
+              <li><CheckCircle2 size={16} /> {t('系統模組就緒')}</li>
+              <li><Circle size={16} /> {tf('{0} 個應用程式執行中', runningCount)}</li>
+              <li><Circle size={16} /> {tf('手勢狀態：{0}', t(gestureStatusLabel(status, gestureData)))}</li>
             </ul>
-            <p className="fusion-launch-status">{lastLaunchMessage}</p>
+            <p className="fusion-launch-status">{lastLaunchMessage || t('工作區已上線。選擇應用程式，或按 Enter 啟動。')}</p>
           </section>
         </aside>
       </div>
 
-      <nav className="fusion-dock" aria-label="Fusion OS 程式塢">
-        <button type="button" className="dock-step" onClick={() => selectIndex(selectedIndex - 1)} title="上一個應用程式">
+      <nav className="fusion-dock" aria-label={t('Fusion OS 程式塢')}>
+        <button type="button" className="dock-step" onClick={() => selectIndex(selectedIndex - 1)} title={t('上一個應用程式')}>
           <ChevronLeft size={21} />
         </button>
         <div className="fusion-dock-rail" ref={dockRailRef}>
@@ -561,15 +566,15 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
                 type="button"
                 className={`${selected ? 'is-selected' : ''} ${running ? 'is-running' : ''}`}
                 onClick={() => selectApp(app.id, true)}
-                title={app.title}
+                title={t(app.title)}
               >
                 <Icon size={23} strokeWidth={1.8} />
-                <span>{app.title}</span>
+                <span>{t(app.title)}</span>
               </button>
             );
           })}
         </div>
-        <button type="button" className="dock-step" onClick={() => selectIndex(selectedIndex + 1)} title="下一個應用程式">
+        <button type="button" className="dock-step" onClick={() => selectIndex(selectedIndex + 1)} title={t('下一個應用程式')}>
           <ChevronRight size={21} />
         </button>
       </nav>
@@ -584,50 +589,50 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
         >
           <button type="button" role="menuitem" onClick={() => runDesktopAction('view-contents')}>
             <span className="context-mark context-grid" />
-            檢視桌面內容
+            {t('檢視桌面內容')}
           </button>
           <button type="button" role="menuitem" onClick={() => runDesktopAction('sort-name')}>
             <span className="context-mark context-sort" />
-            依名稱排序
+            {t('依名稱排序')}
           </button>
           <button type="button" role="menuitem" onClick={() => runDesktopAction('refresh')}>
             <span className="context-mark context-refresh" />
-            重新整理
+            {t('重新整理')}
           </button>
           <div className="context-divider" />
-          <span className="context-section">新增</span>
+          <span className="context-section">{t('新增')}</span>
           <button type="button" role="menuitem" onClick={() => runDesktopAction('new-folder')}>
             <span className="context-mark context-folder" />
-            資料夾
+            {t('資料夾')}
           </button>
           <button type="button" role="menuitem" onClick={() => runDesktopAction('new-text')}>
             <span className="context-mark context-doc" />
-            文字文件
+            {t('文字文件')}
           </button>
           <button type="button" role="menuitem" onClick={() => runDesktopAction('new-markdown')}>
             <span className="context-mark context-doc" />
-            Markdown 檔案
+            {t('Markdown 檔案')}
           </button>
           <button type="button" role="menuitem" onClick={() => runDesktopAction('new-html')}>
             <span className="context-mark context-code" />
-            HTML 文件
+            {t('HTML 文件')}
           </button>
           <button type="button" role="menuitem" onClick={() => runDesktopAction('new-csharp')}>
             <span className="context-mark context-code" />
-            C# 原始碼檔案
+            {t('C# 原始碼檔案')}
           </button>
           <button type="button" role="menuitem" onClick={() => runDesktopAction('new-shortcut')}>
             <span className="context-mark context-shortcut" />
-            捷徑...
+            {t('捷徑...')}
           </button>
           <div className="context-divider" />
           <button type="button" role="menuitem" onClick={() => runDesktopAction('open-folder')}>
             <span className="context-mark context-open" />
-            開啟 FusionDesktop
+            {t('開啟 FusionDesktop')}
           </button>
           <button type="button" role="menuitem" onClick={() => runDesktopAction('properties')}>
             <span className="context-mark context-info" />
-            內容
+            {t('內容')}
           </button>
         </div>
       )}

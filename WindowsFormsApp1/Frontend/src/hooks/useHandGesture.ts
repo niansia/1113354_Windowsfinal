@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { GestureType, ActivateType, StrokePhase, TapPhase, HandSide, ControlMode, FistPhase } from '../types';
+import { ensureMediaPipeScripts, GESTURE_MODEL_OPTIONS } from '../boot/gestureWarmup';
+import { fusionRuntimeCache } from '../boot/runtimeCache';
 
 export type { GestureType, ActivateType, StrokePhase, TapPhase, HandSide, ControlMode, FistPhase };
 
@@ -22,34 +24,6 @@ export type GestureStatus =
   | 'DOUBLE_PINCH'
   | 'FALLBACK_MOUSE_MODE'
   | 'ERROR';
-
-let mediaPipeLoadPromise: Promise<void> | null = null;
-
-function loadScriptOnce(src: string, id: string): Promise<void> {
-  const existing = document.getElementById(id) as HTMLScriptElement | null;
-  if (existing?.dataset.loaded === 'true') return Promise.resolve();
-
-  return new Promise((resolve, reject) => {
-    const script = existing ?? document.createElement('script');
-    script.id = id;
-    script.src = src;
-    script.async = true;
-    script.onload = () => {
-      script.dataset.loaded = 'true';
-      resolve();
-    };
-    script.onerror = () => reject(new Error(`Failed to load ${src}`));
-    if (!existing) document.head.appendChild(script);
-  });
-}
-
-function ensureMediaPipeScripts(): Promise<void> {
-  if (!mediaPipeLoadPromise) {
-    mediaPipeLoadPromise = loadScriptOnce('./mediapipe/hands/hands.js', 'fusion-mediapipe-hands')
-      .then(() => loadScriptOnce('./mediapipe/hands/camera_utils.js', 'fusion-mediapipe-camera-utils'));
-  }
-  return mediaPipeLoadPromise;
-}
 
 export interface GestureData {
   status: GestureStatus;
@@ -151,7 +125,7 @@ export interface GestureData {
     origin?: string;
     href?: string;
     mediapipeStatus: 'NOT_STARTED' | 'LOADING' | 'LOADED' | 'FAILED';
-    mediapipeSource: 'LOCAL' | 'CDN' | 'NONE';
+    mediapipeSource: 'LOCAL' | 'LOCAL_WARM' | 'CDN' | 'NONE';
   };
 }
 
@@ -1076,9 +1050,18 @@ export const useHandGesture = (
       // @ts-ignore
       const { Hands, Camera } = window;
       if (!Hands || !Camera) throw new Error('MediaPipe scripts not found');
-      const hands = new Hands({ locateFile: (file: string) => `./mediapipe/hands/${file}` });
-      updateDebug({ mediapipeSource: 'LOCAL' });
-      hands.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.45, minTrackingConfidence: 0.45 });
+      // Claim the instance the boot sequence already warmed (one-shot handoff) so the
+      // first Home mount skips a second graph build. Falls back to a fresh build if boot
+      // warm-up was skipped or already consumed.
+      let hands = fusionRuntimeCache.gestureHands;
+      if (hands) {
+        fusionRuntimeCache.gestureHands = null;
+        updateDebug({ mediapipeSource: 'LOCAL_WARM' });
+      } else {
+        hands = new Hands({ locateFile: (file: string) => `./mediapipe/hands/${file}` });
+        hands.setOptions(GESTURE_MODEL_OPTIONS);
+        updateDebug({ mediapipeSource: 'LOCAL' });
+      }
       hands.onResults(onResults);
       handsRef.current = hands;
       if (!cameraRef.current) {

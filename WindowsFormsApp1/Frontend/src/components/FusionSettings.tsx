@@ -16,6 +16,9 @@ import {
   Info,
   Languages,
   Lock,
+  LogOut,
+  Mail,
+  KeyRound,
   Monitor,
   Moon,
   MousePointer2,
@@ -34,6 +37,9 @@ import {
 } from 'lucide-react';
 import { WALLPAPERS, type FusionSettingsState } from '../hooks/useFusionSettings';
 import { useSystemInfo } from '../hooks/useSystemInfo';
+import { useI18n } from '../i18n/I18nContext';
+import { useAccount } from '../account/AccountContext';
+import { LANG_LABELS, LANGS } from '../i18n/strings';
 
 interface FusionSettingsProps {
   open: boolean;
@@ -181,12 +187,170 @@ function Group({ title, children }: { title?: string; children: React.ReactNode 
   );
 }
 
+/* ---------- account section (editable profile + password, SQLite-backed) ---------- */
+
+function AccountSection() {
+  const { t } = useI18n();
+  const { profile, updateProfile, changePassword, signOut } = useAccount();
+
+  const [name, setName] = useState(profile.displayName);
+  const [email, setEmail] = useState(profile.email);
+  const [profileMsg, setProfileMsg] = useState('');
+
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [pwMsg, setPwMsg] = useState('');
+  const [pwError, setPwError] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  // Keep the form in sync if the profile is refreshed from the host.
+  useEffect(() => {
+    setName(profile.displayName);
+    setEmail(profile.email);
+  }, [profile.displayName, profile.email]);
+
+  const saveProfile = async () => {
+    setBusy(true);
+    const result = await updateProfile({ displayName: name.trim() || profile.displayName, email: email.trim() });
+    setBusy(false);
+    setProfileMsg(result.ok ? t('已儲存') : '');
+    window.setTimeout(() => setProfileMsg(''), 2200);
+  };
+
+  const savePassword = async () => {
+    setPwError(false);
+    setPwMsg('');
+    if (next.length < 4) {
+      setPwError(true);
+      setPwMsg(t('密碼至少需 4 個字元'));
+      return;
+    }
+    if (next !== confirm) {
+      setPwError(true);
+      setPwMsg(t('兩次輸入的新密碼不一致'));
+      return;
+    }
+    setBusy(true);
+    const result = await changePassword({ current, next });
+    setBusy(false);
+    if (result.ok) {
+      setPwMsg(t('密碼已更新'));
+      setPwError(false);
+      setCurrent('');
+      setNext('');
+      setConfirm('');
+    } else {
+      setPwError(true);
+      setPwMsg(t('目前密碼不正確'));
+    }
+    window.setTimeout(() => setPwMsg(''), 2800);
+  };
+
+  const avatar = (profile.displayName || 'F').trim().charAt(0).toUpperCase();
+
+  return (
+    <>
+      <Group>
+        <div className="set-profile">
+          <span className="set-profile-av">{avatar}</span>
+          <div className="set-profile-text">
+            <strong>{profile.displayName || 'Fusion User'}</strong>
+            <span>
+              {t('專業使用者')}
+              {profile.email ? ` · ${profile.email}` : ''}
+            </span>
+          </div>
+        </div>
+      </Group>
+
+      <Group title={t('個人資料')}>
+        <div className="set-field">
+          <label>
+            <User size={15} strokeWidth={1.9} /> {t('顯示名稱')}
+          </label>
+          <input className="set-input" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="set-field">
+          <label>
+            <Mail size={15} strokeWidth={1.9} /> {t('電子郵件')}
+          </label>
+          <input
+            className="set-input"
+            type="email"
+            value={email}
+            placeholder="name@fusion.os"
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+        <div className="set-actions">
+          <button type="button" className="set-btn primary" onClick={saveProfile} disabled={busy}>
+            {t('儲存變更')}
+          </button>
+          {profileMsg && <span className="set-ok">{profileMsg}</span>}
+        </div>
+      </Group>
+
+      <Group title={t('安全性')}>
+        <div className="set-field">
+          <label>
+            <Lock size={15} strokeWidth={1.9} /> {t('目前密碼')}
+          </label>
+          <input
+            className="set-input"
+            type="password"
+            value={current}
+            autoComplete="current-password"
+            onChange={(e) => setCurrent(e.target.value)}
+          />
+        </div>
+        <div className="set-field">
+          <label>
+            <KeyRound size={15} strokeWidth={1.9} /> {t('新密碼')}
+          </label>
+          <input
+            className="set-input"
+            type="password"
+            value={next}
+            autoComplete="new-password"
+            onChange={(e) => setNext(e.target.value)}
+          />
+        </div>
+        <div className="set-field">
+          <label>
+            <KeyRound size={15} strokeWidth={1.9} /> {t('確認新密碼')}
+          </label>
+          <input
+            className="set-input"
+            type="password"
+            value={confirm}
+            autoComplete="new-password"
+            onChange={(e) => setConfirm(e.target.value)}
+          />
+        </div>
+        <div className="set-actions">
+          <button type="button" className="set-btn primary" onClick={savePassword} disabled={busy}>
+            {t('更新密碼')}
+          </button>
+          {pwMsg && <span className={pwError ? 'set-err' : 'set-ok'}>{pwMsg}</span>}
+        </div>
+      </Group>
+
+      <Group>
+        <Row icon={LogOut} title={t('登出並鎖定')} desc={t('帳戶資料儲存在本機 SQLite 資料庫')} onClick={signOut} chevron />
+      </Group>
+    </>
+  );
+}
+
 /* ---------- main component ---------- */
 
 export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, settings: s, onChange: set }) => {
   const [active, setActive] = useState<CatId>('system');
   const [query, setQuery] = useState('');
   const sys = useSystemInfo();
+  const { t } = useI18n();
+  const account = useAccount();
 
   const storageText = sys.storage
     ? `已使用 ${sys.storage.usedGB.toFixed(1)} GB／可用約 ${sys.storage.totalGB.toFixed(0)} GB`
@@ -339,24 +503,24 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
       case 'personalize':
         return (
           <>
-            <Group title="色彩模式">
-              <Row icon={s.colorMode === 'dark' ? Moon : Sun} title="佈景主題" desc="選擇淺色或深色外觀">
+            <Group title={t('色彩模式')}>
+              <Row icon={s.colorMode === 'dark' ? Moon : Sun} title={t('佈景主題')} desc={t('選擇淺色或深色外觀')}>
                 <Picker
                   value={s.colorMode}
                   onChange={(v) => set('colorMode', v)}
                   options={[
-                    { value: 'dark', label: '深色' },
-                    { value: 'light', label: '淺色' },
-                    { value: 'auto', label: '自動' }
+                    { value: 'dark', label: t('深色') },
+                    { value: 'light', label: t('淺色') },
+                    { value: 'auto', label: t('自動') }
                   ]}
                 />
               </Row>
-              <Row icon={Palette} title="透明效果" desc="視窗與面板的玻璃模糊質感">
+              <Row icon={Palette} title={t('透明效果')} desc={t('視窗與面板的玻璃模糊質感')}>
                 <Toggle on={s.transparency} onChange={(v) => set('transparency', v)} />
               </Row>
             </Group>
 
-            <Group title="強調色">
+            <Group title={t('強調色')}>
               <div className="set-swatches">
                 {ACCENTS.map((color) => (
                   <button
@@ -373,7 +537,7 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
               </div>
             </Group>
 
-            <Group title="桌布">
+            <Group title={t('桌布')}>
               <div className="set-wallpapers">
                 {WALLPAPERS.map((bg, i) => (
                   <button
@@ -414,49 +578,22 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
         );
 
       case 'accounts':
-        return (
-          <>
-            <Group>
-              <div className="set-profile">
-                <span className="set-profile-av">A</span>
-                <div className="set-profile-text">
-                  <strong>Avery</strong>
-                  <span>專業使用者 · avery@fusion.os</span>
-                </div>
-              </div>
-            </Group>
-            <Group title="登入選項">
-              <Row icon={Lock} title="PIN 碼" desc="使用 PIN 快速登入" chevron />
-              <Row icon={User} title="臉部辨識" desc="使用相機登入">
-                <Toggle on onChange={() => undefined} />
-              </Row>
-              <Row icon={Shield} title="動態鎖定" desc="離開時自動鎖定裝置">
-                <Toggle on={false} onChange={() => undefined} />
-              </Row>
-            </Group>
-          </>
-        );
+        return <AccountSection />;
 
       case 'time':
         return (
           <>
-            <Group title="語言">
-              <Row icon={Languages} title="顯示語言" desc="僅變更 FusionOS 桌面的顯示語言（不影響本機）">
+            <Group title={t('語言')}>
+              <Row icon={Languages} title={t('顯示語言')} desc={t('變更整個 FusionOS 桌面的顯示語言')}>
                 <Picker
                   value={s.language}
                   onChange={(v) => set('language', v)}
-                  options={[
-                    { value: 'zh-TW', label: '繁體中文' },
-                    { value: 'zh-CN', label: '简体中文' },
-                    { value: 'en', label: 'English' },
-                    { value: 'ja', label: '日本語' },
-                    { value: 'ko', label: '한국어' }
-                  ]}
+                  options={LANGS.map((code) => ({ value: code, label: LANG_LABELS[code] }))}
                 />
               </Row>
             </Group>
-            <Group title="時間">
-              <Row icon={Clock} title="時區">
+            <Group title={t('時間')}>
+              <Row icon={Clock} title={t('時區')}>
                 <Picker
                   value={s.timezone}
                   onChange={(v) => set('timezone', v)}
@@ -468,7 +605,7 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
                   ]}
                 />
               </Row>
-              <Row icon={Clock} title="使用 24 小時制">
+              <Row icon={Clock} title={t('使用 24 小時制')}>
                 <Toggle on={s.clock24} onChange={(v) => set('clock24', v)} />
               </Row>
             </Group>
@@ -576,29 +713,29 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
             <header className="set-topbar">
               <div className="set-title">
                 <SettingsIcon size={20} strokeWidth={1.9} />
-                <span>系統設定</span>
+                <span>{t('系統設定')}</span>
               </div>
               <label className="set-search">
                 <Search size={16} />
                 <input
                   type="text"
-                  placeholder="搜尋設定"
+                  placeholder={t('搜尋設定')}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                 />
               </label>
-              <button type="button" className="set-close" onClick={onClose} title="關閉">
+              <button type="button" className="set-close" onClick={onClose} title={t('關閉')}>
                 <X size={18} />
               </button>
             </header>
 
             <div className="set-body">
-              <nav className="set-sidebar" aria-label="設定分類">
+              <nav className="set-sidebar" aria-label={t('設定分類')}>
                 <div className="set-account-chip">
-                  <span className="set-account-av">A</span>
+                  <span className="set-account-av">{(account.profile.displayName || 'A').trim().charAt(0).toUpperCase()}</span>
                   <div>
-                    <strong>Avery</strong>
-                    <span>avery@fusion.os</span>
+                    <strong>{account.profile.displayName || 'Avery'}</strong>
+                    <span>{account.profile.email || 'avery@fusion.os'}</span>
                   </div>
                 </div>
                 {CATEGORIES.map((category) => {
@@ -611,7 +748,7 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
                       onClick={() => setActive(category.id)}
                     >
                       <Icon size={19} strokeWidth={1.8} />
-                      <span>{category.label}</span>
+                      <span>{t(category.label)}</span>
                     </button>
                   );
                 })}
@@ -620,7 +757,7 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
               <div className="set-content">
                 <div className="set-content-head">
                   <activeMeta.icon size={26} strokeWidth={1.8} />
-                  <h2>{activeMeta.label}</h2>
+                  <h2>{t(activeMeta.label)}</h2>
                 </div>
                 <AnimatePresence mode="wait">
                   <motion.div
