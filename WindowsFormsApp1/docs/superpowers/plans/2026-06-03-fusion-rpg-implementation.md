@@ -188,9 +188,10 @@ Run:
   -projectPath "C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG" `
   -runTests `
   -testPlatform EditMode `
-  -testResults "C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\TestResults-Health.xml" `
-  -quit
+  -testResults "C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\TestResults-Health.xml"
 ```
+
+Do not add `-quit` to Unity Test Framework runs; on Unity 6000.0.32f1, the test runner owns editor shutdown and writes the XML report before exiting.
 
 Expected: FAIL because `FusionRPG.Health` does not exist.
 
@@ -1292,9 +1293,10 @@ Run:
   -projectPath "C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG" `
   -runTests `
   -testPlatform EditMode `
-  -testResults "C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\TestResults.xml" `
-  -quit
+  -testResults "C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\TestResults.xml"
 ```
+
+Do not add `-quit` to Unity Test Framework runs; on Unity 6000.0.32f1, the test runner owns editor shutdown and writes the XML report before exiting.
 
 Expected: XML report contains passing Health and Combat tests.
 
