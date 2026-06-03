@@ -1,0 +1,12 @@
+{
+    "name": "FusionRPG.EditModeTests",
+    "references": [
+        "FusionRPG"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}
