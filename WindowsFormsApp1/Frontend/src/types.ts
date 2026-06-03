@@ -1,5 +1,5 @@
 export type AppId =
-  | 'pc' | 'dir' | 'piano' | 'cosmic' | 'user'
+  | 'pc' | 'dir' | 'piano' | 'media' | 'wav' | 'cosmic' | 'user'
   | 'add' | 'dev' | 'tool' | 'db' | 'web'
   | 'game' | 'cmd' | 'set';
 
@@ -67,6 +67,8 @@ export const APPS_CONFIG: AppConfig[] = [
   { id: 'pc', title: 'Workspace', glyph: 'OS', description: 'Fusion OS spatial command center.', color: '#67e8ff' },
   { id: 'dir', title: 'Files', glyph: 'DIR', description: 'Browse local projects and folders.', color: '#6aa8ff' },
   { id: 'piano', title: 'Holo Studio', glyph: '88', description: 'Creative piano and sound workspace.', color: '#d56bff' },
+  { id: 'media', title: 'AURORA Cinema', glyph: 'VID', description: 'Multimedia playback and cinema workspace.', color: '#58dcff' },
+  { id: 'wav', title: 'Wave Studio', glyph: 'WAV', description: 'WAV playback, audio library, and waveform tools.', color: '#78ebda' },
   { id: 'cosmic', title: 'Flow', glyph: 'COS', description: 'Gesture and WebGL motion surface.', color: '#9c7cff' },
   { id: 'user', title: 'User Space', glyph: 'USR', description: 'Personal workspace profile.', color: '#7ef6c8' },
   { id: 'add', title: 'Add File', glyph: '+', description: 'Import files into the workspace.', color: '#68a5ff' },

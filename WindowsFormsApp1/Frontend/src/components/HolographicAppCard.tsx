@@ -1,11 +1,13 @@
 import React from 'react';
-import { Monitor, Folder, Piano, Hand, FileUser, Plus, Code, Wrench, Database, Globe, Gamepad2, Terminal, Settings } from 'lucide-react';
+import { Monitor, Folder, Piano, Clapperboard, AudioWaveform, Hand, FileUser, Plus, Code, Wrench, Database, Globe, Gamepad2, Terminal, Settings } from 'lucide-react';
 import type { FusionApp } from '../data/fusionApps';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   PC: Monitor,
   DIR: Folder,
   '88': Piano,
+  VID: Clapperboard,
+  WAV: AudioWaveform,
   COS: Hand,
   USR: FileUser,
   '+': Plus,

@@ -60,6 +60,28 @@ export const FUSION_APPS: FusionApp[] = [
     status: '就緒'
   },
   {
+    id: 'media',
+    title: '影音中心',
+    subtitle: '內建應用程式',
+    description: '啟動 AURORA Cinema 多媒體播放器（IntegratedApps/MultimediaStudio）。',
+    glyph: 'VID',
+    color: '#58dcff',
+    category: 'creative',
+    tags: ['video', 'media', 'cinema'],
+    status: '就緒'
+  },
+  {
+    id: 'wav',
+    title: '音訊工作室',
+    subtitle: '內建應用程式',
+    description: '啟動 WAV 與音訊播放工具（IntegratedApps/WaveStudio）。',
+    glyph: 'WAV',
+    color: '#78ebda',
+    category: 'creative',
+    tags: ['wav', 'audio', 'playlist'],
+    status: '就緒'
+  },
+  {
     id: 'cosmic',
     title: '宇宙手勢',
     subtitle: '內建應用程式',

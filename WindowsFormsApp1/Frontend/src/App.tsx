@@ -56,7 +56,7 @@ export default function App() {
       if (revealed) return;
       revealed = true;
       setRevealHome(true);
-      window.setTimeout(() => setOverlayGone(true), 820);
+      window.setTimeout(() => setOverlayGone(true), 360);
     };
 
     const disposeHostListener = addHostMessageListener((message) => {
@@ -64,7 +64,7 @@ export default function App() {
     });
 
     // Fallback: reveal even if the host never reports shell-ready (e.g. browser).
-    const fallback = window.setTimeout(reveal, 1500);
+    const fallback = window.setTimeout(reveal, 520);
 
     return () => {
       disposeHostListener();

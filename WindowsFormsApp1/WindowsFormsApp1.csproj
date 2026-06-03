@@ -9,9 +9,12 @@
     <RootNamespace>WindowsFormsApp1</RootNamespace>
     <AssemblyName>WindowsFormsApp1</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <RuntimeIdentifiers>win</RuntimeIdentifiers>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <NuGetPackageRoot Condition="'$(NuGetPackageRoot)' == ''">$(USERPROFILE)\.nuget\packages\</NuGetPackageRoot>
+    <WebView2UseWinRT>false</WebView2UseWinRT>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -33,6 +36,18 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Web.WebView2.Core">
+      <HintPath>$(NuGetPackageRoot)microsoft.web.webview2\1.0.3967.48\lib\net462\Microsoft.Web.WebView2.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Web.WebView2.WinForms">
+      <HintPath>$(NuGetPackageRoot)microsoft.web.webview2\1.0.3967.48\lib\net462\Microsoft.Web.WebView2.WinForms.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Web.WebView2.Wpf">
+      <HintPath>$(NuGetPackageRoot)microsoft.web.webview2\1.0.3967.48\lib\net462\Microsoft.Web.WebView2.Wpf.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -87,13 +102,20 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="IntegratedApps\PianoStudio\**\*.*" />
+    <None Include="IntegratedApps\MultimediaStudio\**\*.*" />
+    <None Include="IntegratedApps\WaveStudio\**\*.*" />
     <None Include="IntegratedApps\CosmicGesture\**\*.*" />
+    <None Remove="IntegratedApps\**\packages\**\*.*" />
+    <None Remove="IntegratedApps\**\bin\**\*.*" />
+    <None Remove="IntegratedApps\**\obj\**\*.*" />
     <None Remove="IntegratedApps\CosmicGesture\node_modules\**\*.*" />
     <None Remove="IntegratedApps\CosmicGesture\.vite\**\*.*" />
     <IntegratedAppProject Include="IntegratedApps\PianoStudio\**\*.csproj" />
+    <IntegratedAppProject Include="IntegratedApps\MultimediaStudio\**\*.csproj" />
+    <IntegratedAppProject Include="IntegratedApps\WaveStudio\**\*.csproj" />
   </ItemGroup>
   <Target Name="BuildIntegratedApps" BeforeTargets="Build" Condition="'@(IntegratedAppProject)' != ''">
-    <MSBuild Projects="@(IntegratedAppProject)" Properties="Configuration=$(Configuration);Platform=AnyCPU" />
+    <MSBuild Projects="@(IntegratedAppProject)" Properties="Configuration=$(Configuration);Platform=AnyCPU;WebView2UseWinRT=false" />
   </Target>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="BuildFusionFrontend" BeforeTargets="BeforeBuild" Condition="Exists('$(MSBuildProjectDirectory)\Frontend\package.json')">

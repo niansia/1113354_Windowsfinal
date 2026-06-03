@@ -87,7 +87,7 @@ export async function preloadApp(appId: string): Promise<void> {
 }
 
 export async function preloadCommonApps(): Promise<string> {
-  await Promise.all(['piano', 'cosmic', 'set', 'web'].map((id) => preloadApp(id)));
+  await Promise.all(['piano', 'media', 'wav', 'cosmic', 'set', 'web'].map((id) => preloadApp(id)));
   return `Preloaded ${fusionRuntimeCache.preloadedApps.length} app manifests`;
 }
 
@@ -98,6 +98,60 @@ export function buildGestureConfig(): GestureConfig {
 
 export function detectPerformance() {
   return getPerformanceProfile();
+}
+
+export async function warmGlassKernel(): Promise<string> {
+  if (typeof document !== 'undefined') {
+    const probe = document.createElement('div');
+    probe.style.cssText = [
+      'position:fixed',
+      'left:-9999px',
+      'top:-9999px',
+      'width:240px',
+      'height:160px',
+      'border-radius:18px',
+      'backdrop-filter:blur(18px) saturate(1.35)',
+      'background:linear-gradient(135deg,rgba(88,220,255,.16),rgba(154,103,255,.14))',
+      'box-shadow:0 24px 80px rgba(34,211,238,.18)'
+    ].join(';');
+    document.body.appendChild(probe);
+    void probe.getBoundingClientRect();
+    void window.getComputedStyle(probe).backdropFilter;
+    document.body.removeChild(probe);
+  }
+  await nextPaint();
+  return 'Glass compositor warmed';
+}
+
+export async function warmShellLayout(): Promise<string> {
+  const registry = fusionRuntimeCache.appRegistry ?? buildAppRegistry();
+  fusionRuntimeCache.appRegistry = registry;
+  const layout = registry.apps.map((app, index) => ({
+    id: app.id,
+    x: index % 4,
+    y: Math.floor(index / 4),
+    hue: app.color
+  }));
+  await nextPaint();
+  return `Layout ${layout.length} launch targets`;
+}
+
+export async function warmBridge(): Promise<string> {
+  const ok = typeof (window as unknown as { chrome?: { webview?: unknown } }).chrome?.webview !== 'undefined';
+  await Promise.resolve();
+  return ok ? 'Bridge linked' : 'Bridge console fallback';
+}
+
+export async function warmRevealSurface(): Promise<string> {
+  if (typeof document !== 'undefined') {
+    document.documentElement.style.setProperty('--fusion-boot-ready', '1');
+  }
+  await nextPaint();
+  return 'Desktop surface ready';
+}
+
+function nextPaint(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
 // Decode the lucide glyph set + ensure boot CSS is laid out (prevents first-paint

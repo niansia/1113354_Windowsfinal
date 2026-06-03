@@ -1,12 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { AppConfig } from '../types';
-import { Monitor, Folder, Piano, Hand, FileUser, Plus, Code, Wrench, Database, Globe, Gamepad2, Terminal, Settings } from 'lucide-react';
+import { Monitor, Folder, Piano, Clapperboard, AudioWaveform, Hand, FileUser, Plus, Code, Wrench, Database, Globe, Gamepad2, Terminal, Settings } from 'lucide-react';
 
 const ICON_MAP: Record<string, any> = {
   PC: Monitor,
   DIR: Folder,
   '88': Piano,
+  VID: Clapperboard,
+  WAV: AudioWaveform,
   COS: Hand,
   USR: FileUser,
   '+': Plus,

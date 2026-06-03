@@ -7,9 +7,9 @@
   transform: scale(1.018);
   filter: blur(8px);
   transition:
-    opacity 0.82s ease,
-    transform 0.82s cubic-bezier(0.22, 0.61, 0.36, 1),
-    filter 0.82s ease;
+    opacity 0.34s ease,
+    transform 0.34s cubic-bezier(0.22, 0.61, 0.36, 1),
+    filter 0.34s ease;
 }
 
 .fusion-home-wrap.revealed {
@@ -34,7 +34,7 @@
     radial-gradient(circle at 25% 58%, rgba(24, 202, 232, 0.04), transparent 31%),
     linear-gradient(180deg, #050817 0%, #020514 56%, #01020a 100%);
   opacity: 1;
-  transition: opacity 0.82s ease, transform 0.82s ease, filter 0.82s ease;
+  transition: opacity 0.34s ease, transform 0.34s ease, filter 0.34s ease;
 }
 
 .fusion-boot.is-revealing {

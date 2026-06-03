@@ -15,7 +15,6 @@ import {
   List as ListIcon,
   Music,
   RefreshCw,
-  Server,
   User,
   X,
   type LucideIcon
@@ -217,10 +216,14 @@ export const FusionFiles: React.FC<FusionFilesProps> = ({ open, onClose, accent 
   };
 
   const sideItems: Array<{ label: string; icon: LucideIcon; onClick: () => void; active: boolean }> = [
-    { label: '專案檔案', icon: Folder, onClick: goVirtual, active: mode === 'virtual' },
-    { label: '本機', icon: Server, onClick: goVirtual, active: false },
-    { label: '使用者檔案', icon: User, onClick: goVirtual, active: false },
-    { label: '下載', icon: Download, onClick: goVirtual, active: false }
+    { label: '專案檔案（範例）', icon: Folder, onClick: goVirtual, active: mode === 'virtual' },
+    ...(supportsFSA
+      ? [
+          { label: '使用者資料夾', icon: User, onClick: pickRealFolder, active: false },
+          { label: '下載', icon: Download, onClick: pickRealFolder, active: false },
+          { label: '開啟本機資料夾', icon: HardDrive, onClick: pickRealFolder, active: false }
+        ]
+      : [])
   ];
 
   const selectedEntry = entries.find((e) => e.name === selected);

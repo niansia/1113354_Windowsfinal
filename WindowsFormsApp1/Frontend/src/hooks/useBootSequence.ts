@@ -52,18 +52,9 @@ export function useBootSequence(): BootState {
     startedRef.current = true;
 
     const skipVisual = flag('skip');
-    const force = flag('force');
-    let played = false;
-    try { played = window.sessionStorage?.getItem('fusionBootPlayed') === '1'; } catch { /* ignore */ }
-
-    let paceScale = 0.62;
-    if (!force && played) paceScale = 0.4; // same-session F5 => short boot
-    if (reducedMotion || profile.current.tier === 'low') paceScale = Math.min(paceScale, 0.5);
-    if (force) paceScale = 1;
+    if (skipVisual) skipRef.current = true;
 
     runBoot({
-      fast: skipVisual,
-      paceScale,
       shouldSkip: () => skipRef.current,
       onUpdate: setSnap
     }).then(() => {

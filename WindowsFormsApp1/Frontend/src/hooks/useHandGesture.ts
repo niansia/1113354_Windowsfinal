@@ -173,8 +173,8 @@ const activateSafeGapMs = 400;      // no activate within this of a fire
 const activateSwipeGuardMs = 450;   // no activate within this of a swipe fire
 
 // ---- Fist activate ----
-const fistHoldMs = 300;
-const fistOpenRecentMs = 950;   // an open/relaxed hand must have been seen this recently
+const fistHoldMs = 700;
+const fistOpenRecentMs = 450;   // an open/relaxed hand must have been seen this recently
 
 // ---- Active control hand + intent gating ----
 const mouseActiveWindowMs = 800;     // recent mouse activity window
@@ -655,7 +655,13 @@ export const useHandGesture = (
       const ringCurl = ringTip.y > ringPip.y;
       const pinkyCurl = pinkyTip.y > pinkyPip.y;
       const curledCount = [indexCurl, middleCurl, ringCurl, pinkyCurl].filter(Boolean).length;
-      const isFist = curledCount >= 3;
+      const palmSize = Math.max(0.001, calculateDistance(palmBase, palmMid));
+      const compactFist =
+        calculateDistance(indexTip, palmBase) < palmSize * 2.05 &&
+        calculateDistance(middleTip, palmBase) < palmSize * 2.1 &&
+        calculateDistance(ringTip, palmBase) < palmSize * 2.15 &&
+        calculateDistance(pinkyTip, palmBase) < palmSize * 2.2;
+      const isFist = curledCount >= 4 && compactFist && !isOpenPalm && !isIndexPointing;
       isFistFlag = isFist;
       // Any non-fist posture is an "open/relaxed/pointing" precursor: it re-arms the
       // fist machine and marks a recent open. A hand that appears already as a fist
@@ -693,7 +699,6 @@ export const useHandGesture = (
       nextHandX = smoothedHandX.current;
 
       // ----- Pinch + double pinch -----
-      const palmSize = calculateDistance(palmBase, palmMid);
       const pinchDist = calculateDistance(thumbTip, indexTip);
       normalizedPinchValue = pinchDist / (palmSize || 0.1);
       // A fist also makes thumb/index close; exclude it from pinch.
@@ -722,7 +727,7 @@ export const useHandGesture = (
       nextIsPinching = !isFist && (IS_PINCH_DOWN || (gestureData.isPinching && !IS_PINCH_UP));
 
       if (isFist) {
-        // ----- Intentional fist: open -> fist -> hold (>=300ms) -> activate -----
+        // ----- Intentional fist: open -> fist -> hold (>=700ms) -> activate -----
         candidateType = 'NONE';
         resetStroke('IDLE');
         tapPhaseRef.current = 'IDLE';

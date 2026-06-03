@@ -1,0 +1,11 @@
+﻿.vs/
+**/.vs/
+[Bb]in/
+[Oo]bj/
+packages/
+*.user
+*.suo
+*.cache
+*.pdb
+*.exe
+nuget.exe

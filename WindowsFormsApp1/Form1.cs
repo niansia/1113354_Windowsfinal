@@ -6,6 +6,7 @@ using System.Drawing.Drawing2D;
 using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
@@ -38,6 +39,11 @@ namespace WindowsFormsApp1
         private readonly List<Control> openWindows = new List<Control>();
         private readonly Dictionary<Control, FusionAppWindow> appWindows = new Dictionary<Control, FusionAppWindow>();
         private readonly Dictionary<Control, float> baseFontSizes = new Dictionary<Control, float>();
+        private readonly Dictionary<string, int> externalAppRunCounts = new Dictionary<string, int>();
+
+        // Live system metrics pushed to the React frontend (本機 / This PC page).
+        private PerformanceCounter cpuCounter;
+        private Timer metricsTimer;
         private readonly List<DesktopShortcutInfo> desktopShortcuts = new List<DesktopShortcutInfo>();
         private FusionAppWindow activeApp;
         private int shortcutSerial;
@@ -45,6 +51,10 @@ namespace WindowsFormsApp1
         private string currentLanguage = "zh-TW";
         private Process cosmicServerProcess;
         private int cameraAppWindowCount = 0;
+        private bool nativeWarmupStarted;
+        private string terminalWorkingDirectoryCache;
+        private Font terminalOutputFont;
+        private Font terminalInputFont;
         private const bool UseViteDevServer = false;
 
         // ---- Browser-like controls (zoom / fullscreen / devtools) ----
@@ -145,6 +155,7 @@ namespace WindowsFormsApp1
             // the whole client area and the shell (rail/taskbar/start menu) stays hidden
             // until React posts FUSION_BOOT_DONE.
             EnterSystemBootMode();
+            BeginNativeBootWarmup();
             LayoutShell();
 
             Resize += delegate
@@ -329,6 +340,196 @@ namespace WindowsFormsApp1
                 "\"message\":\"" + JsonEscape(message) + "\"" +
                 "}}";
             try { carouselWebView.CoreWebView2.PostWebMessageAsString(json); } catch { }
+        }
+
+        private void BeginNativeBootWarmup()
+        {
+            if (nativeWarmupStarted) return;
+            nativeWarmupStarted = true;
+
+            try
+            {
+                terminalOutputFont = new Font("Consolas", 10.5F);
+                terminalInputFont = new Font("Consolas", 11F);
+            }
+            catch
+            {
+                terminalOutputFont = new Font(Font.FontFamily, 10.5F);
+                terminalInputFont = new Font(Font.FontFamily, 11F);
+            }
+
+            ScheduleWarmTerminalControls();
+
+            Task.Run(delegate
+            {
+                try
+                {
+                    terminalWorkingDirectoryCache = ResolveTerminalWorkingDirectory();
+                    WarmTerminalShell("cmd.exe", "/d /s /c ver>nul");
+                    WarmTerminalShell("powershell.exe", "-NoLogo -NoProfile -ExecutionPolicy Bypass -Command \"$PSVersionTable.PSVersion.ToString() | Out-Null\"");
+                }
+                catch
+                {
+                }
+            });
+        }
+
+        private void ScheduleWarmTerminalControls()
+        {
+            if (IsDisposed) return;
+            if (IsHandleCreated)
+            {
+                try { BeginInvoke((Action)WarmTerminalControls); }
+                catch { }
+                return;
+            }
+
+            EventHandler handler = null;
+            handler = delegate
+            {
+                HandleCreated -= handler;
+                if (IsDisposed || !IsHandleCreated) return;
+                try { BeginInvoke((Action)WarmTerminalControls); }
+                catch { }
+            };
+            HandleCreated += handler;
+        }
+
+        private void WarmTerminalControls()
+        {
+            try
+            {
+                using (var panel = new TableLayoutPanel())
+                using (var input = new TextBox())
+                using (var output = new TextBox())
+                using (var button = new Button())
+                {
+                    panel.ColumnCount = 2;
+                    panel.RowCount = 2;
+                    input.Font = terminalInputFont ?? Font;
+                    output.Multiline = true;
+                    output.Font = terminalOutputFont ?? Font;
+                    button.FlatStyle = FlatStyle.Flat;
+                    panel.Controls.Add(input, 0, 0);
+                    panel.Controls.Add(button, 1, 0);
+                    panel.Controls.Add(output, 0, 1);
+                    panel.PerformLayout();
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private void WarmTerminalShell(string fileName, string arguments)
+        {
+            try
+            {
+                using (var process = new Process())
+                {
+                    process.StartInfo = new ProcessStartInfo
+                    {
+                        FileName = fileName,
+                        Arguments = arguments,
+                        WorkingDirectory = terminalWorkingDirectoryCache ?? Environment.CurrentDirectory,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true
+                    };
+                    process.Start();
+                    if (!process.WaitForExit(1600))
+                    {
+                        try { process.Kill(); } catch { }
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MEMORYSTATUSEX
+        {
+            public uint dwLength;
+            public uint dwMemoryLoad;
+            public ulong ullTotalPhys;
+            public ulong ullAvailPhys;
+            public ulong ullTotalPageFile;
+            public ulong ullAvailPageFile;
+            public ulong ullTotalVirtual;
+            public ulong ullAvailVirtual;
+            public ulong ullAvailExtendedVirtual;
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool GlobalMemoryStatusEx(ref MEMORYSTATUSEX lpBuffer);
+
+        // Start pushing real CPU / RAM / disk usage to the React 本機 page every second.
+        private void StartSystemMetrics()
+        {
+            if (metricsTimer != null) return;
+            try
+            {
+                cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+                cpuCounter.NextValue(); // priming read (the first value is always 0)
+            }
+            catch { cpuCounter = null; }
+
+            metricsTimer = new Timer { Interval = 1000 };
+            metricsTimer.Tick += delegate { PostSystemMetrics(); };
+            metricsTimer.Start();
+        }
+
+        private void PostSystemMetrics()
+        {
+            if (carouselWebView == null || carouselWebView.CoreWebView2 == null) return;
+            try
+            {
+                var ci = System.Globalization.CultureInfo.InvariantCulture;
+
+                double cpu = -1;
+                if (cpuCounter != null)
+                {
+                    try { cpu = Math.Round(cpuCounter.NextValue(), 1); } catch { cpu = -1; }
+                }
+
+                double ramPct = 0, ramUsed = 0, ramTotal = 0;
+                var mem = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX)) };
+                if (GlobalMemoryStatusEx(ref mem))
+                {
+                    ramTotal = mem.ullTotalPhys / 1073741824.0;
+                    ramUsed = (mem.ullTotalPhys - mem.ullAvailPhys) / 1073741824.0;
+                    ramPct = mem.dwMemoryLoad;
+                }
+
+                double diskUsed = 0, diskTotal = 0;
+                try
+                {
+                    string root = Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\";
+                    var drive = new DriveInfo(root);
+                    if (drive.IsReady)
+                    {
+                        diskTotal = drive.TotalSize / 1073741824.0;
+                        diskUsed = (drive.TotalSize - drive.AvailableFreeSpace) / 1073741824.0;
+                    }
+                }
+                catch { }
+
+                string json =
+                    "{\"type\":\"FUSION_SYS_METRICS\",\"payload\":{" +
+                    "\"cpu\":" + cpu.ToString(ci) + "," +
+                    "\"ramPct\":" + ramPct.ToString(ci) + "," +
+                    "\"ramUsed\":" + ramUsed.ToString("0.00", ci) + "," +
+                    "\"ramTotal\":" + ramTotal.ToString("0.00", ci) + "," +
+                    "\"diskUsed\":" + diskUsed.ToString("0", ci) + "," +
+                    "\"diskTotal\":" + diskTotal.ToString("0", ci) +
+                    "}}";
+                carouselWebView.CoreWebView2.PostWebMessageAsString(json);
+            }
+            catch { }
         }
 
         private void PostActiveAppChanged(FusionAppWindow app)
@@ -641,6 +842,8 @@ namespace WindowsFormsApp1
             AddDesktopIcon(L("ThisPC"), "PC", L("ThisPCDesc"), accent3);
             AddDesktopIcon(L("ProjectFiles"), "DIR", L("ProjectFilesDesc"), Color.FromArgb(90, 212, 255));
             AddDesktopIcon(L("PianoStudio"), "88", L("PianoStudioDesc"), Color.FromArgb(205, 95, 255), LaunchPianoStudio);
+            AddDesktopIcon(L("MultimediaStudio"), "VID", L("MultimediaStudioDesc"), Color.FromArgb(88, 220, 255), LaunchMultimediaStudio);
+            AddDesktopIcon(L("WaveStudio"), "WAV", L("WaveStudioDesc"), Color.FromArgb(120, 235, 218), LaunchWaveStudio);
             AddDesktopIcon(L("CosmicGesture"), "COS", L("CosmicGestureDesc"), Color.FromArgb(103, 125, 255), LaunchCosmicGesture);
             AddDesktopIcon(L("UserFiles"), "USR", L("UserFilesDesc"), Color.FromArgb(86, 214, 255));
             AddDesktopIcon(L("AddFile"), "+", L("AddFileDesc"), Color.FromArgb(130, 165, 255), AddUserFile);
@@ -649,7 +852,7 @@ namespace WindowsFormsApp1
             AddDesktopIcon(L("Database"), "DB", L("DatabaseDesc"), Color.FromArgb(255, 206, 138));
             AddDesktopIcon(L("WebZone"), "WEB", L("WebZoneDesc"), Color.FromArgb(119, 187, 255));
             AddDesktopIcon(L("GameRoom"), "GAME", L("GameRoomDesc"), accent2);
-            AddDesktopIcon(L("Terminal"), "CMD", L("TerminalDesc"), Color.FromArgb(112, 226, 188));
+            AddDesktopIcon(L("Terminal"), "CMD", L("TerminalDesc"), Color.FromArgb(112, 226, 188), OpenFusionTerminal);
             AddDesktopIcon(L("Settings"), "SET", L("SettingsDesc"), Color.FromArgb(163, 133, 255), OpenSettingsWindow);
             UpdateShelfScrollSize();
         }
@@ -791,6 +994,8 @@ namespace WindowsFormsApp1
             apps.Controls.Add(StartItem(L("FileManager"), L("FileManagerDesc"), accent));
             apps.Controls.Add(StartItem(L("AppRegistry"), L("AppRegistryDesc"), Color.FromArgb(255, 196, 96)));
             apps.Controls.Add(StartItem(L("PianoStudio"), L("StartPianoDesc"), accent2));
+            apps.Controls.Add(StartItem(L("MultimediaStudio"), L("StartMultimediaDesc"), Color.FromArgb(88, 220, 255)));
+            apps.Controls.Add(StartItem(L("WaveStudio"), L("StartWaveDesc"), Color.FromArgb(120, 235, 218)));
             apps.Controls.Add(StartItem(L("CosmicGesture"), L("StartCosmicDesc"), accent3));
             apps.Controls.Add(StartItem(L("LanguageLab"), L("StartLanguageDesc"), accent));
             apps.Controls.Add(StartItem(L("SystemSettings"), L("SystemSettingsDesc"), Color.FromArgb(163, 133, 255)));
@@ -969,6 +1174,9 @@ namespace WindowsFormsApp1
                 };
 
                 carouselWebView.CoreWebView2.WebMessageReceived += CarouselWebView_WebMessageReceived;
+
+                // Begin streaming real CPU / RAM / disk usage to the 本機 page.
+                StartSystemMetrics();
 
                 // Build-Only Workflow: Ignore localhost, always load built dist
                 string distFolder = FindFrontendDistFolder();
@@ -1170,10 +1378,19 @@ namespace WindowsFormsApp1
                     return;
                 }
 
+                if (lower.Contains("fusion_desktop_action"))
+                {
+                    HandleFusionDesktopAction(lower);
+                    return;
+                }
+
                 if (lower.Contains("launch_app"))
                 {
                     if (lower.Contains("\"piano\"") || lower.Contains("\"88\"")) LaunchPianoStudio();
+                    else if (lower.Contains("\"media\"") || lower.Contains("\"vid\"")) LaunchMultimediaStudio();
+                    else if (lower.Contains("\"wav\"") || lower.Contains("\"wave\"")) LaunchWaveStudio();
                     else if (lower.Contains("\"cosmic\"") || lower.Contains("\"cos\"")) LaunchCosmicGesture();
+                    else if (lower.Contains("\"cmd\"") || lower.Contains("\"terminal\"")) OpenFusionTerminal();
                     else if (lower.Contains("\"settings\"") || lower.Contains("\"set\"")) OpenSettingsWindow();
                     else 
                     {
@@ -1223,6 +1440,21 @@ namespace WindowsFormsApp1
             if (e.NodeKey == "piano")
             {
                 LaunchPianoStudio();
+                return;
+            }
+            if (e.NodeKey == "media")
+            {
+                LaunchMultimediaStudio();
+                return;
+            }
+            if (e.NodeKey == "wav")
+            {
+                LaunchWaveStudio();
+                return;
+            }
+            if (e.NodeKey == "cmd" || e.NodeKey == "terminal")
+            {
+                OpenFusionTerminal();
                 return;
             }
             if (e.NodeKey == "settings")
@@ -1426,9 +1658,24 @@ namespace WindowsFormsApp1
                     LaunchPianoStudio();
                     return;
                 }
+                if (name == L("MultimediaStudio"))
+                {
+                    LaunchMultimediaStudio();
+                    return;
+                }
+                if (name == L("WaveStudio"))
+                {
+                    LaunchWaveStudio();
+                    return;
+                }
                 if (name == L("CosmicGesture"))
                 {
                     LaunchCosmicGesture();
+                    return;
+                }
+                if (name == L("Terminal"))
+                {
+                    OpenFusionTerminal();
                     return;
                 }
                 if (name == L("SystemSettings"))
@@ -1489,6 +1736,8 @@ namespace WindowsFormsApp1
                 case "PC": return "pc";
                 case "DIR": return "dir";
                 case "88": return "piano";
+                case "VID": return "media";
+                case "WAV": return "wav";
                 case "COS": return "cosmic";
                 case "USR": return "user";
                 case "+": return "add";
@@ -1661,6 +1910,14 @@ namespace WindowsFormsApp1
             {
                 return FindProjectDirectory(Path.Combine("IntegratedApps", "PianoStudio"));
             }
+            if (info.Glyph == "VID")
+            {
+                return FindProjectDirectory(Path.Combine("IntegratedApps", "MultimediaStudio"));
+            }
+            if (info.Glyph == "WAV")
+            {
+                return FindProjectDirectory(Path.Combine("IntegratedApps", "WaveStudio"));
+            }
             if (info.Glyph == "COS")
             {
                 return FindProjectDirectory(Path.Combine("IntegratedApps", "CosmicGesture"));
@@ -1693,14 +1950,254 @@ namespace WindowsFormsApp1
             }
         }
 
+        private void HandleFusionDesktopAction(string lowerMessage)
+        {
+            if (string.IsNullOrEmpty(lowerMessage)) return;
+
+            try
+            {
+                if (lowerMessage.Contains("new-folder"))
+                {
+                    CreateFusionDesktopItem("folder");
+                }
+                else if (lowerMessage.Contains("new-text"))
+                {
+                    CreateFusionDesktopItem("text");
+                }
+                else if (lowerMessage.Contains("new-markdown"))
+                {
+                    CreateFusionDesktopItem("markdown");
+                }
+                else if (lowerMessage.Contains("new-html"))
+                {
+                    CreateFusionDesktopItem("html");
+                }
+                else if (lowerMessage.Contains("new-csharp"))
+                {
+                    CreateFusionDesktopItem("csharp");
+                }
+                else if (lowerMessage.Contains("new-shortcut"))
+                {
+                    AddUserFile();
+                }
+                else if (lowerMessage.Contains("open-folder"))
+                {
+                    OpenFusionDesktopFolder();
+                }
+                else if (lowerMessage.Contains("view-contents"))
+                {
+                    OpenFusionDesktopContents();
+                }
+                else if (lowerMessage.Contains("properties"))
+                {
+                    OpenFusionDesktopProperties();
+                }
+                else if (lowerMessage.Contains("refresh") || lowerMessage.Contains("sort-name"))
+                {
+                    desktop.Invalidate();
+                    if (heroStage != null) heroStage.Invalidate();
+                    ShowToast("Desktop refreshed", accent);
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowToast("Desktop action failed: " + ex.Message, Color.FromArgb(255, 148, 168));
+                PostAppLaunchStatus("dir", "error", "Desktop action failed");
+            }
+        }
+
+        private string GetFusionDesktopDirectory()
+        {
+            string projectFile = FindProjectFile("WindowsFormsApp1.csproj");
+            string projectRoot = !string.IsNullOrEmpty(projectFile) ? Path.GetDirectoryName(projectFile) : Environment.CurrentDirectory;
+            string folder = Path.Combine(projectRoot, "FusionDesktop");
+            Directory.CreateDirectory(folder);
+            return folder;
+        }
+
+        private static string NextAvailablePath(string folder, string baseName, string extension)
+        {
+            string path = Path.Combine(folder, baseName + extension);
+            int index = 2;
+            while (File.Exists(path) || Directory.Exists(path))
+            {
+                path = Path.Combine(folder, baseName + " (" + index + ")" + extension);
+                index++;
+            }
+            return path;
+        }
+
+        private void CreateFusionDesktopItem(string kind)
+        {
+            string folder = GetFusionDesktopDirectory();
+            string path;
+            string glyph;
+            bool isFolder = false;
+
+            switch (kind)
+            {
+                case "folder":
+                    path = NextAvailablePath(folder, "New Folder", string.Empty);
+                    Directory.CreateDirectory(path);
+                    glyph = "DIR";
+                    isFolder = true;
+                    break;
+                case "markdown":
+                    path = NextAvailablePath(folder, "New Markdown", ".md");
+                    File.WriteAllText(path, "# New Markdown\r\n", new UTF8Encoding(false));
+                    glyph = "MD";
+                    break;
+                case "html":
+                    path = NextAvailablePath(folder, "New Page", ".html");
+                    File.WriteAllText(path, "<!doctype html>\r\n<html lang=\"en\">\r\n<head>\r\n  <meta charset=\"utf-8\">\r\n  <title>New Page</title>\r\n</head>\r\n<body>\r\n</body>\r\n</html>\r\n", new UTF8Encoding(false));
+                    glyph = "WEB";
+                    break;
+                case "csharp":
+                    path = NextAvailablePath(folder, "NewClass", ".cs");
+                    File.WriteAllText(path, "using System;\r\n\r\npublic class NewClass\r\n{\r\n}\r\n", new UTF8Encoding(false));
+                    glyph = "CS";
+                    break;
+                default:
+                    path = NextAvailablePath(folder, "New Text Document", ".txt");
+                    File.WriteAllText(path, string.Empty, new UTF8Encoding(false));
+                    glyph = "TXT";
+                    break;
+            }
+
+            string displayName = Path.GetFileName(path);
+            AddDesktopIcon(displayName, glyph, "FusionDesktop item:\r\n" + path, Color.FromArgb(140, 220, 255), delegate
+            {
+                OpenPathWithShell(path);
+            }, path, true);
+
+            ShowToast("Created " + displayName, Color.FromArgb(112, 226, 188));
+            PostAppLaunchStatus("dir", "open", "Created " + displayName);
+            if (isFolder) desktop.Invalidate();
+        }
+
+        private void OpenPathWithShell(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true
+            });
+        }
+
+        private void OpenFusionDesktopFolder()
+        {
+            OpenPathWithShell(GetFusionDesktopDirectory());
+        }
+
+        private void OpenFusionDesktopContents()
+        {
+            string folder = GetFusionDesktopDirectory();
+            var body = new StringBuilder();
+            body.AppendLine("Location: " + folder);
+            body.AppendLine();
+
+            string[] directories = Directory.GetDirectories(folder);
+            string[] files = Directory.GetFiles(folder);
+            if (directories.Length == 0 && files.Length == 0)
+            {
+                body.AppendLine("No desktop items yet.");
+            }
+            else
+            {
+                Array.Sort(directories, StringComparer.OrdinalIgnoreCase);
+                Array.Sort(files, StringComparer.OrdinalIgnoreCase);
+
+                int shown = 0;
+                foreach (string directory in directories)
+                {
+                    if (shown >= 24) break;
+                    body.AppendLine("[Folder] " + Path.GetFileName(directory));
+                    shown++;
+                }
+                foreach (string file in files)
+                {
+                    if (shown >= 24) break;
+                    var info = new FileInfo(file);
+                    body.AppendLine("[File] " + info.Name + "  " + FormatByteSize(info.Length));
+                    shown++;
+                }
+                if (directories.Length + files.Length > shown)
+                {
+                    body.AppendLine("...");
+                }
+            }
+
+            OpenSystemWindow("FusionDesktop Contents", body.ToString(), Color.FromArgb(112, 226, 188), "dir");
+        }
+
+        private void OpenFusionDesktopProperties()
+        {
+            string folder = GetFusionDesktopDirectory();
+            int fileCount = 0;
+            int folderCount = 0;
+            long bytes = 0;
+
+            try
+            {
+                foreach (string directory in Directory.GetDirectories(folder, "*", SearchOption.AllDirectories))
+                {
+                    folderCount++;
+                }
+                foreach (string file in Directory.GetFiles(folder, "*", SearchOption.AllDirectories))
+                {
+                    fileCount++;
+                    try { bytes += new FileInfo(file).Length; } catch { }
+                }
+            }
+            catch { }
+
+            string body =
+                "Type: Fusion desktop folder\r\n" +
+                "Location: " + folder + "\r\n" +
+                "Folders: " + folderCount + "\r\n" +
+                "Files: " + fileCount + "\r\n" +
+                "Size: " + FormatByteSize(bytes) + "\r\n" +
+                "Created: " + Directory.GetCreationTime(folder).ToString("yyyy-MM-dd HH:mm:ss");
+            OpenSystemWindow("FusionDesktop Properties", body, Color.FromArgb(112, 226, 188), "dir");
+        }
+
+        private static string FormatByteSize(long bytes)
+        {
+            string[] units = { "B", "KB", "MB", "GB" };
+            double value = Math.Max(0, bytes);
+            int unit = 0;
+            while (value >= 1024 && unit < units.Length - 1)
+            {
+                value /= 1024;
+                unit++;
+            }
+            return value.ToString(unit == 0 ? "0" : "0.0") + " " + units[unit];
+        }
+
         private void LaunchPianoStudio()
         {
-            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "PianoStudio"));
+            LaunchIntegratedExeApp("piano", "PianoStudio", "PianoStudio", accent2);
+        }
+
+        private void LaunchMultimediaStudio()
+        {
+            LaunchIntegratedExeApp("media", "MultimediaStudio", "MultimediaStudio", Color.FromArgb(88, 220, 255));
+        }
+
+        private void LaunchWaveStudio()
+        {
+            LaunchIntegratedExeApp("wav", "WaveStudio", "WaveStudio", Color.FromArgb(120, 235, 218));
+        }
+
+        private void LaunchIntegratedExeApp(string appId, string titleKey, string folderName, Color color)
+        {
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", folderName));
             string exePath = appRoot == null ? null : FindFirstExe(appRoot);
             if (exePath == null)
             {
-                ShowToast(L("PianoStudio") + " 找不到執行檔", accent2);
-                PostAppLaunchStatus("piano", "error", "找不到 Piano Studio 執行檔");
+                ShowToast(L(titleKey) + " 找不到執行檔", color);
+                PostAppLaunchStatus(appId, "error", L(titleKey) + " 找不到執行檔");
                 return;
             }
 
@@ -1715,15 +2212,77 @@ namespace WindowsFormsApp1
                 Process process = Process.Start(startInfo);
                 if (process != null)
                 {
-                    OpenExternalProcessWindow(L("PianoStudio"), process, accent2, exePath);
-                    PostAppLaunchStatus("piano", "open", exePath);
+                    OpenExternalProcessWindow(L(titleKey), process, color, exePath);
+                    TrackExternalAppProcess(appId, L(titleKey), process, color, exePath);
                 }
             }
             catch (Exception)
             {
-                ShowToast(L("PianoStudio") + " 啟動失敗", accent2);
-                PostAppLaunchStatus("piano", "error", "Piano Studio 啟動失敗");
+                ShowToast(L(titleKey) + " 啟動失敗", color);
+                PostAppLaunchStatus(appId, "error", L(titleKey) + " 啟動失敗");
             }
+        }
+
+        private void TrackExternalAppProcess(string appId, string title, Process process, Color color, string exePath)
+        {
+            if (process == null) return;
+
+            if (!externalAppRunCounts.ContainsKey(appId))
+            {
+                externalAppRunCounts[appId] = 0;
+            }
+            externalAppRunCounts[appId]++;
+            PostAppLaunchStatus(appId, "open", exePath);
+
+            bool completed = false;
+            EventHandler exited = null;
+            exited = delegate
+            {
+                if (completed) return;
+                completed = true;
+                Action complete = delegate { CompleteExternalAppProcess(appId, title, process, color); };
+                if (!IsDisposed && IsHandleCreated)
+                {
+                    try { BeginInvoke(complete); }
+                    catch { complete(); }
+                }
+                else
+                {
+                    complete();
+                }
+            };
+
+            try
+            {
+                process.EnableRaisingEvents = true;
+                process.Exited += exited;
+                if (process.HasExited)
+                {
+                    exited(process, EventArgs.Empty);
+                }
+            }
+            catch
+            {
+                PostAppLaunchStatus(appId, "closed", title + " closed");
+            }
+        }
+
+        private void CompleteExternalAppProcess(string appId, string title, Process process, Color color)
+        {
+            int remaining = 0;
+            if (externalAppRunCounts.ContainsKey(appId))
+            {
+                remaining = Math.Max(0, externalAppRunCounts[appId] - 1);
+                if (remaining == 0) externalAppRunCounts.Remove(appId);
+                else externalAppRunCounts[appId] = remaining;
+            }
+
+            if (remaining == 0)
+            {
+                PostAppLaunchStatus(appId, "closed", title + " closed");
+            }
+
+            try { process.Dispose(); } catch { }
         }
 
         private async void LaunchCosmicGesture()
@@ -2391,6 +2950,7 @@ namespace WindowsFormsApp1
             };
             desktop.Controls.Add(win);
             openWindows.Add(win);
+            win.SuspendLayout();
             win.BringToFront();
             if (!ReactOwnsShell)
             {
@@ -2455,6 +3015,542 @@ namespace WindowsFormsApp1
 
             CreateTaskButtonForWindow(title, win);
             SetActiveApp(app);
+        }
+
+        private void OpenFusionTerminal()
+        {
+            Color terminalAccent = Color.FromArgb(112, 226, 188);
+            windowOffset = (windowOffset + 34) % 170;
+            Rectangle area = AppWorkArea(false);
+            int width = Math.Min(920, Math.Max(680, area.Width - 64));
+            int height = Math.Min(560, Math.Max(440, area.Height - 54));
+            int x = Math.Min(area.Right - width, area.Left + 38 + windowOffset);
+            int y = Math.Min(area.Bottom - height, area.Top + 26 + windowOffset / 2);
+
+            var win = new RoundedPanel
+            {
+                Radius = 22,
+                BackColor = Color.FromArgb(250, 4, 9, 22),
+                Size = new Size(width, height),
+                Location = new Point(Math.Max(area.Left, x), Math.Max(area.Top, y)),
+                Padding = new Padding(0)
+            };
+            win.SuspendLayout();
+
+            var header = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 54,
+                BackColor = Color.FromArgb(52, terminalAccent)
+            };
+            win.Controls.Add(header);
+
+            var titleLabel = new Label
+            {
+                Dock = DockStyle.Fill,
+                Text = "Fusion Terminal",
+                ForeColor = text,
+                Font = new Font(Font.FontFamily, 13F, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(18, 0, 0, 0)
+            };
+            header.Controls.Add(titleLabel);
+            var app = RegisterAppWindow("Fusion Terminal", win, header, titleLabel, terminalAccent, "cmd");
+
+            var root = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                BackColor = Color.Transparent,
+                Padding = new Padding(18),
+                RowCount = 4,
+                ColumnCount = 1
+            };
+            root.SuspendLayout();
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 42));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 22));
+            win.Controls.Add(root);
+
+            var toolbar = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 6,
+                RowCount = 1,
+                BackColor = Color.Transparent
+            };
+            toolbar.SuspendLayout();
+            toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 112));
+            toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 72));
+            toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 92));
+            toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 92));
+            toolbar.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 1));
+            root.Controls.Add(toolbar, 0, 0);
+
+            string shellMode = "PowerShell";
+            var psButton = TerminalShellButton("PowerShell");
+            var cmdButton = TerminalShellButton("CMD");
+            toolbar.Controls.Add(psButton, 0, 0);
+            toolbar.Controls.Add(cmdButton, 1, 0);
+            UpdateTerminalShellButtons(psButton, cmdButton, shellMode, terminalAccent);
+
+            var commandInput = new TextBox
+            {
+                Dock = DockStyle.Fill,
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.FromArgb(12, 24, 44),
+                ForeColor = text,
+                Font = terminalInputFont ?? new Font("Consolas", 11F),
+                Margin = new Padding(8, 3, 8, 4)
+            };
+            toolbar.Controls.Add(commandInput, 2, 0);
+
+            psButton.Click += delegate
+            {
+                shellMode = "PowerShell";
+                UpdateTerminalShellButtons(psButton, cmdButton, shellMode, terminalAccent);
+                commandInput.Focus();
+            };
+            cmdButton.Click += delegate
+            {
+                shellMode = "CMD";
+                UpdateTerminalShellButtons(psButton, cmdButton, shellMode, terminalAccent);
+                commandInput.Focus();
+            };
+
+            var runButton = TerminalButton("Run");
+            runButton.BackColor = Color.FromArgb(52, terminalAccent);
+            toolbar.Controls.Add(runButton, 3, 0);
+
+            var clearButton = TerminalButton("Clear");
+            toolbar.Controls.Add(clearButton, 4, 0);
+
+            var output = new TextBox
+            {
+                Dock = DockStyle.Fill,
+                ReadOnly = true,
+                BorderStyle = BorderStyle.None,
+                BackColor = Color.FromArgb(9, 16, 31),
+                ForeColor = Color.FromArgb(216, 244, 255),
+                Font = terminalOutputFont ?? new Font("Consolas", 10.5F),
+                Multiline = true,
+                WordWrap = false,
+                ScrollBars = ScrollBars.Vertical,
+                TabStop = true,
+                HideSelection = false,
+                Cursor = Cursors.IBeam
+            };
+            root.Controls.Add(output, 0, 1);
+
+            var cwdLabel = new Label
+            {
+                Dock = DockStyle.Fill,
+                Text = GetTerminalWorkingDirectory(),
+                ForeColor = muted,
+                Font = new Font(Font.FontFamily, 8.5F),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(2, 0, 0, 0)
+            };
+            root.Controls.Add(cwdLabel, 0, 2);
+
+            var status = new Label
+            {
+                Dock = DockStyle.Fill,
+                Text = "Ready",
+                ForeColor = muted,
+                Font = new Font(Font.FontFamily, 8.5F, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleLeft
+            };
+            root.Controls.Add(status, 0, 3);
+
+            var history = new List<string>();
+            int historyIndex = -1;
+            string commandBuffer = string.Empty;
+            int promptStart = 0;
+            bool commandRunning = false;
+
+            Action focusTerminal = delegate
+            {
+                if (output.IsDisposed) return;
+                output.Select();
+                output.Focus();
+                output.SelectionStart = output.TextLength;
+                output.SelectionLength = 0;
+                output.ScrollToCaret();
+            };
+            psButton.Click += delegate { focusTerminal(); };
+            cmdButton.Click += delegate { focusTerminal(); };
+
+            Action<string> replaceCommandBuffer = delegate (string value)
+            {
+                value = value ?? string.Empty;
+                if (promptStart < 0 || promptStart > output.TextLength)
+                {
+                    promptStart = output.TextLength;
+                }
+
+                output.Text = output.Text.Substring(0, promptStart) + value;
+                commandBuffer = value;
+                output.SelectionStart = output.TextLength;
+                output.SelectionLength = 0;
+                output.ScrollToCaret();
+            };
+
+            Action writePrompt = delegate
+            {
+                string promptShell = string.Equals(shellMode, "CMD", StringComparison.OrdinalIgnoreCase) ? "cmd" : "powershell";
+                AppendTerminalText(output, "fusion " + promptShell + " > ", terminalAccent, true);
+                promptStart = output.TextLength;
+                commandBuffer = string.Empty;
+                focusTerminal();
+            };
+
+            Func<Task> execute = async delegate
+            {
+                if (commandRunning) return;
+                bool commandCameFromField = commandBuffer.Length == 0 && !string.IsNullOrWhiteSpace(commandInput.Text);
+                string command = (commandBuffer.Length > 0 ? commandBuffer : commandInput.Text).Trim();
+                if (string.IsNullOrWhiteSpace(command))
+                {
+                    AppendTerminalText(output, "\r\n", muted, false);
+                    writePrompt();
+                    return;
+                }
+
+                if (commandCameFromField)
+                {
+                    replaceCommandBuffer(command);
+                }
+
+                history.Add(command);
+                historyIndex = history.Count;
+                commandBuffer = string.Empty;
+                commandInput.Clear();
+                AppendTerminalText(output, "\r\n", muted, false);
+                if (string.Equals(command, "exit", StringComparison.OrdinalIgnoreCase))
+                {
+                    CloseWindow(win);
+                    return;
+                }
+                if (HandleTerminalBuiltIn(command, cwdLabel, output, terminalAccent))
+                {
+                    writePrompt();
+                    return;
+                }
+                commandRunning = true;
+                try
+                {
+                    await RunFusionTerminalCommandAsync(command, shellMode, cwdLabel.Text, output, commandInput, status, runButton);
+                }
+                finally
+                {
+                    commandRunning = false;
+                    writePrompt();
+                }
+            };
+
+            clearButton.Click += delegate
+            {
+                output.Clear();
+                AppendTerminalText(output, "Fusion Terminal online\r\n", terminalAccent, true);
+                AppendTerminalText(output, "Type directly in this terminal surface, then press Enter.\r\n\r\n", Color.FromArgb(184, 211, 255), false);
+                writePrompt();
+            };
+
+            runButton.Click += async delegate { await execute(); };
+            commandInput.KeyDown += async delegate (object sender, KeyEventArgs e)
+            {
+                if (e.KeyCode == Keys.Enter)
+                {
+                    e.SuppressKeyPress = true;
+                    await execute();
+                }
+                else if (e.KeyCode == Keys.Up && history.Count > 0)
+                {
+                    e.SuppressKeyPress = true;
+                    historyIndex = Math.Max(0, historyIndex - 1);
+                    commandInput.Text = history[historyIndex];
+                    commandInput.SelectionStart = commandInput.TextLength;
+                }
+                else if (e.KeyCode == Keys.Down && history.Count > 0)
+                {
+                    e.SuppressKeyPress = true;
+                    historyIndex = Math.Min(history.Count, historyIndex + 1);
+                    commandInput.Text = historyIndex >= history.Count ? string.Empty : history[historyIndex];
+                    commandInput.SelectionStart = commandInput.TextLength;
+                }
+            };
+
+            output.MouseDown += delegate { focusTerminal(); };
+            output.KeyPress += delegate (object sender, KeyPressEventArgs e)
+            {
+                if (commandRunning || char.IsControl(e.KeyChar))
+                {
+                    e.Handled = true;
+                    return;
+                }
+
+                e.Handled = true;
+                commandBuffer += e.KeyChar;
+                AppendTerminalText(output, e.KeyChar.ToString(), Color.FromArgb(216, 244, 255), false);
+            };
+
+            output.KeyDown += async delegate (object sender, KeyEventArgs e)
+            {
+                if (commandRunning)
+                {
+                    e.SuppressKeyPress = true;
+                    return;
+                }
+
+                if (e.Control && e.KeyCode == Keys.V)
+                {
+                    e.SuppressKeyPress = true;
+                    string textToPaste = Clipboard.ContainsText() ? Clipboard.GetText() : string.Empty;
+                    if (!string.IsNullOrEmpty(textToPaste))
+                    {
+                        textToPaste = textToPaste.Replace("\r", string.Empty).Replace("\n", " ");
+                        commandBuffer += textToPaste;
+                        AppendTerminalText(output, textToPaste, Color.FromArgb(216, 244, 255), false);
+                    }
+                }
+                else if (e.KeyCode == Keys.Enter)
+                {
+                    e.SuppressKeyPress = true;
+                    await execute();
+                }
+                else if (e.KeyCode == Keys.Back)
+                {
+                    e.SuppressKeyPress = true;
+                    if (commandBuffer.Length > 0)
+                    {
+                        replaceCommandBuffer(commandBuffer.Substring(0, commandBuffer.Length - 1));
+                    }
+                }
+                else if (e.KeyCode == Keys.Up && history.Count > 0)
+                {
+                    e.SuppressKeyPress = true;
+                    historyIndex = Math.Max(0, historyIndex - 1);
+                    replaceCommandBuffer(history[historyIndex]);
+                }
+                else if (e.KeyCode == Keys.Down && history.Count > 0)
+                {
+                    e.SuppressKeyPress = true;
+                    historyIndex = Math.Min(history.Count, historyIndex + 1);
+                    replaceCommandBuffer(historyIndex >= history.Count ? string.Empty : history[historyIndex]);
+                }
+                else if (e.KeyCode == Keys.Left || e.KeyCode == Keys.Right || e.KeyCode == Keys.Home || e.KeyCode == Keys.Delete)
+                {
+                    e.SuppressKeyPress = true;
+                    focusTerminal();
+                }
+            };
+
+            toolbar.ResumeLayout(false);
+            root.ResumeLayout(false);
+            win.ResumeLayout(true);
+
+            desktop.Controls.Add(win);
+            openWindows.Add(win);
+            win.BringToFront();
+            header.BringToFront();
+            CreateTaskButtonForWindow("Terminal", win);
+            SetActiveApp(app);
+            focusTerminal();
+            BeginInvoke((Action)delegate
+            {
+                AppendTerminalText(output, "Fusion Terminal online\r\n", terminalAccent, true);
+                AppendTerminalText(output, "Working directory: " + cwdLabel.Text + "\r\n", muted, false);
+                AppendTerminalText(output, "Type directly in this terminal surface, then press Enter. Try: dir, cd, dotnet --info, npm -v\r\n\r\n", Color.FromArgb(184, 211, 255), false);
+                writePrompt();
+                PostAppLaunchStatus("cmd", "open", "Fusion Terminal ready");
+                focusTerminal();
+            });
+        }
+
+        private Button TerminalButton(string label)
+        {
+            var button = WindowButton(label);
+            button.Width = 84;
+            button.Height = 30;
+            button.Margin = new Padding(8, 1, 0, 1);
+            button.BackColor = Color.FromArgb(28, 43, 68);
+            return button;
+        }
+
+        private Button TerminalShellButton(string label)
+        {
+            var button = new Button
+            {
+                Dock = DockStyle.Fill,
+                Text = label,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(20, 34, 55),
+                ForeColor = text,
+                Font = new Font(Font.FontFamily, 9F, FontStyle.Bold),
+                Margin = new Padding(0, 3, 8, 4),
+                Cursor = Cursors.Hand,
+                UseVisualStyleBackColor = false
+            };
+            button.FlatAppearance.BorderSize = 1;
+            button.FlatAppearance.BorderColor = Color.FromArgb(70, 112, 226, 188);
+            button.FlatAppearance.MouseOverBackColor = Color.FromArgb(38, 63, 88);
+            button.FlatAppearance.MouseDownBackColor = Color.FromArgb(52, 112, 226, 188);
+            return button;
+        }
+
+        private void UpdateTerminalShellButtons(Button psButton, Button cmdButton, string shellMode, Color accentColor)
+        {
+            bool psActive = string.Equals(shellMode, "PowerShell", StringComparison.OrdinalIgnoreCase);
+            psButton.BackColor = psActive ? Color.FromArgb(58, accentColor) : Color.FromArgb(20, 34, 55);
+            cmdButton.BackColor = psActive ? Color.FromArgb(20, 34, 55) : Color.FromArgb(58, accentColor);
+            psButton.ForeColor = psActive ? text : muted;
+            cmdButton.ForeColor = psActive ? muted : text;
+        }
+
+        private string GetTerminalWorkingDirectory()
+        {
+            if (!string.IsNullOrEmpty(terminalWorkingDirectoryCache)) return terminalWorkingDirectoryCache;
+            terminalWorkingDirectoryCache = ResolveTerminalWorkingDirectory();
+            return terminalWorkingDirectoryCache;
+        }
+
+        private string ResolveTerminalWorkingDirectory()
+        {
+            string projectFile = FindProjectFile("WindowsFormsApp1.csproj");
+            if (!string.IsNullOrEmpty(projectFile)) return Path.GetDirectoryName(projectFile);
+            return Environment.CurrentDirectory;
+        }
+
+        private bool HandleTerminalBuiltIn(string command, Label cwdLabel, TextBox output, Color terminalAccent)
+        {
+            string clean = command.Trim();
+            if (string.Equals(clean, "clear", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(clean, "cls", StringComparison.OrdinalIgnoreCase))
+            {
+                output.Clear();
+                AppendTerminalText(output, "Fusion Terminal online\r\n\r\n", terminalAccent, true);
+                return true;
+            }
+
+            if (string.Equals(clean, "pwd", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(clean, "cd", StringComparison.OrdinalIgnoreCase))
+            {
+                AppendTerminalText(output, cwdLabel.Text + "\r\n\r\n", Color.FromArgb(216, 244, 255), false);
+                return true;
+            }
+
+            if (clean.StartsWith("cd ", StringComparison.OrdinalIgnoreCase))
+            {
+                string target = clean.Substring(3).Trim().Trim('"');
+                try
+                {
+                    string next = Path.IsPathRooted(target) ? target : Path.Combine(cwdLabel.Text, target);
+                    next = Path.GetFullPath(next);
+                    if (!Directory.Exists(next))
+                    {
+                        AppendTerminalText(output, "Directory not found: " + next + "\r\n\r\n", Color.FromArgb(255, 148, 168), false);
+                        return true;
+                    }
+
+                    cwdLabel.Text = next;
+                    AppendTerminalText(output, next + "\r\n\r\n", Color.FromArgb(216, 244, 255), false);
+                }
+                catch (Exception ex)
+                {
+                    AppendTerminalText(output, ex.Message + "\r\n\r\n", Color.FromArgb(255, 148, 168), false);
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        private async Task RunFusionTerminalCommandAsync(string command, string shell, string workingDirectory, TextBox output, TextBox input, Label status, Button runButton)
+        {
+            input.Enabled = false;
+            runButton.Enabled = false;
+            status.Text = "Running " + shell;
+
+            string stdout = string.Empty;
+            string stderr = string.Empty;
+            int exitCode = -1;
+            try
+            {
+                ProcessStartInfo startInfo = CreateTerminalStartInfo(shell, command, workingDirectory);
+                await Task.Run(delegate
+                {
+                    using (var process = new Process())
+                    {
+                        process.StartInfo = startInfo;
+                        process.Start();
+                        Task<string> stdoutTask = process.StandardOutput.ReadToEndAsync();
+                        Task<string> stderrTask = process.StandardError.ReadToEndAsync();
+                        process.WaitForExit();
+                        stdout = stdoutTask.Result;
+                        stderr = stderrTask.Result;
+                        exitCode = process.ExitCode;
+                    }
+                });
+
+                if (!string.IsNullOrEmpty(stdout)) AppendTerminalText(output, stdout.EndsWith("\n") ? stdout : stdout + "\r\n", Color.FromArgb(216, 244, 255), false);
+                if (!string.IsNullOrEmpty(stderr)) AppendTerminalText(output, stderr.EndsWith("\n") ? stderr : stderr + "\r\n", Color.FromArgb(255, 148, 168), false);
+                AppendTerminalText(output, "exit " + exitCode + "\r\n\r\n", exitCode == 0 ? Color.FromArgb(112, 226, 188) : Color.FromArgb(255, 148, 168), true);
+                status.Text = exitCode == 0 ? "Ready" : "Command exited with code " + exitCode;
+            }
+            catch (Exception ex)
+            {
+                AppendTerminalText(output, ex.Message + "\r\n\r\n", Color.FromArgb(255, 148, 168), false);
+                status.Text = "Command failed";
+            }
+            finally
+            {
+                input.Enabled = true;
+                runButton.Enabled = true;
+                input.Focus();
+            }
+        }
+
+        private ProcessStartInfo CreateTerminalStartInfo(string shell, string command, string workingDirectory)
+        {
+            bool useCmd = string.Equals(shell, "CMD", StringComparison.OrdinalIgnoreCase);
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = useCmd ? "cmd.exe" : "powershell.exe",
+                WorkingDirectory = Directory.Exists(workingDirectory) ? workingDirectory : Environment.CurrentDirectory,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                StandardOutputEncoding = Encoding.UTF8,
+                StandardErrorEncoding = Encoding.UTF8
+            };
+
+            if (useCmd)
+            {
+                startInfo.Arguments = "/d /s /c " + QuoteCmdArgument("chcp 65001>nul & " + command);
+            }
+            else
+            {
+                string script = "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new(); $OutputEncoding = [Console]::OutputEncoding; " + command;
+                startInfo.Arguments = "-NoLogo -NoProfile -ExecutionPolicy Bypass -EncodedCommand " + Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
+            }
+
+            return startInfo;
+        }
+
+        private static string QuoteCmdArgument(string value)
+        {
+            return "\"" + (value ?? string.Empty).Replace("\"", "\"\"") + "\"";
+        }
+
+        private void AppendTerminalText(TextBox output, string value, Color color, bool bold)
+        {
+            if (output == null || output.IsDisposed || string.IsNullOrEmpty(value)) return;
+            output.AppendText(value);
+            output.SelectionStart = output.TextLength;
+            output.ScrollToCaret();
         }
 
         private async void OpenWebAppWindow(string title, string url, Color color, bool ownsCamera = false, string kind = "webview")
@@ -2904,6 +4000,8 @@ namespace WindowsFormsApp1
             if (info.Glyph == "WEB") return Color.FromArgb(90, 190, 255);
             if (info.Glyph == "SET") return Color.FromArgb(150, 120, 255);
             if (info.Glyph == "88") return accent2;
+            if (info.Glyph == "VID") return Color.FromArgb(88, 220, 255);
+            if (info.Glyph == "WAV") return Color.FromArgb(120, 235, 218);
             if (info.Glyph == "COS") return accent3;
             return accent;
         }
@@ -2921,6 +4019,8 @@ namespace WindowsFormsApp1
                 case "ThisPC": return zh ? "本機" : "This PC";
                 case "ProjectFiles": return zh ? "專案檔案" : "Project Files";
                 case "PianoStudio": return zh ? "鋼琴工作室" : "Piano Studio";
+                case "MultimediaStudio": return zh ? "影音中心" : "AURORA Cinema";
+                case "WaveStudio": return zh ? "音訊工作室" : "Wave Studio";
                 case "CosmicGesture": return zh ? "宇宙手勢" : "Cosmic Gesture";
                 case "UserFiles": return zh ? "使用者檔案" : "User Files";
                 case "AddFile": return zh ? "新增檔案" : "Add File";
@@ -2935,6 +4035,8 @@ namespace WindowsFormsApp1
                 case "ThisPCDesc": return zh ? "系統檔案管理與電腦資訊入口。" : "System file manager and computer information.";
                 case "ProjectFilesDesc": return zh ? "存放舊作品與新作品的預設資料夾。" : "Default folder for all old and new school projects.";
                 case "PianoStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/PianoStudio。啟動鋼琴學習與音樂工具。" : "Integrated app package: IntegratedApps/PianoStudio.";
+                case "MultimediaStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/MultimediaStudio。啟動 AURORA Cinema 多媒體播放器。" : "Integrated app package: IntegratedApps/MultimediaStudio.";
+                case "WaveStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/WaveStudio。啟動 WAV 與音訊播放工具。" : "Integrated app package: IntegratedApps/WaveStudio.";
                 case "CosmicGestureDesc": return zh ? "內建應用程式套件：IntegratedApps/CosmicGesture。啟動 Python + JavaScript 的 WebGL 宇宙手勢系統。" : "Integrated app package: IntegratedApps/CosmicGesture.";
                 case "UserFilesDesc": return zh ? "執行時由使用者加入的檔案捷徑區。" : "A place for files added by the user during runtime.";
                 case "AddFileDesc": return zh ? "選擇本機檔案並建立桌面捷徑。" : "Select a file and create a desktop shortcut.";
@@ -2951,6 +4053,8 @@ namespace WindowsFormsApp1
                 case "AppRegistry": return zh ? "應用登錄" : "App Registry";
                 case "AppRegistryDesc": return zh ? "保留每個作品模組的登錄清單。" : "Reserved list for every project module.";
                 case "StartPianoDesc": return zh ? "從系統啟動 1113354_piano。" : "Launch 1113354_piano from the system.";
+                case "StartMultimediaDesc": return zh ? "從系統啟動 1113354_multimedia。" : "Launch 1113354_multimedia from the system.";
+                case "StartWaveDesc": return zh ? "從系統啟動 1113354_wav。" : "Launch 1113354_wav from the system.";
                 case "StartCosmicDesc": return zh ? "啟動手勢控制的 3D 宇宙。" : "Launch the gesture-controlled 3D universe.";
                 case "StartLanguageDesc": return zh ? "開啟語言整合工作區。" : "Open language integration workspace.";
                 case "SystemSettings": return zh ? "系統設定" : "System Settings";
@@ -3878,7 +4982,8 @@ namespace WindowsFormsApp1
             DrawNodeCard(g, new Rectangle(x, y, 160, 76), "cosmic", "宇宙手勢", "WebView app", AccentColor3);
             DrawNodeCard(g, new Rectangle(x - 44, y + 98, 170, 78), "web", "網頁區", "browser zone", AccentColor);
             DrawNodeCard(g, new Rectangle(x + 12, y + 198, 160, 78), "piano", "鋼琴工作室", "built-in app", AccentColor2);
-            DrawNodeCard(g, new Rectangle(x - 72, y + 296, 176, 78), "settings", "系統設定", "theme / paths", Color.FromArgb(163, 133, 255));
+            DrawNodeCard(g, new Rectangle(x - 72, y + 296, 176, 78), "media", "影音中心", "WinForms app", Color.FromArgb(88, 220, 255));
+            DrawNodeCard(g, new Rectangle(x + 2, y + 394, 166, 78), "wav", "音訊工作室", "WinForms app", Color.FromArgb(120, 235, 218));
         }
 
         private void DrawNodeCard(Graphics g, Rectangle rect, string key, string title, string subtitle, Color accent)

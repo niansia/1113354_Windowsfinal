@@ -2,10 +2,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
   AppWindow,
+  AudioWaveform,
   Bluetooth,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  Clapperboard,
   Circle,
   Code2,
   Cpu,
@@ -34,7 +36,7 @@ import { FusionThisPc } from './FusionThisPc';
 import { FusionFiles } from './FusionFiles';
 import { useFusionSettings, WALLPAPERS } from '../hooks/useFusionSettings';
 import { getPerformanceProfile } from '../utils/performanceProfile';
-import { addHostMessageListener, launchApp } from '../utils/bridge';
+import { addHostMessageListener, launchApp, sendMessageToHost } from '../utils/bridge';
 
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
 const CARD_W = 208;
@@ -49,6 +51,7 @@ interface SpatialHomeStageProps {
 }
 
 type LaunchState = 'idle' | 'open' | 'error' | 'closed';
+type DesktopContextMenuState = { x: number; y: number };
 
 const NAV_ITEMS: Array<{ label: string; icon: LucideIcon; appId: AppId; launch?: boolean }> = [
   { label: '首頁', icon: Home, appId: 'pc' },
@@ -62,6 +65,8 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   pc: Cpu,
   dir: Folder,
   piano: Music,
+  media: Clapperboard,
+  wav: AudioWaveform,
   cosmic: Sparkles,
   user: Home,
   add: Plus,
@@ -115,6 +120,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   const [now, setNow] = useState(() => new Date());
   // In-shell app overlays (React pages instead of the host's placeholder windows).
   const [overlayApp, setOverlayApp] = useState<AppId | null>(null);
+  const [desktopContextMenu, setDesktopContextMenu] = useState<DesktopContextMenuState | null>(null);
   const [viewportW, setViewportW] = useState(0);
   const [dragDX, setDragDX] = useState(0);
   const runViewportRef = useRef<HTMLDivElement>(null);
@@ -197,18 +203,24 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   }, [selectedIndex]);
 
   // ----- Left-button drag to slide the running carousel -----
+  // Capture the pointer only AFTER it moves past a threshold, so a plain click
+  // still reaches the card underneath (otherwise pointer-capture swallows it).
   const onCarouselPointerDown = useCallback((event: React.PointerEvent) => {
     if (event.button !== 0) return;
     dragStartXRef.current = event.clientX;
     dragMovedRef.current = false;
-    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
   }, []);
 
   const onCarouselPointerMove = useCallback((event: React.PointerEvent) => {
     if (dragStartXRef.current === null) return;
     const dx = event.clientX - dragStartXRef.current;
-    if (Math.abs(dx) > 5) dragMovedRef.current = true;
-    setDragDX(dx);
+    if (Math.abs(dx) > 5) {
+      if (!dragMovedRef.current) {
+        dragMovedRef.current = true;
+        (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+      }
+      setDragDX(dx);
+    }
   }, []);
 
   const endCarouselDrag = useCallback((event: React.PointerEvent) => {
@@ -216,10 +228,12 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
     const dx = event.clientX - dragStartXRef.current;
     dragStartXRef.current = null;
     setDragDX(0);
-    const steps = Math.round(-dx / CARD_STEP);
-    if (steps !== 0) selectIndex(selectedIndex + steps);
-    // keep dragMovedRef true briefly so the click that follows a drag is ignored
-    if (dragMovedRef.current) window.setTimeout(() => { dragMovedRef.current = false; }, 0);
+    if (dragMovedRef.current) {
+      const steps = Math.round(-dx / CARD_STEP);
+      if (steps !== 0) selectIndex(selectedIndex + steps);
+      // keep the flag set until after the click event so the post-drag click is ignored
+      window.setTimeout(() => { dragMovedRef.current = false; }, 0);
+    }
   }, [selectIndex, selectedIndex]);
 
   // Derived desktop theming from the sandboxed settings.
@@ -310,8 +324,46 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [apps, launchSelectedApp, selectApp, selectIndex, selectedIndex, overlayApp]);
 
+  const openDesktopContextMenu = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const menuWidth = 270;
+    const menuHeight = 390;
+    setDesktopContextMenu({
+      x: Math.min(event.clientX, Math.max(12, window.innerWidth - menuWidth - 12)),
+      y: Math.min(event.clientY, Math.max(12, window.innerHeight - menuHeight - 12))
+    });
+  }, []);
+
+  const closeDesktopContextMenu = useCallback(() => {
+    setDesktopContextMenu(null);
+  }, []);
+
+  const runDesktopAction = useCallback((action: string) => {
+    setDesktopContextMenu(null);
+    if (action === 'refresh') {
+      setLastLaunchMessage('Desktop refreshed.');
+    } else if (action.startsWith('new-')) {
+      setLastLaunchMessage('Creating desktop item...');
+    }
+    sendMessageToHost('FUSION_DESKTOP_ACTION', { action });
+  }, []);
+
+  useEffect(() => {
+    if (!desktopContextMenu) return;
+    const closeOnPointer = () => closeDesktopContextMenu();
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeDesktopContextMenu();
+    };
+    window.addEventListener('pointerdown', closeOnPointer);
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.removeEventListener('pointerdown', closeOnPointer);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [closeDesktopContextMenu, desktopContextMenu]);
+
   return (
-    <div className={homeClassName} style={homeStyle}>
+    <div className={homeClassName} style={homeStyle} onContextMenu={openDesktopContextMenu}>
       <FusionDepthBackground handX={handX} profile={profile} />
       <div className="fusion-stage-aurora" />
       <div className="fusion-stage-grid" />
@@ -521,6 +573,64 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
           <ChevronRight size={21} />
         </button>
       </nav>
+
+      {desktopContextMenu && (
+        <div
+          className="fusion-desktop-context-menu"
+          style={{ left: desktopContextMenu.x, top: desktopContextMenu.y }}
+          onPointerDown={(event) => event.stopPropagation()}
+          onContextMenu={(event) => event.preventDefault()}
+          role="menu"
+        >
+          <button type="button" role="menuitem" onClick={() => runDesktopAction('view-contents')}>
+            <span className="context-mark context-grid" />
+            檢視桌面內容
+          </button>
+          <button type="button" role="menuitem" onClick={() => runDesktopAction('sort-name')}>
+            <span className="context-mark context-sort" />
+            依名稱排序
+          </button>
+          <button type="button" role="menuitem" onClick={() => runDesktopAction('refresh')}>
+            <span className="context-mark context-refresh" />
+            重新整理
+          </button>
+          <div className="context-divider" />
+          <span className="context-section">新增</span>
+          <button type="button" role="menuitem" onClick={() => runDesktopAction('new-folder')}>
+            <span className="context-mark context-folder" />
+            資料夾
+          </button>
+          <button type="button" role="menuitem" onClick={() => runDesktopAction('new-text')}>
+            <span className="context-mark context-doc" />
+            文字文件
+          </button>
+          <button type="button" role="menuitem" onClick={() => runDesktopAction('new-markdown')}>
+            <span className="context-mark context-doc" />
+            Markdown 檔案
+          </button>
+          <button type="button" role="menuitem" onClick={() => runDesktopAction('new-html')}>
+            <span className="context-mark context-code" />
+            HTML 文件
+          </button>
+          <button type="button" role="menuitem" onClick={() => runDesktopAction('new-csharp')}>
+            <span className="context-mark context-code" />
+            C# 原始碼檔案
+          </button>
+          <button type="button" role="menuitem" onClick={() => runDesktopAction('new-shortcut')}>
+            <span className="context-mark context-shortcut" />
+            捷徑...
+          </button>
+          <div className="context-divider" />
+          <button type="button" role="menuitem" onClick={() => runDesktopAction('open-folder')}>
+            <span className="context-mark context-open" />
+            開啟 FusionDesktop
+          </button>
+          <button type="button" role="menuitem" onClick={() => runDesktopAction('properties')}>
+            <span className="context-mark context-info" />
+            內容
+          </button>
+        </div>
+      )}
 
       <div className="fusion-brightness-veil" style={{ opacity: veilOpacity }} aria-hidden="true" />
       <div className="fusion-night-veil" style={{ opacity: settings.nightLight ? 1 : 0 }} aria-hidden="true" />
