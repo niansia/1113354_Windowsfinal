@@ -1,0 +1,33 @@
+{
+  "generatedAt": "2026-06-03T17:08:29.555Z",
+  "sources": [
+    {
+      "name": "OpenNGC",
+      "url": "https://raw.githubusercontent.com/mattiaverga/OpenNGC/master/database_files/NGC.csv",
+      "license": "CC-BY-SA-4.0"
+    },
+    {
+      "name": "NASA Exoplanet Archive",
+      "url": "https://exoplanetarchive.ipac.caltech.edu/",
+      "license": "Public domain"
+    }
+  ],
+  "counts": {
+    "deepSky": 1696,
+    "exoplanets": 220,
+    "byType": {
+      "G": 1027,
+      "HII": 42,
+      "PN": 129,
+      "Cl+N": 44,
+      "RfN": 16,
+      "Neb": 43,
+      "SNR": 6,
+      "OCl": 232,
+      "GCl": 148,
+      "*Ass": 4,
+      "EmN": 4,
+      "GPair": 1
+    }
+  }
+}

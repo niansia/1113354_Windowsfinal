@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 8765",
     "build": "tsc && vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 8765"
+    "preview": "vite preview --host 127.0.0.1 --port 8765",
+    "fetch-data": "node scripts/fetch-cosmic-data.mjs"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.21",

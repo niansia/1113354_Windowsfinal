@@ -1,4 +1,5 @@
 import type { BodyId } from "../types";
+import { deriveGeneratedEntries } from "./derive";
 
 // Extensible cosmic catalog: the menu, info cards and deep-space visuals are all
 // data-driven from here. Adding a new object = appending one entry below.
@@ -29,6 +30,9 @@ export type RenderKind =
   | "cluster"
   | "rocky";
 
+// Nebula morphology — drives which volumetric particle generator is used.
+export type NebulaKind = "emission" | "planetary" | "snr" | "dark" | "reflection";
+
 export interface SourceLink {
   label: string;
   url: string;
@@ -58,6 +62,11 @@ export interface CatalogEntry {
   palette: string[]; // colours that drive the deep-space visual
   accent: string;
   seed: number;
+  nebulaKind?: NebulaKind; // optional override; otherwise inferred from subtype/tags
+  ra?: number; // right ascension in degrees (0..360) — for the all-sky map
+  dec?: number; // declination in degrees (-90..90)
+  magnitude?: number; // apparent visual magnitude (lower = brighter)
+  source?: "curated" | "opengnc" | "exoplanet"; // provenance for generated entries
 }
 
 export interface CategoryMeta {
@@ -83,7 +92,9 @@ export const CATEGORIES: CategoryMeta[] = [
 const NASA_PLANETS: SourceLink = { label: "NASA Planetary Fact Sheet", url: "https://nssdc.gsfc.nasa.gov/planetary/factsheet/" };
 const NASA_SCIENCE: SourceLink = { label: "NASA Science", url: "https://science.nasa.gov/" };
 
-export const catalog: CatalogEntry[] = [
+// Hand-curated, richly-described "featured" objects. The full catalog below is
+// this set merged with the auto-fetched OpenNGC / NASA universe data.
+const CURATED: CatalogEntry[] = [
   // ---------------- Solar system planets (rendered by particle scene) ----------------
   {
     id: "sun", name: "太陽", englishName: "Sun", category: "star", subtype: "G 型主序星 (恆星)",
@@ -215,6 +226,27 @@ export const catalog: CatalogEntry[] = [
   q({ id: "omega-centauri", name: "半人馬座 ω", englishName: "Omega Centauri", category: "cluster", subtype: "球狀星團", render: "cluster", distance: "約 17,000 光年", system: "半人馬座", description: "半人馬座 ω 是銀河系最大最亮的球狀星團，可能是矮星系的殘核。", facts: ["銀河系最大的球狀星團", "含約一千萬顆恆星"], funFacts: ["也許是被吞併的矮星系核心"], tags: ["星團", "球狀星團", "南天"], palette: ["#ffe7c0", "#cfb088", "#ffffff"], accent: "#ffe7c0" }),
   q({ id: "m4", name: "M4 球狀星團", englishName: "Messier 4", category: "cluster", subtype: "球狀星團", render: "cluster", distance: "約 7,200 光年", system: "天蠍座", description: "M4 是離地球最近的球狀星團之一，位於亮星心宿二旁，含古老白矮星。", facts: ["最近的球狀星團之一"], funFacts: ["藏有上百億歲的白矮星"], tags: ["星團", "Messier", "天蠍座"], palette: ["#ffe7c0", "#cfb088", "#ffffff"], accent: "#ffe7c0" })
 ];
+
+// ===================== Curated + auto-fetched universe merge =====================
+// Build de-dup keys from the curated set so the generated catalogue never
+// duplicates a hand-authored object (matched by Messier number or common name).
+const normKey = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const curatedMessier = new Set<string>();
+const curatedNames = new Set<string>();
+for (const e of CURATED) {
+  const mm = /M\s?(\d+)/i.exec(e.name) || /M\s?(\d+)/i.exec(e.englishName);
+  if (mm) curatedMessier.add(mm[1]);
+  curatedNames.add(normKey(e.englishName));
+  curatedNames.add(normKey(e.englishName.split(" · ")[0]));
+  curatedNames.add(normKey(e.name));
+}
+
+// Auto-derived entries from OpenNGC + NASA Exoplanet Archive (particle-ized on demand).
+export const generatedEntries: CatalogEntry[] = deriveGeneratedEntries({ messier: curatedMessier, names: curatedNames });
+
+// The full catalog: featured curated objects first, then the wider universe.
+export const catalog: CatalogEntry[] = [...CURATED, ...generatedEntries];
 
 // ---- helpers ----
 function planet(

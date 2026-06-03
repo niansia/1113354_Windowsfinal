@@ -7,6 +7,20 @@
       "runtimeArgs": ["run", "dev"],
       "cwd": "Frontend",
       "port": 5173
+    },
+    {
+      "name": "cosmic-gesture",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "IntegratedApps/CosmicGesture",
+      "port": 8765
+    },
+    {
+      "name": "cosmic-preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5283"],
+      "cwd": "IntegratedApps/CosmicGesture",
+      "port": 5283
     }
   ]
 }

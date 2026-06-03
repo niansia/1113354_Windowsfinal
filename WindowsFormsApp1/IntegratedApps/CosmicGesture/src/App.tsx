@@ -1,16 +1,18 @@
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { numberGestureMap } from "./data/celestialBodies";
-import { CATEGORIES, type CatalogCategory, catalogById, catalog, entriesByCategory } from "./data/catalog";
+import { CATEGORIES, type CatalogCategory, type CatalogEntry, catalogById, catalog, entriesByCategory } from "./data/catalog";
 import { GestureController } from "./components/GestureController";
 import { SolarSystemScene } from "./components/SolarSystemScene";
 import { DeepSpaceScene } from "./components/DeepSpaceScene";
+import { StarMapScene } from "./components/StarMapScene";
 import { EarthExploreScene } from "./components/EarthExploreScene";
 import { EARTH_REGIONS } from "./utils/earthGeo";
 import { CosmicBackdrop } from "./components/CosmicBackdrop";
 import { CosmosMenu } from "./components/CosmosMenu";
 import { InfoCard, type InfoTab } from "./components/InfoCard";
 import { ApodPanel } from "./components/ApodPanel";
+import { GestureHelp } from "./components/GestureHelp";
 import { performanceScale } from "./utils/particleMath";
 import { fetchApod, type ApodData } from "./services/nasaService";
 import type { BodyId, GestureDebugState, GestureEvent, PerformanceMode, RuntimeControls, SceneMode } from "./types";
@@ -39,6 +41,10 @@ export default function App() {
   const [gestureEnabled, setGestureEnabled] = useState(hostMode);
   const [bloomEnabled, setBloomEnabled] = useState(true);
   const [orbitLinesEnabled, setOrbitLinesEnabled] = useState(true);
+  const [immersive, setImmersive] = useState(false);
+  const [hudIdle, setHudIdle] = useState(false);
+  const [mapMode, setMapMode] = useState(false);
+  const [hoverEntry, setHoverEntry] = useState<CatalogEntry | null>(null);
   const [coreLevel, setCoreLevel] = useState(0);
   const [earthExplore, setEarthExplore] = useState(false);
   const [earthRegionId, setEarthRegionId] = useState("east-asia");
@@ -62,6 +68,7 @@ export default function App() {
   const entry = catalogById[selectedId] ?? catalogById.earth;
   const isSolar = entry.render === "solar";
   const particleScale = useMemo(() => performanceScale(performanceMode), [performanceMode]);
+  const mappedCount = useMemo(() => catalog.filter((e) => e.ra != null && e.dec != null).length, []);
 
   useEffect(() => {
     let active = true;
@@ -73,9 +80,74 @@ export default function App() {
     };
   }, []);
 
+  // ---- Immersive fullscreen gesture mode ----
+  const toggleImmersive = useCallback(() => {
+    setImmersive((on) => {
+      const next = !on;
+      try {
+        if (next && !document.fullscreenElement) {
+          void document.documentElement.requestFullscreen?.();
+        } else if (!next && document.fullscreenElement) {
+          void document.exitFullscreen?.();
+        }
+      } catch {
+        /* fullscreen API may be blocked in the WebView host — panel hiding still applies */
+      }
+      // Entering immersive turns gestures on so the hands are the primary control.
+      if (next) setGestureEnabled(true);
+      return next;
+    });
+  }, []);
+
+  // Immersive (panel-hiding) is decoupled from the fullscreen API, which is a
+  // best-effort bonus. Only when we genuinely WERE in fullscreen and the user
+  // leaves it (e.g. browser Esc) do we also drop out of immersive — so a host
+  // that blocks the Fullscreen API still gets the de-cluttered view.
+  useEffect(() => {
+    const wasFullscreen = { current: false };
+    const onFsChange = () => {
+      const now = !!document.fullscreenElement;
+      if (wasFullscreen.current && !now) setImmersive(false);
+      wasFullscreen.current = now;
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  // Auto-hide the immersive HUD after a few idle seconds; any input brings it back.
+  useEffect(() => {
+    if (!immersive) {
+      setHudIdle(false);
+      return;
+    }
+    let timer = window.setTimeout(() => setHudIdle(true), 3600);
+    const wake = () => {
+      setHudIdle(false);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setHudIdle(true), 3600);
+    };
+    window.addEventListener("pointermove", wake);
+    window.addEventListener("keydown", wake);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pointermove", wake);
+      window.removeEventListener("keydown", wake);
+    };
+  }, [immersive]);
+
+  const toggleMap = useCallback(() => {
+    setMapMode((on) => {
+      const next = !on;
+      setNotice(next ? "宇宙星圖 · 揮手環視全天，點擊或張掌進入天體" : "離開星圖");
+      return next;
+    });
+  }, []);
+
   const selectEntry = useCallback((id: string) => {
     const next = catalogById[id];
     if (!next) return;
+    setMapMode(false);
+    setHoverEntry(null);
     setEarthExplore(false);
     setSelectedId(id);
     setMenuCategory(next.category);
@@ -173,6 +245,38 @@ export default function App() {
 
   const handleGesture = useCallback(
     (event: GestureEvent) => {
+      // Star-map mode: gestures fly the view across the whole sky; fist exits,
+      // open palm / number dives into the hovered or numbered object.
+      if (mapMode) {
+        switch (event.type) {
+          case "pointer":
+            controlsRef.current.pointer = event.pointer;
+            return;
+          case "orbit":
+            controlsRef.current.orbitImpulse += -event.velocityX * 0.02;
+            controlsRef.current.elevationImpulse += event.velocityY * 0.01;
+            return;
+          case "swipe":
+            controlsRef.current.orbitImpulse += event.dir === "left" ? 0.22 : -0.22;
+            return;
+          case "tilt":
+            controlsRef.current.elevationImpulse += event.dir === "up" ? 0.12 : -0.12;
+            return;
+          case "openPalm":
+            // Point at a target to dive in; otherwise張掌 flies you deeper into space.
+            if (hoverEntry) selectEntry(hoverEntry.id);
+            else controlsRef.current.zoomImpulse += 0.5;
+            return;
+          case "closedFist":
+            setMapMode(false);
+            controlsRef.current.lastGestureLabel = "握拳 / 離開星圖";
+            return;
+          case "number":
+            selectEntry(numberGestureMap[event.value]);
+            return;
+        }
+        return;
+      }
       // While walking the Earth surface, every gesture drives travel/zoom, not
       // object switching — "fly across the regions" feel.
       if (earthExplore) {
@@ -241,7 +345,7 @@ export default function App() {
           return;
       }
     },
-    [earthExplore, enterCore, exitCore, exitEarthExplore, navigateCategory, navigateObject, selectEntry]
+    [earthExplore, enterCore, exitCore, exitEarthExplore, hoverEntry, mapMode, navigateCategory, navigateObject, selectEntry]
   );
 
   useEffect(() => {
@@ -266,13 +370,19 @@ export default function App() {
         event.preventDefault();
         if (earthExplore) exitEarthExplore();
         else enterCore(1);
+      } else if (event.key === "f" || event.key === "F") {
+        toggleImmersive();
+      } else if (event.key === "m" || event.key === "M") {
+        toggleMap();
       } else if (event.key === "Escape") {
-        resetOverview();
+        if (mapMode) setMapMode(false);
+        else if (immersive) setImmersive(false);
+        else resetOverview();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [earthExplore, enterCore, exitEarthExplore, navigateCategory, navigateObject, resetOverview, selectEntry]);
+  }, [earthExplore, enterCore, exitEarthExplore, immersive, mapMode, navigateCategory, navigateObject, resetOverview, selectEntry, toggleImmersive, toggleMap]);
 
   useEffect(() => {
     if (mode !== "inner") {
@@ -302,7 +412,7 @@ export default function App() {
 
   return (
     <main
-      className="cosmic-app"
+      className={`cosmic-app${immersive ? " immersive" : ""}${immersive && hudIdle ? " hud-idle" : ""}${mapMode ? " map-mode" : ""}`}
       onPointerDown={(event) => {
         dragRef.current = { active: true, x: event.clientX, y: event.clientY };
         updatePointer(event.clientX, event.clientY, event.currentTarget);
@@ -347,8 +457,17 @@ export default function App() {
         <Canvas camera={{ fov: 52, near: 0.05, far: 200, position: [0, 7, 24] }} dpr={[1, 1.35]} gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}>
           <Suspense fallback={null}>
             <color attach="background" args={["#030611"]} />
-            <CosmicBackdrop controlsRef={controlsRef} density={backgroundDensity(performanceMode)} />
-            {earthExplore ? (
+            <CosmicBackdrop controlsRef={controlsRef} density={backgroundDensity(performanceMode)} nebulaDim={mapMode ? 0.18 : 1} />
+            {mapMode ? (
+              <StarMapScene
+                entries={catalog}
+                controlsRef={controlsRef}
+                bloomEnabled={bloomEnabled}
+                selectedId={selectedId}
+                onPick={selectEntry}
+                onHover={setHoverEntry}
+              />
+            ) : earthExplore ? (
               <EarthExploreScene controlsRef={controlsRef} particleScale={particleScale} bloomEnabled={bloomEnabled} onRegion={setEarthRegionId} />
             ) : isSolar ? (
               <SolarSystemScene
@@ -406,6 +525,7 @@ export default function App() {
         <div className="control-row">
           <span className={`gesture-pill ${debug.active ? "on" : ""}`}>{debug.active ? "手勢追蹤中" : gestureEnabled ? "等待手勢" : "手勢關閉"}</span>
           <span className="gesture-label">{debug.label}</span>
+          <GestureHelp />
         </div>
         <div className="control-row buttons">
           <select value={performanceMode} onChange={(e) => setPerformanceMode(e.target.value as PerformanceMode)}>
@@ -424,10 +544,62 @@ export default function App() {
       <div className="command-bar">
         <button type="button" onClick={() => navigateObject("prev")}>‹ 上一個</button>
         <button type="button" onClick={resetOverview}>總覽</button>
+        <button type="button" className={mapMode ? "active" : ""} onClick={toggleMap}>{mapMode ? "離開星圖" : "宇宙星圖"}</button>
         <button type="button" onClick={() => setInfoTab("detail")}>詳細資料</button>
         <button type="button" onClick={() => navigateObject("next")}>下一個 ›</button>
         <span>{notice}</span>
       </div>
+
+      {/* Star-map overlay: object count + hovered target */}
+      {mapMode && (
+        <section className="starmap-hint">
+          <div className="sm-eyebrow">宇宙星圖 · ALL-SKY MAP</div>
+          <div className="sm-count">{mappedCount.toLocaleString()} 個真實天體 · 揮手 / 拖曳環視 · 點擊或張掌進入</div>
+          {hoverEntry && (
+            <div className="sm-hover">
+              <span className="sm-dot" style={{ background: hoverEntry.accent }} />
+              聚焦：<b>{hoverEntry.name}</b> · {hoverEntry.subtype || hoverEntry.englishName}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Always-available fullscreen / immersive toggle */}
+      <button
+        type="button"
+        className="immersive-toggle"
+        onClick={toggleImmersive}
+        title={immersive ? "離開沉浸模式 (F / Esc)" : "沉浸式全螢幕手勢模式 (F)"}
+      >
+        <span>{immersive ? "⤫" : "⛶"}</span>
+      </button>
+
+      {/* Minimal heads-up display shown only in immersive mode */}
+      {immersive && (
+        <div className="immersive-hud">
+          <div className="ih-title">
+            <span className="ih-eyebrow">FUSIONOS · 沉浸模式</span>
+            <h2>{entry.name}</h2>
+            <p>{entry.englishName} · {viewLabel}</p>
+          </div>
+          <div className="ih-bottom">
+            <div className="ih-status">
+              <span className={`gesture-pill ${debug.active ? "on" : ""}`}>{debug.active ? "手勢追蹤中" : gestureEnabled ? "等待手勢" : "手勢關閉"}</span>
+              <span className="gesture-label">{debug.label}</span>
+              <GestureHelp className="up" />
+            </div>
+            <div className="ih-nav">
+              <button type="button" onClick={() => navigateObject("prev")}>‹</button>
+              <button type="button" onClick={resetOverview}>總覽</button>
+              <button type="button" className={mapMode ? "active" : ""} onClick={toggleMap}>星圖</button>
+              <button type="button" onClick={() => navigateObject("next")}>›</button>
+              <button type="button" onClick={() => setGestureEnabled((v) => !v)}>{gestureEnabled ? "手勢✓" : "手勢✗"}</button>
+              <button type="button" onClick={() => setBloomEnabled((v) => !v)}>{bloomEnabled ? "光暈✓" : "光暈✗"}</button>
+            </div>
+            <div className="ih-hint">張掌進入 · 握拳返回 · 揮手切換 · 數字 1–8 快選 · 按 F / Esc 離開</div>
+          </div>
+        </div>
+      )}
 
       <GestureController enabled={gestureEnabled} onGesture={handleGesture} onDebug={setDebug} />
     </main>

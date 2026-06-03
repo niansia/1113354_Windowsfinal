@@ -6,12 +6,13 @@ import type { RuntimeControlsRef } from "../types";
 interface CosmicBackdropProps {
   controlsRef: RuntimeControlsRef;
   density?: number; // 0.3 .. 1
+  nebulaDim?: number; // 0..1 multiplier on the big soft nebula volumes (dimmed in star-map mode)
 }
 
 // Layered deep-space background shared by every scene: a deep starfield, a tilted
 // milky-way band, soft nebula volumes and slowly drifting dust — with gentle
 // pointer parallax so the whole cosmos feels alive even when idle.
-export function CosmicBackdrop({ controlsRef, density = 1 }: CosmicBackdropProps) {
+export function CosmicBackdrop({ controlsRef, density = 1, nebulaDim = 1 }: CosmicBackdropProps) {
   const parallaxRef = useRef<Group>(null);
   const dustRef = useRef<Points>(null);
   const bandRef = useRef<Group>(null);
@@ -58,18 +59,18 @@ export function CosmicBackdrop({ controlsRef, density = 1 }: CosmicBackdropProps
         </points>
       </group>
 
-      {/* soft nebula volumes */}
+      {/* soft nebula volumes (dimmed in star-map mode so they don't dominate) */}
       <mesh position={[-14, -6, -30]} rotation={[0.2, 0.1, -0.2]}>
         <sphereGeometry args={[14, 30, 14]} />
-        <meshBasicMaterial color="#1a8bff" transparent opacity={0.03} blending={AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial color="#1a8bff" transparent opacity={0.03 * nebulaDim} blending={AdditiveBlending} depthWrite={false} />
       </mesh>
       <mesh position={[16, 8, -34]} rotation={[0.4, -0.2, 0.4]}>
         <sphereGeometry args={[18, 30, 14]} />
-        <meshBasicMaterial color="#c733ff" transparent opacity={0.022} blending={AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial color="#c733ff" transparent opacity={0.022 * nebulaDim} blending={AdditiveBlending} depthWrite={false} />
       </mesh>
       <mesh position={[4, -12, -26]}>
         <sphereGeometry args={[12, 30, 14]} />
-        <meshBasicMaterial color="#23d5c0" transparent opacity={0.018} blending={AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial color="#23d5c0" transparent opacity={0.018 * nebulaDim} blending={AdditiveBlending} depthWrite={false} />
       </mesh>
 
       <points ref={dustRef} geometry={dust} frustumCulled={false}>
