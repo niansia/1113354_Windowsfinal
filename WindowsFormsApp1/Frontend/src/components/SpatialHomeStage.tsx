@@ -29,8 +29,17 @@ import type { GestureData, GestureStatus } from '../hooks/useHandGesture';
 import { FUSION_APPS, type FusionApp } from '../data/fusionApps';
 import { FusionDepthBackground } from './FusionDepthBackground';
 import { HeroEnergyCore } from './HeroEnergyCore';
+import { FusionSettings } from './FusionSettings';
+import { FusionThisPc } from './FusionThisPc';
+import { FusionFiles } from './FusionFiles';
+import { useFusionSettings, WALLPAPERS } from '../hooks/useFusionSettings';
 import { getPerformanceProfile } from '../utils/performanceProfile';
 import { addHostMessageListener, launchApp } from '../utils/bridge';
+
+// Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
+const CARD_W = 208;
+const CARD_GAP = 16;
+const CARD_STEP = CARD_W + CARD_GAP;
 
 interface SpatialHomeStageProps {
   status: GestureStatus;
@@ -48,9 +57,6 @@ const NAV_ITEMS: Array<{ label: string; icon: LucideIcon; appId: AppId; launch?:
   { label: '開發實驗室', icon: Code2, appId: 'dev' },
   { label: '設定', icon: Settings, appId: 'set', launch: true }
 ];
-
-const DOCK_IDS: AppId[] = ['pc', 'dir', 'piano', 'cosmic', 'dev', 'db', 'web', 'set'];
-const FEATURED_IDS: AppId[] = ['dir', 'piano', 'cosmic', 'dev', 'db'];
 
 const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   pc: Cpu,
@@ -107,8 +113,20 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   const [launchStates, setLaunchStates] = useState<Partial<Record<AppId, LaunchState>>>({});
   const [lastLaunchMessage, setLastLaunchMessage] = useState('工作區已上線。選擇應用程式，或按 Enter 啟動。');
   const [now, setNow] = useState(() => new Date());
+  // In-shell app overlays (React pages instead of the host's placeholder windows).
+  const [overlayApp, setOverlayApp] = useState<AppId | null>(null);
+  const [viewportW, setViewportW] = useState(0);
+  const [dragDX, setDragDX] = useState(0);
+  const runViewportRef = useRef<HTMLDivElement>(null);
+  const dockRailRef = useRef<HTMLDivElement>(null);
+  const selectedDockBtnRef = useRef<HTMLButtonElement>(null);
+  const dragStartXRef = useRef<number | null>(null);
+  const dragMovedRef = useRef(false);
   const lastSwipeIdRef = useRef(0);
   const lastActivateIdRef = useRef(0);
+
+  // Sandboxed FusionOS preferences (localStorage only — never touches the host OS).
+  const { settings, update } = useFusionSettings();
 
   const profile = useMemo(() => getPerformanceProfile(), []);
   const selectedApp = apps[selectedIndex] ?? apps[0] ?? FUSION_APPS[0];
@@ -126,6 +144,12 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   }, [apps.length, onIndexChange, onQueueChange]);
 
   const launchFusionApp = useCallback((app: FusionApp) => {
+    // 系統設定 / 本機 / 專案檔案 改為在桌面內開啟 React 頁面，而非請主機彈出預留視窗。
+    if (app.id === 'set' || app.id === 'pc' || app.id === 'dir') {
+      setOverlayApp(app.id);
+      setLastLaunchMessage(`已開啟「${app.title}」。`);
+      return;
+    }
     launchApp(app.id);
     setLastLaunchMessage(`已將「${app.title}」的啟動要求送至 Fusion 主機。`);
     setLaunchStates((prev) => ({ ...prev, [app.id]: 'open' }));
@@ -147,22 +171,77 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
     if (selectedApp) launchFusionApp(selectedApp);
   }, [launchFusionApp, selectedApp]);
 
-  const focusAppList = useMemo(() => {
-    const featured = FEATURED_IDS
-      .map((id) => apps.find((app) => app.id === id))
-      .filter(Boolean) as FusionApp[];
-    return featured.length ? featured : apps.slice(0, 6);
-  }, [apps]);
-
-  const dockApps = useMemo(
-    () => DOCK_IDS.map((id) => apps.find((app) => app.id === id)).filter(Boolean) as FusionApp[],
-    [apps]
-  );
-
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  // Measure the running-carousel viewport so the selected card can be centred.
+  useEffect(() => {
+    const el = runViewportRef.current;
+    if (!el) return;
+    const measure = () => setViewportW(el.clientWidth);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Slide the track so the selected card sits centred in the viewport (+ live drag).
+  const trackX = (viewportW ? viewportW / 2 - CARD_W / 2 - selectedIndex * CARD_STEP : 0) + dragDX;
+
+  // Keep the selected dock button scrolled into view so the dock mirrors the
+  // carousel (same apps, same order, both centred on the selection).
+  useEffect(() => {
+    selectedDockBtnRef.current?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+  }, [selectedIndex]);
+
+  // ----- Left-button drag to slide the running carousel -----
+  const onCarouselPointerDown = useCallback((event: React.PointerEvent) => {
+    if (event.button !== 0) return;
+    dragStartXRef.current = event.clientX;
+    dragMovedRef.current = false;
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+  }, []);
+
+  const onCarouselPointerMove = useCallback((event: React.PointerEvent) => {
+    if (dragStartXRef.current === null) return;
+    const dx = event.clientX - dragStartXRef.current;
+    if (Math.abs(dx) > 5) dragMovedRef.current = true;
+    setDragDX(dx);
+  }, []);
+
+  const endCarouselDrag = useCallback((event: React.PointerEvent) => {
+    if (dragStartXRef.current === null) return;
+    const dx = event.clientX - dragStartXRef.current;
+    dragStartXRef.current = null;
+    setDragDX(0);
+    const steps = Math.round(-dx / CARD_STEP);
+    if (steps !== 0) selectIndex(selectedIndex + steps);
+    // keep dragMovedRef true briefly so the click that follows a drag is ignored
+    if (dragMovedRef.current) window.setTimeout(() => { dragMovedRef.current = false; }, 0);
+  }, [selectIndex, selectedIndex]);
+
+  // Derived desktop theming from the sandboxed settings.
+  const uiScale = (parseInt(settings.scale, 10) || 100) / 100;
+  const homeClassName = [
+    'fusion-stage',
+    'fusion-os-home',
+    settings.transparency ? '' : 'fusion-no-glass',
+    settings.animations ? '' : 'fusion-reduce-motion',
+    settings.highContrast ? 'fusion-high-contrast' : '',
+    settings.nightLight ? 'fusion-night' : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const homeStyle = {
+    ['--fusion-accent']: settings.accent,
+    ['--fusion-wallpaper']: WALLPAPERS[settings.wallpaper] ?? WALLPAPERS[0],
+    ['--fusion-ui-scale']: uiScale
+  } as React.CSSProperties;
+
+  const veilOpacity = Math.max(0, Math.min(0.62, (100 - settings.brightness) / 100));
 
   useEffect(() => {
     return addHostMessageListener((message) => {
@@ -185,21 +264,24 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   }, []);
 
   useEffect(() => {
+    if (overlayApp) return;
     const swipeId = gestureData?.swipeId ?? 0;
     if (!swipeId || swipeId === lastSwipeIdRef.current) return;
     lastSwipeIdRef.current = swipeId;
     selectIndex(selectedIndex + (gestureData?.swipeDirection === 'left' ? 1 : -1));
-  }, [gestureData?.swipeDirection, gestureData?.swipeId, selectIndex, selectedIndex]);
+  }, [gestureData?.swipeDirection, gestureData?.swipeId, selectIndex, selectedIndex, overlayApp]);
 
   useEffect(() => {
+    if (overlayApp) return;
     const activateId = gestureData?.activateId ?? 0;
     if (!activateId || activateId === lastActivateIdRef.current) return;
     lastActivateIdRef.current = activateId;
     launchSelectedApp();
-  }, [gestureData?.activateId, launchSelectedApp]);
+  }, [gestureData?.activateId, launchSelectedApp, overlayApp]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (overlayApp) return;
       const target = event.target as HTMLElement | null;
       const tag = target?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
@@ -226,10 +308,10 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [apps, launchSelectedApp, selectApp, selectIndex, selectedIndex]);
+  }, [apps, launchSelectedApp, selectApp, selectIndex, selectedIndex, overlayApp]);
 
   return (
-    <div className="fusion-stage fusion-os-home">
+    <div className={homeClassName} style={homeStyle}>
       <FusionDepthBackground handX={handX} profile={profile} />
       <div className="fusion-stage-aurora" />
       <div className="fusion-stage-grid" />
@@ -310,31 +392,58 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
               <small>{runningCount} 個應用程式執行中</small>
             </div>
 
-            <div className="fusion-module-grid">
-              {focusAppList.map((app) => {
-                const Icon = appIcon(app.id);
-                const selected = app.id === selectedApp.id;
-                const launchState = launchStates[app.id] ?? 'idle';
-                return (
-                  <button
-                    key={app.id}
-                    type="button"
-                    className={`fusion-module-card ${selected ? 'is-selected' : ''}`}
-                    style={{ ['--app-color' as string]: app.color } as React.CSSProperties}
-                    onDoubleClick={() => launchFusionApp(app)}
-                    onClick={() => selectApp(app.id)}
-                  >
-                    <span className="fusion-module-icon">
-                      <Icon size={22} strokeWidth={1.8} />
-                    </span>
-                    <span className="fusion-module-title">{app.title}</span>
-                    <span className="fusion-module-subtitle">{app.subtitle}</span>
-                    <span className={`fusion-module-status ${launchState}`}>
-                      {launchState === 'open' ? '執行中' : app.status}
-                    </span>
-                  </button>
-                );
-              })}
+            <div
+              className={`fusion-run-viewport ${dragStartXRef.current !== null ? 'is-dragging' : ''}`}
+              ref={runViewportRef}
+              onPointerDown={onCarouselPointerDown}
+              onPointerMove={onCarouselPointerMove}
+              onPointerUp={endCarouselDrag}
+              onPointerCancel={endCarouselDrag}
+            >
+              <div
+                className="fusion-run-track"
+                style={{ transform: `translateX(${trackX}px)`, transition: dragStartXRef.current !== null ? 'none' : undefined }}
+              >
+                {apps.map((app, index) => {
+                  const Icon = appIcon(app.id);
+                  const offset = index - selectedIndex;
+                  const dist = Math.abs(offset);
+                  const selected = index === selectedIndex;
+                  const launchState = launchStates[app.id] ?? 'idle';
+                  const scale = selected ? 1 : dist === 1 ? 0.9 : 0.82;
+                  const opacity = dist > 3 ? 0 : selected ? 1 : dist === 1 ? 0.74 : 0.46;
+                  const offscreen = dist > 3;
+                  return (
+                    <button
+                      key={app.id}
+                      type="button"
+                      className={`fusion-module-card ${selected ? 'is-selected' : ''}`}
+                      style={{
+                        ['--app-color' as string]: app.color,
+                        transform: `scale(${scale})`,
+                        opacity
+                      } as React.CSSProperties}
+                      onDoubleClick={() => launchFusionApp(app)}
+                      onClick={() => {
+                        if (dragMovedRef.current) return;
+                        if (selected) launchFusionApp(app);
+                        else selectApp(app.id);
+                      }}
+                      tabIndex={offscreen ? -1 : 0}
+                      aria-hidden={offscreen}
+                    >
+                      <span className="fusion-module-icon">
+                        <Icon size={22} strokeWidth={1.8} />
+                      </span>
+                      <span className="fusion-module-title">{app.title}</span>
+                      <span className="fusion-module-subtitle">{app.subtitle}</span>
+                      <span className={`fusion-module-status ${launchState}`}>
+                        {launchState === 'open' ? '執行中' : app.status}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </section>
         </main>
@@ -388,27 +497,51 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
         <button type="button" className="dock-step" onClick={() => selectIndex(selectedIndex - 1)} title="上一個應用程式">
           <ChevronLeft size={21} />
         </button>
-        {dockApps.map((app) => {
-          const Icon = appIcon(app.id);
-          const selected = app.id === selectedApp.id;
-          const running = runningApps.has(app.id);
-          return (
-            <button
-              key={app.id}
-              type="button"
-              className={`${selected ? 'is-selected' : ''} ${running ? 'is-running' : ''}`}
-              onClick={() => selectApp(app.id, true)}
-              title={app.title}
-            >
-              <Icon size={23} strokeWidth={1.8} />
-              <span>{app.title}</span>
-            </button>
-          );
-        })}
+        <div className="fusion-dock-rail" ref={dockRailRef}>
+          {apps.map((app, index) => {
+            const Icon = appIcon(app.id);
+            const selected = index === selectedIndex;
+            const running = runningApps.has(app.id);
+            return (
+              <button
+                key={app.id}
+                ref={selected ? selectedDockBtnRef : undefined}
+                type="button"
+                className={`${selected ? 'is-selected' : ''} ${running ? 'is-running' : ''}`}
+                onClick={() => selectApp(app.id, true)}
+                title={app.title}
+              >
+                <Icon size={23} strokeWidth={1.8} />
+                <span>{app.title}</span>
+              </button>
+            );
+          })}
+        </div>
         <button type="button" className="dock-step" onClick={() => selectIndex(selectedIndex + 1)} title="下一個應用程式">
           <ChevronRight size={21} />
         </button>
       </nav>
+
+      <div className="fusion-brightness-veil" style={{ opacity: veilOpacity }} aria-hidden="true" />
+      <div className="fusion-night-veil" style={{ opacity: settings.nightLight ? 1 : 0 }} aria-hidden="true" />
+
+      <FusionSettings
+        open={overlayApp === 'set'}
+        onClose={() => setOverlayApp(null)}
+        settings={settings}
+        onChange={update}
+      />
+      <FusionThisPc
+        open={overlayApp === 'pc'}
+        onClose={() => setOverlayApp(null)}
+        accent={settings.accent}
+        onOpenFiles={() => setOverlayApp('dir')}
+      />
+      <FusionFiles
+        open={overlayApp === 'dir'}
+        onClose={() => setOverlayApp(null)}
+        accent={settings.accent}
+      />
     </div>
   );
 };

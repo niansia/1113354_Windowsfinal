@@ -1030,3 +1030,168 @@
     animation: none;
   }
 }
+
+/* ==================================================================
+   RUNNING CAROUSEL · gesture / arrow / dock slidable app strip
+   The selected card is centred; neighbours peek, scale down and dim.
+   Card width + gap below MUST match CARD_W / CARD_GAP in SpatialHomeStage.tsx.
+   ================================================================== */
+.fusion-run-viewport {
+  position: relative;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+
+.fusion-run-track {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  height: 100%;
+  will-change: transform;
+  transition: transform 0.46s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.fusion-run-track .fusion-module-card {
+  flex: 0 0 208px;
+  width: 208px;
+  height: clamp(150px, 100%, 184px);
+  min-height: 0;
+  transform-origin: center;
+  transition:
+    transform 0.46s cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 0.46s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fusion-run-track,
+  .fusion-run-track .fusion-module-card {
+    transition: none;
+  }
+}
+
+/* left-button drag affordance for the carousel */
+.fusion-run-viewport {
+  cursor: grab;
+  touch-action: pan-y;
+}
+.fusion-run-viewport.is-dragging {
+  cursor: grabbing;
+}
+
+/* ==================================================================
+   DOCK RAIL · scrollable strip that mirrors the running carousel
+   (same apps, same order). Selected button is auto-scrolled to centre.
+   ================================================================== */
+.fusion-dock-rail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 auto;
+  justify-content: center;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: 4px 2px;
+}
+.fusion-dock-rail::-webkit-scrollbar {
+  display: none;
+}
+.fusion-dock-rail > button {
+  flex: 0 0 auto;
+}
+
+/* ==================================================================
+   SETTINGS-DRIVEN DESKTOP THEMING (sandboxed · localStorage only)
+   Wallpaper / accent / transparency / brightness / motion all affect
+   ONLY the FusionOS desktop — never the real machine.
+   ================================================================== */
+
+/* wallpaper (index 0 == the original default background) */
+.fusion-os-home {
+  background: var(--fusion-wallpaper, linear-gradient(180deg, #05080f 0%, #03050c 56%, #010308 100%));
+}
+
+/* accent recolours signature desktop elements live */
+.fusion-os-home .fusion-eyebrow,
+.fusion-os-home .fusion-section-head span,
+.fusion-os-home .fusion-side-brand span,
+.fusion-os-home .fusion-widget-title,
+.fusion-os-home .fusion-widget-title span {
+  color: var(--fusion-accent, #8cf6ff);
+}
+.fusion-os-home .fusion-user-ring {
+  border-color: var(--fusion-accent, #6de8ff);
+}
+.fusion-os-home .fusion-dock button.is-selected {
+  border-color: color-mix(in srgb, var(--fusion-accent, #8cf6ff) 54%, transparent);
+}
+.fusion-os-home .fusion-dock button.is-selected::after {
+  background: var(--fusion-accent, #8cf6ff);
+  box-shadow: 0 0 16px var(--fusion-accent, #8cf6ff);
+}
+
+/* transparency OFF — drop the glass blur and solidify panels */
+.fusion-no-glass .fusion-side-panel,
+.fusion-no-glass .fusion-hero-card,
+.fusion-no-glass .fusion-widget,
+.fusion-no-glass .fusion-running-section,
+.fusion-no-glass .fusion-dock,
+.fusion-no-glass .fusion-module-card,
+.fusion-no-glass .set-panel,
+.fusion-no-glass .set-overlay {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.fusion-no-glass .fusion-side-panel,
+.fusion-no-glass .fusion-hero-card,
+.fusion-no-glass .fusion-widget,
+.fusion-no-glass .fusion-running-section,
+.fusion-no-glass .fusion-dock {
+  background: linear-gradient(180deg, rgba(14, 20, 40, 0.97), rgba(7, 11, 24, 0.97)) !important;
+}
+
+/* animations OFF (accessibility / settings toggle) */
+.fusion-reduce-motion *,
+.fusion-reduce-motion *::before,
+.fusion-reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* high contrast (scoped to the shell so it can't break fixed overlays) */
+.fusion-high-contrast .fusion-shell {
+  filter: contrast(1.16) saturate(1.1);
+}
+
+/* brightness veil — dims the desktop behind the settings panel */
+.fusion-brightness-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  pointer-events: none;
+  background: #000;
+  transition: opacity 0.2s ease;
+}
+
+/* night-light warm filter (sandboxed visual only) */
+.fusion-night-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 56;
+  pointer-events: none;
+  background: rgba(255, 168, 66, 0.16);
+  transition: opacity 0.4s ease;
+}
+
+/* UI scale (sandboxed) — only zooms the FusionOS shell content */
+.fusion-shell {
+  zoom: var(--fusion-ui-scale, 1);
+}

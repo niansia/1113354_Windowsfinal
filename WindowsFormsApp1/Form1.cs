@@ -1477,7 +1477,7 @@ namespace WindowsFormsApp1
                 return;
             }
 
-            OpenSystemWindow(info.Name, info.Description + "\r\n\r\n" + L("DefaultEntryBody"), ColorFor(info));
+            OpenSystemWindow(info.Name, info.Description + "\r\n\r\n" + L("DefaultEntryBody"), ColorFor(info), AppIdForIcon(info));
             PostAppLaunchStatus(AppIdForIcon(info), "open", info.Name + " 已開啟");
         }
 
@@ -1777,7 +1777,7 @@ namespace WindowsFormsApp1
             }
 
             PostAppLaunchStatus("cosmic", "open", "Cosmic Gesture WebView 開啟中");
-            OpenWebAppWindow(L("CosmicGesture"), "http://127.0.0.1:8765/?host=fusionos", accent3, ownsCamera: true);
+            OpenWebAppWindow(L("CosmicGesture"), "http://127.0.0.1:8765/?host=fusionos", accent3, ownsCamera: true, kind: "cosmic");
         }
 
         private async Task<bool> WaitForCosmicServerAsync()
@@ -2373,7 +2373,7 @@ namespace WindowsFormsApp1
             catch { }
         }
 
-        private void OpenSystemWindow(string title, string body, Color color)
+        private void OpenSystemWindow(string title, string body, Color color, string kind = "system")
         {
             windowOffset = (windowOffset + 30) % 180;
             Rectangle area = AppWorkArea(false);
@@ -2416,7 +2416,7 @@ namespace WindowsFormsApp1
                 Padding = new Padding(18, 0, 0, 0)
             };
             header.Controls.Add(titleLabel);
-            var app = RegisterAppWindow(title, win, header, titleLabel, color, "system");
+            var app = RegisterAppWindow(title, win, header, titleLabel, color, kind);
 
             var content = new TableLayoutPanel
             {
@@ -2457,7 +2457,7 @@ namespace WindowsFormsApp1
             SetActiveApp(app);
         }
 
-        private async void OpenWebAppWindow(string title, string url, Color color, bool ownsCamera = false)
+        private async void OpenWebAppWindow(string title, string url, Color color, bool ownsCamera = false, string kind = "webview")
         {
             windowOffset = (windowOffset + 28) % 168;
             Rectangle area = AppWorkArea(false);
@@ -2514,7 +2514,7 @@ namespace WindowsFormsApp1
                 Padding = new Padding(18, 0, 0, 0)
             };
             header.Controls.Add(titleLabel);
-            var app = RegisterAppWindow(title, win, header, titleLabel, color, "webview");
+            var app = RegisterAppWindow(title, win, header, titleLabel, color, kind);
 
             var content = new Panel
             {
