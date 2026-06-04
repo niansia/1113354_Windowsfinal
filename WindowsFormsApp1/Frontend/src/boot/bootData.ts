@@ -87,7 +87,7 @@ export async function preloadApp(appId: string): Promise<void> {
 }
 
 export async function preloadCommonApps(): Promise<string> {
-  await Promise.all(['piano', 'media', 'wav', 'cosmic', 'set', 'web'].map((id) => preloadApp(id)));
+  await Promise.all(['piano', 'media', 'wav', 'cosmic', 'metro', 'set', 'web'].map((id) => preloadApp(id)));
   return `Preloaded ${fusionRuntimeCache.preloadedApps.length} app manifests`;
 }
 

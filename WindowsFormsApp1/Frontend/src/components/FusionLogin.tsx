@@ -7,7 +7,9 @@ import { LANGS, LANG_LABELS, type Lang } from '../i18n/strings';
 
 // Fullscreen login / first-run setup gate shown between the boot loader and the desktop.
 // First run (no account) => create display name + password; afterwards => password lock.
-export const FusionLogin: React.FC<{ exiting?: boolean }> = ({ exiting = false }) => {
+// phase: 'idle' = interactive, 'welcome' = success "歡迎" beat, 'exit' = zoom/fade out.
+export type LoginPhase = 'idle' | 'welcome' | 'exit';
+export const FusionLogin: React.FC<{ phase?: LoginPhase }> = ({ phase = 'idle' }) => {
   const { t, lang } = useI18n();
   const { status, profile, verify, setup, reset } = useAccount();
   const { settings, update } = useSettings();
@@ -62,8 +64,10 @@ export const FusionLogin: React.FC<{ exiting?: boolean }> = ({ exiting = false }
     }
   };
 
+  const welcoming = phase !== 'idle';
+
   return (
-    <div className={`fusion-login ${exiting ? 'is-exiting' : ''}`}>
+    <div className={`fusion-login ${phase === 'exit' ? 'is-exiting' : ''} ${welcoming ? 'is-welcoming' : ''}`}>
       <div className="fusion-login-aurora" aria-hidden="true" />
       <form className="fusion-login-card" onSubmit={onSubmit}>
         <div className="fusion-login-avatar" aria-hidden="true">
@@ -144,6 +148,19 @@ export const FusionLogin: React.FC<{ exiting?: boolean }> = ({ exiting = false }
           ))}
         </div>
       </form>
+
+      {welcoming && (
+        <div className="fusion-login-welcome" aria-hidden="true">
+          <div className="fusion-login-welcome-avatar">
+            <span>{avatarLetter}</span>
+            <div className="fusion-login-welcome-ring" />
+          </div>
+          <div className="fusion-login-welcome-title">
+            {t('歡迎回來')}{profile.displayName ? `，${profile.displayName}` : ''}
+          </div>
+          <div className="fusion-login-welcome-sub">{t('正在載入你的桌面…')}</div>
+        </div>
+      )}
     </div>
   );
 };

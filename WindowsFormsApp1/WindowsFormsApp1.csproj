@@ -54,6 +54,10 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.SQLite">
+      <HintPath>$(NuGetPackageRoot)stub.system.data.sqlite.core.netframework\1.0.118\lib\net46\System.Data.SQLite.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Web.Extensions" />
     <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
@@ -108,9 +112,12 @@
     <None Include="IntegratedApps\MultimediaStudio\**\*.*" />
     <None Include="IntegratedApps\WaveStudio\**\*.*" />
     <None Include="IntegratedApps\CosmicGesture\**\*.*" />
+    <None Include="IntegratedApps\MetroPulse\**\*.*" />
     <None Remove="IntegratedApps\**\packages\**\*.*" />
     <None Remove="IntegratedApps\**\bin\**\*.*" />
     <None Remove="IntegratedApps\**\obj\**\*.*" />
+    <None Remove="IntegratedApps\**\build\**\*.*" />
+    <None Remove="IntegratedApps\**\__pycache__\**\*.*" />
     <None Remove="IntegratedApps\CosmicGesture\node_modules\**\*.*" />
     <None Remove="IntegratedApps\CosmicGesture\.vite\**\*.*" />
     <IntegratedAppProject Include="IntegratedApps\PianoStudio\**\*.csproj" />

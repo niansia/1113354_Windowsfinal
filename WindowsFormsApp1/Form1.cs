@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -50,12 +51,18 @@ namespace WindowsFormsApp1
         private int shortcutSerial;
         private int windowOffset;
         private string currentLanguage = "zh-TW";
+        private string currentTimezone = "Asia/Taipei";
+        private bool currentClock24 = true;
         // Lazily-opened SQLite account store (profile + hashed password + language).
         private AccountStore accountStore;
         private AccountStore AccountDb { get { return accountStore ?? (accountStore = new AccountStore()); } }
         private Process cosmicServerProcess;
+        private Process metroPulseServerProcess;
         private int cameraAppWindowCount = 0;
         private bool nativeWarmupStarted;
+        private Task<CoreWebView2Environment> fusionBrowserEnvironmentTask;
+        private CoreWebView2Environment fusionBrowserEnvironment;
+        private Task metroPulseWarmupTask;
         private string terminalWorkingDirectoryCache;
         private Font terminalOutputFont;
         private Font terminalInputFont;
@@ -363,6 +370,8 @@ namespace WindowsFormsApp1
             }
 
             ScheduleWarmTerminalControls();
+            WarmFusionBrowserEnvironment();
+            WarmMetroPulseEngine();
 
             Task.Run(delegate
             {
@@ -376,6 +385,84 @@ namespace WindowsFormsApp1
                 {
                 }
             });
+        }
+
+        private void WarmFusionBrowserEnvironment()
+        {
+            try
+            {
+                Task<CoreWebView2Environment> warmTask = GetFusionBrowserEnvironmentAsync();
+                warmTask.ContinueWith(delegate (Task<CoreWebView2Environment> task)
+                {
+                    if (task.IsFaulted && task.Exception != null)
+                    {
+                        Debug.WriteLine("[Fusion Web] WebView2 warmup failed: " + task.Exception.GetBaseException().Message);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine("[Fusion Web] WebView2 warmup could not start: " + ex.Message);
+            }
+        }
+
+        private Task<CoreWebView2Environment> GetFusionBrowserEnvironmentAsync()
+        {
+            if (fusionBrowserEnvironment != null) return Task.FromResult(fusionBrowserEnvironment);
+            if (fusionBrowserEnvironmentTask != null) return fusionBrowserEnvironmentTask;
+            fusionBrowserEnvironmentTask = CreateFusionBrowserEnvironmentAsync();
+            return fusionBrowserEnvironmentTask;
+        }
+
+        private async Task<CoreWebView2Environment> CreateFusionBrowserEnvironmentAsync()
+        {
+            string userDataFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "FusionOS",
+                "WebView2");
+            Directory.CreateDirectory(userDataFolder);
+            fusionBrowserEnvironment = await CoreWebView2Environment.CreateAsync(null, userDataFolder, null);
+            return fusionBrowserEnvironment;
+        }
+
+        private void WarmMetroPulseEngine()
+        {
+            if (metroPulseWarmupTask != null) return;
+            metroPulseWarmupTask = Task.Run(delegate
+            {
+                try { EnsureMetroPulseEngineBuilt(); }
+                catch (Exception ex) { Debug.WriteLine("[MetroPulse] warmup failed: " + ex.Message); }
+            });
+        }
+
+        private void EnsureMetroPulseEngineBuilt()
+        {
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "MetroPulse"));
+            if (appRoot == null) return;
+            string source = Path.Combine(appRoot, "src", "main.cpp");
+            string buildDir = Path.Combine(appRoot, "build");
+            string exe = Path.Combine(buildDir, "MetroPulseEngine.exe");
+            if (!File.Exists(source)) return;
+            if (File.Exists(exe) && File.GetLastWriteTimeUtc(exe) >= File.GetLastWriteTimeUtc(source)) return;
+
+            string compiler = FindGppCommand();
+            if (compiler == null) return;
+            Directory.CreateDirectory(buildDir);
+            using (var process = new Process())
+            {
+                process.StartInfo.FileName = compiler;
+                process.StartInfo.Arguments = "-std=c++17 -O2 -Wall -Wextra -pedantic \"" + source + "\" -o \"" + exe + "\"";
+                process.StartInfo.WorkingDirectory = appRoot;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.Start();
+                if (!process.WaitForExit(18000) || process.ExitCode != 0)
+                {
+                    Debug.WriteLine("[MetroPulse] g++ compile failed: " + process.StandardError.ReadToEnd());
+                }
+            }
         }
 
         private void ScheduleWarmTerminalControls()
@@ -864,12 +951,13 @@ namespace WindowsFormsApp1
             AddDesktopIcon(L("MultimediaStudio"), "VID", L("MultimediaStudioDesc"), Color.FromArgb(88, 220, 255), LaunchMultimediaStudio);
             AddDesktopIcon(L("WaveStudio"), "WAV", L("WaveStudioDesc"), Color.FromArgb(120, 235, 218), LaunchWaveStudio);
             AddDesktopIcon(L("CosmicGesture"), "COS", L("CosmicGestureDesc"), Color.FromArgb(103, 125, 255), LaunchCosmicGesture);
+            AddDesktopIcon(L("MetroPulse"), "MAP", L("MetroPulseDesc"), Color.FromArgb(94, 224, 184), LaunchMetroPulse);
             AddDesktopIcon(L("UserFiles"), "USR", L("UserFilesDesc"), Color.FromArgb(86, 214, 255));
             AddDesktopIcon(L("AddFile"), "+", L("AddFileDesc"), Color.FromArgb(130, 165, 255), AddUserFile);
             AddDesktopIcon(L("LanguageLab"), "DEV", L("LanguageLabDesc"), accent);
             AddDesktopIcon(L("ToolBox"), "TOOL", L("ToolBoxDesc"), Color.FromArgb(255, 129, 142));
             AddDesktopIcon(L("Database"), "DB", L("DatabaseDesc"), Color.FromArgb(255, 206, 138));
-            AddDesktopIcon(L("WebZone"), "WEB", L("WebZoneDesc"), Color.FromArgb(119, 187, 255));
+            AddDesktopIcon(L("WebZone"), "WEB", L("WebZoneDesc"), Color.FromArgb(119, 187, 255), LaunchWebBrowser);
             AddDesktopIcon(L("GameRoom"), "GAME", L("GameRoomDesc"), accent2, LaunchFusionRPG);
             AddDesktopIcon(L("Terminal"), "CMD", L("TerminalDesc"), Color.FromArgb(112, 226, 188), OpenFusionTerminal);
             AddDesktopIcon(L("Settings"), "SET", L("SettingsDesc"), Color.FromArgb(163, 133, 255), OpenSettingsWindow);
@@ -1016,6 +1104,7 @@ namespace WindowsFormsApp1
             apps.Controls.Add(StartItem(L("MultimediaStudio"), L("StartMultimediaDesc"), Color.FromArgb(88, 220, 255)));
             apps.Controls.Add(StartItem(L("WaveStudio"), L("StartWaveDesc"), Color.FromArgb(120, 235, 218)));
             apps.Controls.Add(StartItem(L("CosmicGesture"), L("StartCosmicDesc"), accent3));
+            apps.Controls.Add(StartItem(L("MetroPulse"), L("StartMetroPulseDesc"), Color.FromArgb(94, 224, 184)));
             apps.Controls.Add(StartItem(L("GameRoom"), L("StartGameDesc"), accent2));
             apps.Controls.Add(StartItem(L("LanguageLab"), L("StartLanguageDesc"), accent));
             apps.Controls.Add(StartItem(L("SystemSettings"), L("SystemSettingsDesc"), Color.FromArgb(163, 133, 255)));
@@ -1059,11 +1148,13 @@ namespace WindowsFormsApp1
                 {
                     Debug.WriteLine($"[FusionOS PermissionRequested] Kind={args.PermissionKind}, Uri={args.Uri}, IsUserInitiated={args.IsUserInitiated}");
 
+                    string permissionName = args.PermissionKind.ToString();
                     if (args.PermissionKind == CoreWebView2PermissionKind.Camera ||
-                        args.PermissionKind == CoreWebView2PermissionKind.Microphone)
+                        args.PermissionKind == CoreWebView2PermissionKind.Microphone ||
+                        string.Equals(permissionName, "Geolocation", StringComparison.OrdinalIgnoreCase))
                     {
                         args.State = CoreWebView2PermissionState.Allow;
-                        Debug.WriteLine("[FusionOS PermissionRequested] Camera/Microphone allowed");
+                        Debug.WriteLine("[FusionOS PermissionRequested] Media/location permission allowed");
                     }
                 };
                 Debug.WriteLine("[FusionOS WebView2] PermissionRequested handler registered");
@@ -1413,10 +1504,12 @@ namespace WindowsFormsApp1
                     else if (lower.Contains("\"media\"") || lower.Contains("\"vid\"")) LaunchMultimediaStudio();
                     else if (lower.Contains("\"wav\"") || lower.Contains("\"wave\"")) LaunchWaveStudio();
                     else if (lower.Contains("\"cosmic\"") || lower.Contains("\"cos\"")) LaunchCosmicGesture();
+                    else if (lower.Contains("\"metro\"") || lower.Contains("\"traffic\"")) LaunchMetroPulse();
                     else if (lower.Contains("\"game\"") || lower.Contains("\"fusionrpg\"") || lower.Contains("\"rpg\"")) LaunchFusionRPG();
                     else if (lower.Contains("\"cmd\"") || lower.Contains("\"terminal\"")) OpenFusionTerminal();
                     else if (lower.Contains("\"settings\"") || lower.Contains("\"set\"")) OpenSettingsWindow();
-                    else 
+                    else if (lower.Contains("\"web\"") || lower.Contains("\"browser\"")) LaunchWebBrowser();
+                    else
                     {
                         foreach(var shortcut in desktopShortcuts) 
                         {
@@ -1433,8 +1526,8 @@ namespace WindowsFormsApp1
             catch { }
         }
 
-        // ===================== Account + language bridge =====================
-        // Handles the SQLite-backed account messages and the live language switch.
+        // ===================== Account + locale bridge =====================
+        // Handles the SQLite-backed account messages and the live language/time switch.
         // Returns true when the message was an account/language message (so the main
         // receiver stops processing it).
         private bool HandleAccountBridgeMessage(string json, string lower)
@@ -1462,8 +1555,9 @@ namespace WindowsFormsApp1
                         string lang = Field(msg, "language");
                         if (string.IsNullOrWhiteSpace(dn)) dn = "Fusion User";
                         if (string.IsNullOrEmpty(lang)) lang = currentLanguage;
+                        lang = NormalizeLang(lang);
                         AccountDb.CreateUser(dn, em, pw, lang);
-                        currentLanguage = NormalizeLang(lang);
+                        ApplyHostLocaleSettings(lang, Field(msg, "timezone"), BoolField(msg, "clock24"));
                         PostAccountResult("setup", true, null);
                         PostAccountState();
                         return true;
@@ -1495,7 +1589,7 @@ namespace WindowsFormsApp1
                     case "FUSION_SET_LANGUAGE":
                     {
                         string lang = NormalizeLang(Field(msg, "language"));
-                        currentLanguage = lang;
+                        ApplyHostLocaleSettings(lang, Field(msg, "timezone"), BoolField(msg, "clock24"));
                         try { AccountDb.SetLanguage(lang); } catch { }
                         PostAccountResult("setLanguage", true, null);
                         return true;
@@ -1519,19 +1613,37 @@ namespace WindowsFormsApp1
             return null;
         }
 
+        private static bool? BoolField(Dictionary<string, object> d, string key)
+        {
+            object v;
+            if (d == null || !d.TryGetValue(key, out v) || v == null) return null;
+            if (v is bool) return (bool)v;
+            bool parsed;
+            if (bool.TryParse(Convert.ToString(v), out parsed)) return parsed;
+            int intValue;
+            if (int.TryParse(Convert.ToString(v), out intValue)) return intValue != 0;
+            return null;
+        }
+
+        private void ApplyHostLocaleSettings(string lang, string timezone, bool? clock24)
+        {
+            currentLanguage = NormalizeLang(lang);
+            if (!string.IsNullOrWhiteSpace(timezone))
+            {
+                currentTimezone = FusionLocale.NormalizeTimezone(timezone);
+            }
+            if (clock24.HasValue)
+            {
+                currentClock24 = clock24.Value;
+            }
+            UpdateClock();
+            RefreshOpenWebPortalLocalization();
+            BroadcastLocaleToWebViews();
+        }
+
         private static string NormalizeLang(string lang)
         {
-            switch ((lang ?? string.Empty).Trim())
-            {
-                case "zh-TW":
-                case "zh-CN":
-                case "en":
-                case "ja":
-                case "ko":
-                    return lang.Trim();
-                default:
-                    return "zh-TW";
-            }
+            return FusionLocale.NormalizeLang(lang);
         }
 
         private void PostAccountState()
@@ -1549,7 +1661,9 @@ namespace WindowsFormsApp1
                 "\"needsSetup\":" + (exists ? "false" : "true") + "," +
                 "\"displayName\":\"" + JsonEscape(dn) + "\"," +
                 "\"email\":\"" + JsonEscape(em) + "\"," +
-                "\"language\":\"" + JsonEscape(lang) + "\"" +
+                "\"language\":\"" + JsonEscape(lang) + "\"," +
+                "\"timezone\":\"" + JsonEscape(currentTimezone) + "\"," +
+                "\"clock24\":" + (currentClock24 ? "true" : "false") +
                 "}}";
             try { carouselWebView.CoreWebView2.PostWebMessageAsString(jsonOut); } catch { }
         }
@@ -1594,6 +1708,11 @@ namespace WindowsFormsApp1
                 LaunchCosmicGesture();
                 return;
             }
+            if (e.NodeKey == "metro")
+            {
+                LaunchMetroPulse();
+                return;
+            }
             if (e.NodeKey == "piano")
             {
                 LaunchPianoStudio();
@@ -1621,7 +1740,7 @@ namespace WindowsFormsApp1
             }
             if (e.NodeKey == "web")
             {
-                OpenSystemWindow(L("WebZone"), L("WebZoneDesc") + "\r\n\r\n" + L("ReservedAppBody"), Color.FromArgb(90, 190, 255));
+                LaunchWebBrowser();
                 return;
             }
 
@@ -1828,6 +1947,11 @@ namespace WindowsFormsApp1
                 if (name == L("CosmicGesture"))
                 {
                     LaunchCosmicGesture();
+                    return;
+                }
+                if (name == L("MetroPulse"))
+                {
+                    LaunchMetroPulse();
                     return;
                 }
                 if (name == L("GameRoom"))
@@ -2083,6 +2207,10 @@ namespace WindowsFormsApp1
             if (info.Glyph == "COS")
             {
                 return FindProjectDirectory(Path.Combine("IntegratedApps", "CosmicGesture"));
+            }
+            if (info.Glyph == "MAP")
+            {
+                return FindProjectDirectory(Path.Combine("IntegratedApps", "MetroPulse"));
             }
             if (info.Glyph == "GAME")
             {
@@ -2356,6 +2484,74 @@ namespace WindowsFormsApp1
             LaunchIntegratedExeApp("wav", "WaveStudio", "WaveStudio", Color.FromArgb(120, 235, 218));
         }
 
+        private async void LaunchMetroPulse()
+        {
+            Color metroColor = Color.FromArgb(94, 224, 184);
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "MetroPulse"));
+            string serverPath = appRoot == null ? null : Path.Combine(appRoot, "server.py");
+            if (serverPath == null || !File.Exists(serverPath))
+            {
+                ShowToast(L("MetroPulseServerMissing"), metroColor);
+                PostAppLaunchStatus("metro", "error", L("MetroPulseServerMissing"));
+                return;
+            }
+
+            try
+            {
+                if (metroPulseWarmupTask != null) await metroPulseWarmupTask;
+            }
+            catch
+            {
+            }
+
+            bool serverReady = await IsMetroPulseServerReadyAsync();
+            if (!serverReady)
+            {
+                string python = FindPythonCommand();
+                if (python == null)
+                {
+                    ShowToast(L("MetroPulsePythonMissing"), metroColor);
+                    PostAppLaunchStatus("metro", "error", L("MetroPulsePythonMissing"));
+                    return;
+                }
+
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = python,
+                        Arguments = "\"" + serverPath + "\" --host 127.0.0.1 --port 8791",
+                        WorkingDirectory = appRoot,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    metroPulseServerProcess = Process.Start(startInfo);
+                    serverReady = await WaitForMetroPulseServerAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[MetroPulse] server launch failed: " + ex.Message);
+                    ShowToast(L("MetroPulseBrokerFailed"), metroColor);
+                    PostAppLaunchStatus("metro", "error", L("MetroPulseBrokerFailed"));
+                    return;
+                }
+            }
+
+            if (!serverReady)
+            {
+                ShowToast(L("MetroPulseBrokerNotReady"), metroColor);
+                PostAppLaunchStatus("metro", "error", L("MetroPulseBrokerNotReady"));
+                return;
+            }
+
+            string url = "http://127.0.0.1:8791/?host=fusionos" +
+                "&lang=" + Uri.EscapeDataString(currentLanguage) +
+                "&timezone=" + Uri.EscapeDataString(currentTimezone) +
+                "&clock24=" + (currentClock24 ? "true" : "false");
+            PostAppLaunchStatus("metro", "open", L("MetroPulseOpening"));
+            OpenWebAppWindow(L("MetroPulse"), url, metroColor, ownsCamera: false, kind: "metro");
+        }
+
         private void LaunchFusionRPG()
         {
             string preferredExe = FindProjectFile(Path.Combine("IntegratedApps", "FusionRPG", "Build", "FusionRPG.exe"));
@@ -2547,9 +2743,73 @@ namespace WindowsFormsApp1
             });
         }
 
+        private async Task<bool> WaitForMetroPulseServerAsync()
+        {
+            for (int i = 0; i < 36; i++)
+            {
+                if (await IsMetroPulseServerReadyAsync())
+                {
+                    return true;
+                }
+                await Task.Delay(180);
+            }
+
+            return false;
+        }
+
+        private Task<bool> IsMetroPulseServerReadyAsync()
+        {
+            return Task.Run(delegate
+            {
+                try
+                {
+                    var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8791/health");
+                    request.Timeout = 700;
+                    using (var response = (HttpWebResponse)request.GetResponse())
+                    {
+                        return response.StatusCode == HttpStatusCode.OK;
+                    }
+                }
+                catch
+                {
+                    return false;
+                }
+            });
+        }
+
         private string FindPythonCommand()
         {
             string[] candidates = { "py", "python", "python3" };
+            foreach (string candidate in candidates)
+            {
+                try
+                {
+                    using (var process = new Process())
+                    {
+                        process.StartInfo.FileName = candidate;
+                        process.StartInfo.Arguments = "--version";
+                        process.StartInfo.UseShellExecute = false;
+                        process.StartInfo.CreateNoWindow = true;
+                        process.StartInfo.RedirectStandardOutput = true;
+                        process.StartInfo.RedirectStandardError = true;
+                        process.Start();
+                        if (process.WaitForExit(1200) && process.ExitCode == 0)
+                        {
+                            return candidate;
+                        }
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            return null;
+        }
+
+        private string FindGppCommand()
+        {
+            string[] candidates = { "g++" };
             foreach (string candidate in candidates)
             {
                 try
@@ -3777,7 +4037,7 @@ namespace WindowsFormsApp1
             var titleLabel = new Label
             {
                 Dock = DockStyle.Fill,
-                Text = title + " / FusionOS React Web UI",    // Updated text hint
+                Text = title,
                 ForeColor = text,
                 Font = new Font(Font.FontFamily, 12.5F, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleLeft,
@@ -3798,7 +4058,7 @@ namespace WindowsFormsApp1
             var loading = new Label
             {
                 Dock = DockStyle.Fill,
-                Text = "Booting Modern Frontend Stack...",
+                Text = L("WebSurfaceLoading"),
                 ForeColor = muted,
                 BackColor = Color.FromArgb(2, 4, 13),
                 Font = new Font(Font.FontFamily, 12F, FontStyle.Bold),
@@ -3839,7 +4099,10 @@ namespace WindowsFormsApp1
 
                 webView.CoreWebView2.PermissionRequested += delegate (object eventSender, CoreWebView2PermissionRequestedEventArgs args)
                 {
-                    if (args.PermissionKind == CoreWebView2PermissionKind.Camera || args.PermissionKind == CoreWebView2PermissionKind.Microphone)
+                    string permissionName = args.PermissionKind.ToString();
+                    if (args.PermissionKind == CoreWebView2PermissionKind.Camera ||
+                        args.PermissionKind == CoreWebView2PermissionKind.Microphone ||
+                        string.Equals(permissionName, "Geolocation", StringComparison.OrdinalIgnoreCase))
                     {
                         args.State = CoreWebView2PermissionState.Allow;
                     }
@@ -3853,7 +4116,7 @@ namespace WindowsFormsApp1
                     if (!args.IsSuccess)
                     {
                         loading.Visible = true;
-                        loading.Text = "Cosmic Gesture could not finish loading: " + args.WebErrorStatus;
+                        loading.Text = string.Format(CultureInfo.InvariantCulture, L("WebSurfaceLoadError"), args.WebErrorStatus);
                     }
                 };
 
@@ -3865,8 +4128,353 @@ namespace WindowsFormsApp1
             {
                 webView.Visible = false;
                 loading.Visible = true;
-                loading.Text = "WebView2 could not start.\r\n\r\n" + ex.Message;
+                loading.Text = L("WebViewStartError") + "\r\n\r\n" + ex.Message;
             }
+        }
+
+        // No-arg entry used by the dock launch / desktop icon / canvas node.
+        private void LaunchWebBrowser()
+        {
+            LaunchWebBrowser(null);
+        }
+
+        // ----------------------------------------------------------------------------
+        //  FusionOS in-app web browser ("網頁區")
+        //
+        //  A real Chromium (WebView2/Edge) browsing surface that lives INSIDE the
+        //  project: address bar + back/forward/reload/home, quick links and a live
+        //  page title. New windows / popups / target=_blank are kept in-app (opened as
+        //  another FusionOS browser window) instead of shelling out to the system's
+        //  external Chrome. Reuses the shared FusionOS WebView2 profile so cookies and
+        //  logins (Google account etc.) persist across sessions.
+        // ----------------------------------------------------------------------------
+        private async void LaunchWebBrowser(string startUrl)
+        {
+            Color color = Color.FromArgb(119, 187, 255);
+            const string home = "https://www.google.com";
+            Func<FusionWebPortalText> getWebText = delegate { return FusionWebPortalText.For(currentLanguage); };
+            FusionWebPortalText initialWebText = getWebText();
+            bool openDirectly = !string.IsNullOrWhiteSpace(startUrl);
+            CoreWebView2 browserCore = null;
+            string pendingTarget = null;
+
+            windowOffset = (windowOffset + 28) % 168;
+            Rectangle area = AppWorkArea(false);
+            var win = new RoundedPanel
+            {
+                Radius = 22,
+                BackColor = Color.FromArgb(250, 3, 7, 19),
+                Size = new Size(Math.Max(900, area.Width), Math.Max(620, area.Height)),
+                Location = new Point(area.Left, area.Top),
+                Padding = new Padding(0)
+            };
+            desktop.Controls.Add(win);
+            openWindows.Add(win);
+            win.BringToFront();
+            if (!ReactOwnsShell) { startMenu?.BringToFront(); taskbar?.BringToFront(); }
+
+            var header = new Panel { Dock = DockStyle.Top, Height = 56, BackColor = Color.FromArgb(58, 12, 28, 54) };
+            var titleLabel = new Label
+            {
+                Dock = DockStyle.Fill,
+                Text = openDirectly ? initialWebText.BrowserTitle : initialWebText.PortalTitle,
+                ForeColor = text,
+                Font = new Font(Font.FontFamily, 12.5F, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleLeft,
+                Padding = new Padding(20, 0, 0, 0)
+            };
+            header.Controls.Add(titleLabel);
+
+            var nav = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 64,
+                Visible = openDirectly,
+                BackColor = Color.FromArgb(244, 5, 12, 28),
+                Padding = new Padding(14, 12, 14, 12)
+            };
+            var leftFlow = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Left,
+                Width = 188,
+                FlowDirection = FlowDirection.LeftToRight,
+                WrapContents = false,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0)
+            };
+            Button backBtn = BrowserButton("<", initialWebText.BackTip);
+            Button fwdBtn = BrowserButton(">", initialWebText.ForwardTip);
+            Button reloadBtn = BrowserButton("R", initialWebText.ReloadTip);
+            Button homeBtn = BrowserButton("P", initialWebText.PortalTip);
+            backBtn.Name = "webBackButton";
+            fwdBtn.Name = "webForwardButton";
+            reloadBtn.Name = "webReloadButton";
+            homeBtn.Name = "webPortalButton";
+            leftFlow.Controls.Add(backBtn);
+            leftFlow.Controls.Add(fwdBtn);
+            leftFlow.Controls.Add(reloadBtn);
+            leftFlow.Controls.Add(homeBtn);
+
+            Button goBtn = BrowserButton(initialWebText.OpenButton, initialWebText.OpenTip);
+            goBtn.Name = "webOpenButton";
+            goBtn.Dock = DockStyle.Right;
+            goBtn.Width = 92;
+            goBtn.Margin = new Padding(10, 0, 0, 0);
+
+            var addrWrap = new RoundedPanel
+            {
+                Dock = DockStyle.Fill,
+                Radius = 18,
+                BackColor = Color.FromArgb(220, 7, 16, 36),
+                Padding = new Padding(14, 10, 14, 0),
+                Margin = new Padding(4, 0, 10, 0)
+            };
+            var addr = new TextBox
+            {
+                Dock = DockStyle.Top,
+                BorderStyle = BorderStyle.None,
+                BackColor = Color.FromArgb(7, 16, 36),
+                ForeColor = Color.FromArgb(224, 242, 255),
+                Font = new Font(Font.FontFamily, 11F)
+            };
+            addrWrap.Controls.Add(addr);
+            nav.Controls.Add(addrWrap);
+            nav.Controls.Add(goBtn);
+            nav.Controls.Add(leftFlow);
+
+            var content = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(2, 4, 13), Padding = new Padding(0) };
+            var loading = new Label
+            {
+                Dock = DockStyle.Fill,
+                Text = initialWebText.PreparingBrowser,
+                ForeColor = muted,
+                BackColor = Color.FromArgb(2, 4, 13),
+                Font = new Font(Font.FontFamily, 12F, FontStyle.Bold),
+                TextAlign = ContentAlignment.MiddleCenter,
+                Visible = openDirectly
+            };
+            var webView = new WebView2 { Dock = DockStyle.Fill, Visible = false };
+
+            Action<string> navigate = null;
+            var portal = BuildFusionWebPortal(delegate (string raw)
+            {
+                if (navigate != null) navigate(raw);
+            }, initialWebText);
+
+            content.Controls.Add(webView);
+            content.Controls.Add(loading);
+            content.Controls.Add(portal);
+            portal.BringToFront();
+
+            win.Controls.Add(content);
+            win.Controls.Add(nav);
+            win.Controls.Add(header);
+
+            var app = RegisterAppWindow(initialWebText.Brand, win, header, titleLabel, color, "web");
+            CreateTaskButtonForWindow(initialWebText.TaskTitle, win);
+            SetActiveApp(app);
+            PostAppLaunchStatus("web", "open", openDirectly ? initialWebText.BrowserOpeningStatus : initialWebText.PortalReadyStatus);
+
+            Action showPortal = delegate
+            {
+                FusionWebPortalText webText = getWebText();
+                pendingTarget = null;
+                titleLabel.Text = webText.PortalTitle;
+                if (app.TaskButton != null && !app.TaskButton.IsDisposed) app.TaskButton.Text = ShortTaskTitle(webText.TaskTitle);
+                nav.Visible = false;
+                loading.Visible = false;
+                webView.Visible = false;
+                portal.Visible = true;
+                portal.BringToFront();
+            };
+
+            navigate = delegate (string raw)
+            {
+                FusionWebPortalText webText = getWebText();
+                string target = NormalizeBrowserUrl(raw, home);
+                pendingTarget = target;
+                addr.Text = target;
+                titleLabel.Text = webText.BrowserTitle;
+                portal.Visible = false;
+                nav.Visible = true;
+                webView.Visible = false;
+                loading.Text = string.Format(CultureInfo.InvariantCulture, webText.OpeningFormat, BrowserTargetLabel(target));
+                loading.Visible = true;
+                loading.BringToFront();
+
+                if (webView.IsDisposed || browserCore == null) return;
+                pendingTarget = null;
+                browserCore.Navigate(target);
+            };
+
+            backBtn.Click += delegate { if (browserCore != null && browserCore.CanGoBack) browserCore.GoBack(); };
+            fwdBtn.Click += delegate { if (browserCore != null && browserCore.CanGoForward) browserCore.GoForward(); };
+            reloadBtn.Click += delegate { if (browserCore != null) browserCore.Reload(); };
+            homeBtn.Click += delegate { showPortal(); };
+            goBtn.Click += delegate { navigate(addr.Text); };
+            addr.KeyDown += delegate (object s2, KeyEventArgs ke)
+            {
+                if (ke.KeyCode == Keys.Enter)
+                {
+                    ke.SuppressKeyPress = true;
+                    navigate(addr.Text);
+                }
+            };
+
+            if (openDirectly)
+            {
+                navigate(startUrl);
+            }
+            else
+            {
+                showPortal();
+            }
+
+            try
+            {
+                var environment = await GetFusionBrowserEnvironmentAsync();
+                if (webView.IsDisposed) return;
+                await webView.EnsureCoreWebView2Async(environment);
+                if (webView.IsDisposed) return;
+
+                browserCore = webView.CoreWebView2;
+                browserCore.Settings.AreDefaultContextMenusEnabled = true;
+                browserCore.Settings.AreDevToolsEnabled = true;
+                browserCore.Settings.IsStatusBarEnabled = true;
+                browserCore.PermissionRequested += delegate (object es, CoreWebView2PermissionRequestedEventArgs pa)
+                {
+                    string permissionName = pa.PermissionKind.ToString();
+                    if (pa.PermissionKind == CoreWebView2PermissionKind.Camera ||
+                        pa.PermissionKind == CoreWebView2PermissionKind.Microphone ||
+                        string.Equals(permissionName, "Geolocation", StringComparison.OrdinalIgnoreCase))
+                    {
+                        pa.State = CoreWebView2PermissionState.Allow;
+                    }
+                };
+
+                // Keep new windows inside Fusion OS so the browser still feels like an OS surface.
+                browserCore.NewWindowRequested += delegate (object es, CoreWebView2NewWindowRequestedEventArgs na)
+                {
+                    na.Handled = true;
+                    if (!string.IsNullOrEmpty(na.Uri)) LaunchWebBrowser(na.Uri);
+                };
+
+                browserCore.SourceChanged += delegate
+                {
+                    if (!addr.Focused) addr.Text = browserCore.Source;
+                    backBtn.Enabled = browserCore.CanGoBack;
+                    fwdBtn.Enabled = browserCore.CanGoForward;
+                };
+                browserCore.DocumentTitleChanged += delegate
+                {
+                    string dt = browserCore.DocumentTitle;
+                    FusionWebPortalText webText = getWebText();
+                    titleLabel.Text = string.IsNullOrEmpty(dt) ? webText.BrowserTitle : webText.BrowserTitle + " - " + dt;
+                };
+                webView.NavigationStarting += delegate
+                {
+                    portal.Visible = false;
+                    loading.Visible = false;
+                    webView.Visible = true;
+                    webView.BringToFront();
+                };
+                webView.NavigationCompleted += delegate (object es, CoreWebView2NavigationCompletedEventArgs ca)
+                {
+                    backBtn.Enabled = browserCore.CanGoBack;
+                    fwdBtn.Enabled = browserCore.CanGoForward;
+                    if (!ca.IsSuccess)
+                    {
+                        webView.Visible = false;
+                        loading.Visible = true;
+                        loading.Text = getWebText().LoadErrorPrefix + ca.WebErrorStatus;
+                        loading.BringToFront();
+                    }
+                };
+
+                app.WebView = webView;
+                ApplyWebViewBrowserShortcuts(app);
+                backBtn.Enabled = false;
+                fwdBtn.Enabled = false;
+
+                if (!string.IsNullOrEmpty(pendingTarget))
+                {
+                    string target = pendingTarget;
+                    pendingTarget = null;
+                    navigate(target);
+                }
+            }
+            catch (Exception ex)
+            {
+                portal.Visible = false;
+                webView.Visible = false;
+                loading.Visible = true;
+                loading.Text = getWebText().WebViewStartErrorPrefix + "\r\n\r\n" + ex.Message;
+                loading.BringToFront();
+            }
+        }
+
+        private Control BuildFusionWebPortal(Action<string> navigate, FusionWebPortalText webText)
+        {
+            var portal = new FusionWebPortalControl
+            {
+                Dock = DockStyle.Fill,
+                AccentColor = Color.FromArgb(119, 187, 255),
+                BackColor = Color.FromArgb(2, 4, 13)
+            };
+            portal.SetLocalization(webText, currentTimezone, currentClock24);
+            portal.NavigateRequested = navigate;
+            return portal;
+        }
+
+        private Button BrowserButton(string glyph, string tip)
+        {
+            var b = new Button
+            {
+                Width = glyph.Length > 1 ? 58 : 36,
+                Height = 34,
+                Text = glyph,
+                FlatStyle = FlatStyle.Flat,
+                ForeColor = text,
+                BackColor = Color.FromArgb(34, 49, 78),
+                Font = new Font(Font.FontFamily, glyph.Length > 1 ? 9.5F : 13F, FontStyle.Bold),
+                Margin = new Padding(0, 0, 6, 0),
+                Cursor = Cursors.Hand,
+                TabStop = false
+            };
+            b.FlatAppearance.BorderSize = 1;
+            b.FlatAppearance.BorderColor = Color.FromArgb(110, 119, 187, 255);
+            b.FlatAppearance.MouseOverBackColor = Color.FromArgb(48, 73, 113);
+            windowToolTips.SetToolTip(b, tip);
+            return b;
+        }
+
+        // Turn raw address-bar text into a navigable URL: real URLs pass through,
+        // bare domains get https://, everything else becomes a Google search.
+        private static string BrowserTargetLabel(string target)
+        {
+            Uri uri;
+            if (Uri.TryCreate(target, UriKind.Absolute, out uri) && !string.IsNullOrWhiteSpace(uri.Host))
+            {
+                return uri.Host.Replace("www.", string.Empty);
+            }
+            return "web route";
+        }
+
+        private static string NormalizeBrowserUrl(string input, string fallback)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return fallback;
+            input = input.Trim();
+            if (input.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                input.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+                input.StartsWith("about:", StringComparison.OrdinalIgnoreCase) ||
+                input.StartsWith("edge:", StringComparison.OrdinalIgnoreCase) ||
+                input.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+            {
+                return input;
+            }
+            bool looksLikeDomain = !input.Contains(" ") && input.Contains(".") && !input.EndsWith(".");
+            if (looksLikeDomain) return "https://" + input;
+            return "https://www.google.com/search?q=" + Uri.EscapeDataString(input);
         }
 
         private void CreateTaskButtonForWindow(string title, Control win)
@@ -3875,7 +4483,7 @@ namespace WindowsFormsApp1
             {
                 Width = 138,
                 Height = 48,
-                Text = title.Length > 14 ? title.Substring(0, 14) : title,
+                Text = ShortTaskTitle(title),
                 FlatStyle = FlatStyle.Flat,
                 BackColor = Color.FromArgb(36, 49, 78),
                 ForeColor = text,
@@ -4094,6 +4702,24 @@ namespace WindowsFormsApp1
             try { carouselWebView.CoreWebView2.PostWebMessageAsString(json); } catch { }
         }
 
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            StopOwnedServerProcess(cosmicServerProcess);
+            StopOwnedServerProcess(metroPulseServerProcess);
+            base.OnFormClosing(e);
+        }
+
+        private static void StopOwnedServerProcess(Process process)
+        {
+            if (process == null) return;
+            try
+            {
+                if (!process.HasExited) process.Kill();
+            }
+            catch { }
+            try { process.Dispose(); } catch { }
+        }
+
         // Tells the desktop carousel WebView to release or resume the shared webcam
         // so that a camera-using app window (e.g. Cosmic Gesture) can acquire it.
         private void SetCarouselCamera(bool active)
@@ -4163,7 +4789,93 @@ namespace WindowsFormsApp1
 
         private void UpdateClock()
         {
-            clockLabel.Text = DateTime.Now.ToString("HH:mm:ss\r\nyyyy/MM/dd");
+            if (clockLabel == null || clockLabel.IsDisposed) return;
+            DateTime now = FusionLocale.Now(currentTimezone);
+            CultureInfo culture = FusionLocale.CultureForLang(currentLanguage);
+            string timeFormat = currentClock24 ? "HH:mm:ss" : "tt h:mm:ss";
+            clockLabel.Text = now.ToString(timeFormat, culture) + "\r\n" + now.ToString("yyyy/MM/dd", culture);
+        }
+
+        private void RefreshOpenWebPortalLocalization()
+        {
+            FusionWebPortalText webText = FusionWebPortalText.For(currentLanguage);
+            foreach (FusionAppWindow app in appWindows.Values)
+            {
+                if (app == null || app.Kind != "web" || app.Window == null || app.Window.IsDisposed) continue;
+                FusionWebPortalControl portal = FindDescendant<FusionWebPortalControl>(app.Window);
+                if (portal == null) continue;
+
+                portal.SetLocalization(webText, currentTimezone, currentClock24);
+                if (portal.Visible && app.TitleLabel != null && !app.TitleLabel.IsDisposed)
+                {
+                    app.TitleLabel.Text = webText.PortalTitle;
+                }
+                if (app.TaskButton != null && !app.TaskButton.IsDisposed)
+                {
+                    app.TaskButton.Text = ShortTaskTitle(webText.TaskTitle);
+                }
+
+                UpdateNamedButtonTooltip(app.Window, "webBackButton", null, webText.BackTip);
+                UpdateNamedButtonTooltip(app.Window, "webForwardButton", null, webText.ForwardTip);
+                UpdateNamedButtonTooltip(app.Window, "webReloadButton", null, webText.ReloadTip);
+                UpdateNamedButtonTooltip(app.Window, "webPortalButton", null, webText.PortalTip);
+                UpdateNamedButtonTooltip(app.Window, "webOpenButton", webText.OpenButton, webText.OpenTip);
+            }
+        }
+
+        private void BroadcastLocaleToWebViews()
+        {
+            string jsonOut =
+                "{\"type\":\"FUSION_LOCALE_CHANGED\"," +
+                "\"language\":\"" + JsonEscape(currentLanguage) + "\"," +
+                "\"timezone\":\"" + JsonEscape(currentTimezone) + "\"," +
+                "\"clock24\":" + (currentClock24 ? "true" : "false") +
+                "}";
+            foreach (FusionAppWindow app in appWindows.Values)
+            {
+                if (app == null || app.WebView == null || app.WebView.IsDisposed || app.WebView.CoreWebView2 == null) continue;
+                try { app.WebView.CoreWebView2.PostWebMessageAsString(jsonOut); } catch { }
+            }
+        }
+
+        private void UpdateNamedButtonTooltip(Control root, string name, string textValue, string tip)
+        {
+            Button button = FindDescendantByName<Button>(root, name);
+            if (button == null || button.IsDisposed) return;
+            if (textValue != null) button.Text = textValue;
+            windowToolTips.SetToolTip(button, tip);
+        }
+
+        private static T FindDescendant<T>(Control root) where T : Control
+        {
+            if (root == null) return null;
+            T self = root as T;
+            if (self != null) return self;
+            foreach (Control child in root.Controls)
+            {
+                T found = FindDescendant<T>(child);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        private static T FindDescendantByName<T>(Control root, string name) where T : Control
+        {
+            if (root == null) return null;
+            T self = root as T;
+            if (self != null && string.Equals(self.Name, name, StringComparison.Ordinal)) return self;
+            foreach (Control child in root.Controls)
+            {
+                T found = FindDescendantByName<T>(child, name);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        private static string ShortTaskTitle(string title)
+        {
+            string value = string.IsNullOrEmpty(title) ? string.Empty : title;
+            return value.Length > 14 ? value.Substring(0, 14) : value;
         }
 
         private Color ColorFor(IconInfo info)
@@ -4172,6 +4884,7 @@ namespace WindowsFormsApp1
             if (info.Glyph == "GAME") return accent2;
             if (info.Glyph == "DB") return Color.FromArgb(255, 190, 96);
             if (info.Glyph == "WEB") return Color.FromArgb(90, 190, 255);
+            if (info.Glyph == "MAP") return Color.FromArgb(94, 224, 184);
             if (info.Glyph == "SET") return Color.FromArgb(150, 120, 255);
             if (info.Glyph == "88") return accent2;
             if (info.Glyph == "VID") return Color.FromArgb(88, 220, 255);
@@ -4199,6 +4912,7 @@ namespace WindowsFormsApp1
                 case "MultimediaStudio": return zh ? "影音中心" : "AURORA Cinema";
                 case "WaveStudio": return zh ? "音訊工作室" : "Wave Studio";
                 case "CosmicGesture": return zh ? "宇宙手勢" : "Cosmic Gesture";
+                case "MetroPulse": return zh ? "MetroPulse 智慧交通" : "MetroPulse";
                 case "UserFiles": return zh ? "使用者檔案" : "User Files";
                 case "AddFile": return zh ? "新增檔案" : "Add File";
                 case "LanguageLab": return zh ? "語言實驗室" : "Language Lab";
@@ -4215,6 +4929,7 @@ namespace WindowsFormsApp1
                 case "MultimediaStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/MultimediaStudio。啟動 AURORA Cinema 多媒體播放器。" : "Integrated app package: IntegratedApps/MultimediaStudio.";
                 case "WaveStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/WaveStudio。啟動 WAV 與音訊播放工具。" : "Integrated app package: IntegratedApps/WaveStudio.";
                 case "CosmicGestureDesc": return zh ? "內建應用程式套件：IntegratedApps/CosmicGesture。啟動 Python + JavaScript 的 WebGL 宇宙手勢系統。" : "Integrated app package: IntegratedApps/CosmicGesture.";
+                case "MetroPulseDesc": return zh ? "結合定位、開放資料、Python broker 與原生模擬核心的智慧城市交通中樞。" : "Smart-city traffic command center with location, open data, a Python broker, and a native simulation core.";
                 case "UserFilesDesc": return zh ? "執行時由使用者加入的檔案捷徑區。" : "A place for files added by the user during runtime.";
                 case "AddFileDesc": return zh ? "選擇本機檔案並建立桌面捷徑。" : "Select a file and create a desktop shortcut.";
                 case "LanguageLabDesc": return zh ? "預留 C#、Python、JavaScript、SQL、C++ 與多語言融合實驗區。" : "Reserved area for mixed-language experiments.";
@@ -4233,6 +4948,15 @@ namespace WindowsFormsApp1
                 case "StartMultimediaDesc": return zh ? "從系統啟動 1113354_multimedia。" : "Launch 1113354_multimedia from the system.";
                 case "StartWaveDesc": return zh ? "從系統啟動 1113354_wav。" : "Launch 1113354_wav from the system.";
                 case "StartCosmicDesc": return zh ? "啟動手勢控制的 3D 宇宙。" : "Launch the gesture-controlled 3D universe.";
+                case "StartMetroPulseDesc": return zh ? "開啟即時智慧城市交通中樞。" : "Open the realtime smart-city traffic command center.";
+                case "MetroPulseServerMissing": return zh ? "MetroPulse 伺服器檔案不存在。" : "MetroPulse server file is missing.";
+                case "MetroPulsePythonMissing": return zh ? "MetroPulse 需要 Python 才能啟動。" : "MetroPulse needs Python to start.";
+                case "MetroPulseBrokerFailed": return zh ? "MetroPulse 即時資料 broker 啟動失敗。" : "MetroPulse realtime data broker could not start.";
+                case "MetroPulseBrokerNotReady": return zh ? "MetroPulse 伺服器尚未就緒。" : "MetroPulse server is not ready yet.";
+                case "MetroPulseOpening": return zh ? "MetroPulse 正在開啟。" : "MetroPulse is opening.";
+                case "WebSurfaceLoading": return zh ? "正在準備系統應用表面..." : "Preparing application surface...";
+                case "WebSurfaceLoadError": return zh ? "應用表面載入失敗：{0}" : "Application surface could not finish loading: {0}";
+                case "WebViewStartError": return zh ? "WebView2 無法啟動。" : "WebView2 could not start.";
                 case "StartGameDesc": return zh ? "啟動 Fusion RPG Unity 原型。" : "Launch the Fusion RPG Unity prototype.";
                 case "StartLanguageDesc": return zh ? "開啟語言整合工作區。" : "Open language integration workspace.";
                 case "SystemSettings": return zh ? "系統設定" : "System Settings";
@@ -4343,7 +5067,7 @@ namespace WindowsFormsApp1
 
                 if (dialog.ShowDialog(this) == DialogResult.OK)
                 {
-                    currentLanguage = language.SelectedIndex == 0 ? "zh-TW" : "en";
+                    ApplyHostLocaleSettings(language.SelectedIndex == 0 ? "zh-TW" : "en", currentTimezone, currentClock24);
                     BuildSystemDesktop();
                 }
             }
@@ -4560,6 +5284,818 @@ namespace WindowsFormsApp1
             {
                 Region = new Region(path);
             }
+        }
+
+        private static GraphicsPath RoundRect(Rectangle bounds, int radius)
+        {
+            int d = Math.Max(2, radius * 2);
+            var path = new GraphicsPath();
+            var arc = new Rectangle(bounds.Left, bounds.Top, d, d);
+            path.AddArc(arc, 180, 90);
+            arc.X = bounds.Right - d;
+            path.AddArc(arc, 270, 90);
+            arc.Y = bounds.Bottom - d;
+            path.AddArc(arc, 0, 90);
+            arc.X = bounds.Left;
+            path.AddArc(arc, 90, 90);
+            path.CloseFigure();
+            return path;
+        }
+    }
+
+    public static class FusionLocale
+    {
+        public static string NormalizeLang(string lang)
+        {
+            switch ((lang ?? string.Empty).Trim())
+            {
+                case "zh-TW":
+                case "zh-CN":
+                case "en":
+                case "ja":
+                case "ko":
+                    return lang.Trim();
+                default:
+                    return "zh-TW";
+            }
+        }
+
+        public static CultureInfo CultureForLang(string lang)
+        {
+            string cultureName;
+            switch (NormalizeLang(lang))
+            {
+                case "zh-CN": cultureName = "zh-CN"; break;
+                case "en": cultureName = "en-US"; break;
+                case "ja": cultureName = "ja-JP"; break;
+                case "ko": cultureName = "ko-KR"; break;
+                default: cultureName = "zh-TW"; break;
+            }
+
+            try { return CultureInfo.GetCultureInfo(cultureName); }
+            catch { return CultureInfo.InvariantCulture; }
+        }
+
+        public static string NormalizeTimezone(string timezone)
+        {
+            string value = (timezone ?? string.Empty).Trim();
+            return string.IsNullOrEmpty(value) ? "Asia/Taipei" : value;
+        }
+
+        public static DateTime Now(string timezone)
+        {
+            try
+            {
+                TimeZoneInfo zone = ResolveTimeZone(timezone);
+                return TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, zone).DateTime;
+            }
+            catch
+            {
+                return DateTime.Now;
+            }
+        }
+
+        private static TimeZoneInfo ResolveTimeZone(string timezone)
+        {
+            string id = NormalizeTimezone(timezone);
+            try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
+            catch { }
+
+            string windowsId = null;
+            switch (id)
+            {
+                case "Asia/Taipei": windowsId = "Taipei Standard Time"; break;
+                case "Asia/Tokyo": windowsId = "Tokyo Standard Time"; break;
+                case "America/Los_Angeles": windowsId = "Pacific Standard Time"; break;
+                case "Europe/London": windowsId = "GMT Standard Time"; break;
+                case "UTC": windowsId = "UTC"; break;
+            }
+
+            if (!string.IsNullOrEmpty(windowsId))
+            {
+                try { return TimeZoneInfo.FindSystemTimeZoneById(windowsId); }
+                catch { }
+            }
+
+            return TimeZoneInfo.Local;
+        }
+    }
+
+    public sealed class FusionWebPortalRoute
+    {
+        public string Title;
+        public string Subtitle;
+        public string Url;
+        public Color Accent;
+
+        public FusionWebPortalRoute(string title, string subtitle, string url, Color accent)
+        {
+            Title = title;
+            Subtitle = subtitle;
+            Url = url;
+            Accent = accent;
+        }
+    }
+
+    public sealed class FusionWebPortalText
+    {
+        public string Language;
+        public string Brand;
+        public string PortalTitle;
+        public string BrowserTitle;
+        public string TaskTitle;
+        public string BackTip;
+        public string ForwardTip;
+        public string ReloadTip;
+        public string PortalTip;
+        public string OpenTip;
+        public string PreparingBrowser;
+        public string BrowserOpeningStatus;
+        public string PortalReadyStatus;
+        public string OpeningFormat;
+        public string LoadErrorPrefix;
+        public string WebViewStartErrorPrefix;
+        public string[] Pills;
+        public string HeroTitle;
+        public string HeroKicker;
+        public string HeroSubtitle;
+        public string Placeholder;
+        public string OpenButton;
+        public string SideTitle;
+        public string ProfileLabel;
+        public string ProfileValue;
+        public string WindowsLabel;
+        public string WindowsValue;
+        public string EngineLabel;
+        public string EngineValue;
+        public string LocalTimeLabel;
+        public string SideIntro;
+        public string SideButton;
+        public FusionWebPortalRoute[] Routes;
+
+        public static FusionWebPortalText For(string lang)
+        {
+            switch (FusionLocale.NormalizeLang(lang))
+            {
+                case "zh-CN": return ZhCn();
+                case "en": return En();
+                case "ja": return Ja();
+                case "ko": return Ko();
+                default: return ZhTw();
+            }
+        }
+
+        private static FusionWebPortalRoute[] BuildRoutes(string search, string searchSub, string video, string videoSub, string code, string codeSub, string wiki, string wikiSub, string map, string mapSub, string bing, string bingSub)
+        {
+            return new FusionWebPortalRoute[]
+            {
+                new FusionWebPortalRoute(search, searchSub, "https://www.google.com", Color.FromArgb(34, 211, 238)),
+                new FusionWebPortalRoute(video, videoSub, "https://www.youtube.com", Color.FromArgb(96, 165, 250)),
+                new FusionWebPortalRoute(code, codeSub, "https://github.com", Color.FromArgb(129, 140, 248)),
+                new FusionWebPortalRoute(wiki, wikiSub, "https://en.wikipedia.org", Color.FromArgb(167, 139, 250)),
+                new FusionWebPortalRoute(map, mapSub, "https://www.google.com/maps", Color.FromArgb(45, 212, 191)),
+                new FusionWebPortalRoute(bing, bingSub, "https://www.bing.com", Color.FromArgb(217, 70, 239))
+            };
+        }
+
+        private static FusionWebPortalText Common(string language)
+        {
+            return new FusionWebPortalText
+            {
+                Language = language,
+                Brand = "Fusion Web",
+                HeroTitle = "FUSION WEB"
+            };
+        }
+
+        private static FusionWebPortalText ZhTw()
+        {
+            var t = Common("zh-TW");
+            t.PortalTitle = "Fusion Web 入口";
+            t.BrowserTitle = "Fusion 瀏覽器";
+            t.TaskTitle = "網頁入口";
+            t.BackTip = "上一頁";
+            t.ForwardTip = "下一頁";
+            t.ReloadTip = "重新整理";
+            t.PortalTip = "返回入口";
+            t.OpenTip = "開啟網址或搜尋";
+            t.PreparingBrowser = "正在準備瀏覽器表面...";
+            t.BrowserOpeningStatus = "瀏覽器表面開啟中";
+            t.PortalReadyStatus = "網頁入口已就緒";
+            t.OpeningFormat = "正在開啟 {0}...";
+            t.LoadErrorPrefix = "頁面無法載入：";
+            t.WebViewStartErrorPrefix = "WebView2 無法啟動。";
+            t.Pills = new string[] { "FUSION OS", "CHROMIUM 核心", "已預載" };
+            t.HeroKicker = "入口";
+            t.HeroSubtitle = "選擇入口，或輸入搜尋 / 網址後按 Enter。";
+            t.Placeholder = "搜尋或輸入網址";
+            t.OpenButton = "開啟";
+            t.SideTitle = "表面堆疊";
+            t.ProfileLabel = "個人設定";
+            t.ProfileValue = "沿用 Fusion 身分";
+            t.WindowsLabel = "視窗";
+            t.WindowsValue = "新頁面留在 Fusion OS";
+            t.EngineLabel = "引擎";
+            t.EngineValue = "Chromium 表面已預載";
+            t.LocalTimeLabel = "本地時間";
+            t.SideIntro = "先從精選入口開始，再依你選擇的路由進入完整瀏覽器。";
+            t.SideButton = "開啟搜尋核心";
+            t.Routes = BuildRoutes("搜尋核心", "Google 知識入口", "影音串流", "YouTube 媒體通道", "程式碼網路", "GitHub 專案空間", "知識索引", "Wikipedia 參考層", "地圖圖層", "Google 空間路線", "訊號搜尋", "Bing 探索介面");
+            return t;
+        }
+
+        private static FusionWebPortalText ZhCn()
+        {
+            var t = Common("zh-CN");
+            t.PortalTitle = "Fusion Web 入口";
+            t.BrowserTitle = "Fusion 浏览器";
+            t.TaskTitle = "网页入口";
+            t.BackTip = "上一页";
+            t.ForwardTip = "下一页";
+            t.ReloadTip = "刷新";
+            t.PortalTip = "返回入口";
+            t.OpenTip = "打开网址或搜索";
+            t.PreparingBrowser = "正在准备浏览器表面...";
+            t.BrowserOpeningStatus = "浏览器表面开启中";
+            t.PortalReadyStatus = "网页入口已就绪";
+            t.OpeningFormat = "正在打开 {0}...";
+            t.LoadErrorPrefix = "页面无法加载：";
+            t.WebViewStartErrorPrefix = "WebView2 无法启动。";
+            t.Pills = new string[] { "FUSION OS", "CHROMIUM 核心", "已预载" };
+            t.HeroKicker = "入口";
+            t.HeroSubtitle = "选择入口，或输入搜索 / 网址后按 Enter。";
+            t.Placeholder = "搜索或输入网址";
+            t.OpenButton = "打开";
+            t.SideTitle = "表面堆栈";
+            t.ProfileLabel = "个人设置";
+            t.ProfileValue = "沿用 Fusion 身份";
+            t.WindowsLabel = "窗口";
+            t.WindowsValue = "新页面留在 Fusion OS";
+            t.EngineLabel = "引擎";
+            t.EngineValue = "Chromium 表面已预载";
+            t.LocalTimeLabel = "本地时间";
+            t.SideIntro = "先从精选入口开始，再按你选择的路由进入完整浏览器。";
+            t.SideButton = "打开搜索核心";
+            t.Routes = BuildRoutes("搜索核心", "Google 知识入口", "影音串流", "YouTube 媒体通道", "代码网络", "GitHub 项目空间", "知识索引", "Wikipedia 参考层", "地图图层", "Google 空间路线", "信号搜索", "Bing 探索界面");
+            return t;
+        }
+
+        private static FusionWebPortalText En()
+        {
+            var t = Common("en");
+            t.PortalTitle = "Fusion Web Portal";
+            t.BrowserTitle = "Fusion Browser";
+            t.TaskTitle = "Web Portal";
+            t.BackTip = "Back";
+            t.ForwardTip = "Forward";
+            t.ReloadTip = "Reload";
+            t.PortalTip = "Return to portal";
+            t.OpenTip = "Open address or search";
+            t.PreparingBrowser = "Preparing browser surface...";
+            t.BrowserOpeningStatus = "Browser surface opening";
+            t.PortalReadyStatus = "Web portal ready";
+            t.OpeningFormat = "Opening {0}...";
+            t.LoadErrorPrefix = "Could not load page: ";
+            t.WebViewStartErrorPrefix = "WebView2 could not start.";
+            t.Pills = new string[] { "FUSION OS", "CHROMIUM CORE", "PRELOADED" };
+            t.HeroKicker = "Portal";
+            t.HeroSubtitle = "Choose a route, or type a search / URL and press Enter.";
+            t.Placeholder = "Search or enter a URL";
+            t.OpenButton = "OPEN";
+            t.SideTitle = "Surface Stack";
+            t.ProfileLabel = "Profile";
+            t.ProfileValue = "Persistent Fusion identity";
+            t.WindowsLabel = "Windows";
+            t.WindowsValue = "New pages stay inside Fusion OS";
+            t.EngineLabel = "Engine";
+            t.EngineValue = "Chromium surface preloaded";
+            t.LocalTimeLabel = "Local time";
+            t.SideIntro = "Start from a curated entry point, then move into the full browser only when you choose a route.";
+            t.SideButton = "Open Search Core";
+            t.Routes = BuildRoutes("Search Core", "Google knowledge entry", "Video Stream", "YouTube media lane", "Code Network", "GitHub repository space", "Knowledge Index", "Wikipedia reference layer", "Map Layer", "Google spatial routes", "Signal Search", "Bing discovery surface");
+            return t;
+        }
+
+        private static FusionWebPortalText Ja()
+        {
+            var t = Common("ja");
+            t.PortalTitle = "Fusion Web ポータル";
+            t.BrowserTitle = "Fusion ブラウザー";
+            t.TaskTitle = "Web ポータル";
+            t.BackTip = "戻る";
+            t.ForwardTip = "進む";
+            t.ReloadTip = "再読み込み";
+            t.PortalTip = "ポータルに戻る";
+            t.OpenTip = "アドレスまたは検索を開く";
+            t.PreparingBrowser = "ブラウザーサーフェスを準備しています...";
+            t.BrowserOpeningStatus = "ブラウザーサーフェスを開いています";
+            t.PortalReadyStatus = "Web ポータル準備完了";
+            t.OpeningFormat = "{0} を開いています...";
+            t.LoadErrorPrefix = "ページを読み込めません：";
+            t.WebViewStartErrorPrefix = "WebView2 を起動できません。";
+            t.Pills = new string[] { "FUSION OS", "CHROMIUM コア", "読み込み済み" };
+            t.HeroKicker = "ポータル";
+            t.HeroSubtitle = "ルートを選ぶか、検索 / URL を入力して Enter を押します。";
+            t.Placeholder = "検索または URL を入力";
+            t.OpenButton = "開く";
+            t.SideTitle = "サーフェス構成";
+            t.ProfileLabel = "プロフィール";
+            t.ProfileValue = "Fusion ID を継続";
+            t.WindowsLabel = "ウィンドウ";
+            t.WindowsValue = "新しいページは Fusion OS 内に保持";
+            t.EngineLabel = "エンジン";
+            t.EngineValue = "Chromium サーフェスを事前読み込み";
+            t.LocalTimeLabel = "ローカル時刻";
+            t.SideIntro = "厳選された入口から始め、選んだルートでフルブラウザーへ移動します。";
+            t.SideButton = "検索コアを開く";
+            t.Routes = BuildRoutes("検索コア", "Google ナレッジ入口", "動画ストリーム", "YouTube メディアレーン", "コードネットワーク", "GitHub リポジトリ空間", "知識インデックス", "Wikipedia 参照レイヤー", "マップレイヤー", "Google 空間ルート", "シグナル検索", "Bing 探索サーフェス");
+            return t;
+        }
+
+        private static FusionWebPortalText Ko()
+        {
+            var t = Common("ko");
+            t.PortalTitle = "Fusion Web 포털";
+            t.BrowserTitle = "Fusion 브라우저";
+            t.TaskTitle = "웹 포털";
+            t.BackTip = "뒤로";
+            t.ForwardTip = "앞으로";
+            t.ReloadTip = "새로 고침";
+            t.PortalTip = "포털로 돌아가기";
+            t.OpenTip = "주소 또는 검색 열기";
+            t.PreparingBrowser = "브라우저 표면을 준비하는 중...";
+            t.BrowserOpeningStatus = "브라우저 표면 여는 중";
+            t.PortalReadyStatus = "웹 포털 준비됨";
+            t.OpeningFormat = "{0} 여는 중...";
+            t.LoadErrorPrefix = "페이지를 불러올 수 없습니다: ";
+            t.WebViewStartErrorPrefix = "WebView2를 시작할 수 없습니다.";
+            t.Pills = new string[] { "FUSION OS", "CHROMIUM 코어", "사전 로드됨" };
+            t.HeroKicker = "포털";
+            t.HeroSubtitle = "경로를 선택하거나 검색 / URL을 입력한 뒤 Enter를 누르세요.";
+            t.Placeholder = "검색 또는 URL 입력";
+            t.OpenButton = "열기";
+            t.SideTitle = "표면 스택";
+            t.ProfileLabel = "프로필";
+            t.ProfileValue = "Fusion ID 유지";
+            t.WindowsLabel = "창";
+            t.WindowsValue = "새 페이지는 Fusion OS 안에 유지";
+            t.EngineLabel = "엔진";
+            t.EngineValue = "Chromium 표면 사전 로드";
+            t.LocalTimeLabel = "현지 시간";
+            t.SideIntro = "선별된 진입점에서 시작한 뒤 선택한 경로로 전체 브라우저에 진입합니다.";
+            t.SideButton = "검색 코어 열기";
+            t.Routes = BuildRoutes("검색 코어", "Google 지식 진입점", "비디오 스트림", "YouTube 미디어 레인", "코드 네트워크", "GitHub 저장소 공간", "지식 인덱스", "Wikipedia 참조 레이어", "지도 레이어", "Google 공간 경로", "시그널 검색", "Bing 탐색 표면");
+            return t;
+        }
+    }
+
+    public class FusionWebPortalControl : Control
+    {
+        private FusionWebPortalText texts = FusionWebPortalText.For("zh-TW");
+        private FusionWebPortalRoute[] routes = FusionWebPortalText.For("zh-TW").Routes;
+        private readonly Timer timeTimer;
+        private readonly Rectangle[] routeRects = new Rectangle[6];
+        private Rectangle commandRect;
+        private Rectangle openRect;
+        private Rectangle inputTextRect;
+        private Rectangle sidePanelRect;
+        private Rectangle sideButtonRect;
+        private string commandText = string.Empty;
+        private int hoverRoute = -1;
+        private bool hoverOpen;
+        private bool hoverSideButton;
+        private bool commandFocused;
+        private string timezone = "Asia/Taipei";
+        private bool clock24 = true;
+
+        public Action<string> NavigateRequested { get; set; }
+        public Color AccentColor { get; set; }
+
+        public FusionWebPortalControl()
+        {
+            AccentColor = Color.FromArgb(119, 187, 255);
+            DoubleBuffered = true;
+            ResizeRedraw = true;
+            TabStop = true;
+            SetStyle(
+                ControlStyles.AllPaintingInWmPaint |
+                ControlStyles.OptimizedDoubleBuffer |
+                ControlStyles.UserPaint |
+                ControlStyles.ResizeRedraw |
+                ControlStyles.Selectable,
+                true);
+            timeTimer = new Timer { Interval = 30000 };
+            timeTimer.Tick += delegate { if (Visible) Invalidate(sidePanelRect); };
+            timeTimer.Start();
+        }
+
+        public void SetLocalization(FusionWebPortalText textPack, string timezoneId, bool use24HourClock)
+        {
+            texts = textPack ?? FusionWebPortalText.For("zh-TW");
+            routes = texts.Routes ?? FusionWebPortalText.For("zh-TW").Routes;
+            timezone = FusionLocale.NormalizeTimezone(timezoneId);
+            clock24 = use24HourClock;
+            Invalidate();
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && timeTimer != null)
+            {
+                timeTimer.Stop();
+                timeTimer.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        protected override bool IsInputKey(Keys keyData)
+        {
+            Keys key = keyData & Keys.KeyCode;
+            if (key == Keys.Enter || key == Keys.Back || key == Keys.Delete || key == Keys.Escape)
+            {
+                return true;
+            }
+            return base.IsInputKey(keyData);
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+            Focus();
+            LayoutPortal();
+
+            if (openRect.Contains(e.Location))
+            {
+                commandFocused = true;
+                SubmitCommand();
+                Invalidate();
+                return;
+            }
+
+            if (inputTextRect.Contains(e.Location) || commandRect.Contains(e.Location))
+            {
+                commandFocused = true;
+                Invalidate();
+                return;
+            }
+
+            int routeCount = Math.Min(routeRects.Length, routes == null ? 0 : routes.Length);
+            for (int i = 0; i < routeCount; i++)
+            {
+                if (routeRects[i].Contains(e.Location))
+                {
+                    commandFocused = false;
+                    Navigate(routes[i].Url);
+                    Invalidate();
+                    return;
+                }
+            }
+
+            if (sideButtonRect.Contains(e.Location))
+            {
+                commandFocused = false;
+                if (routes != null && routes.Length > 0) Navigate(routes[0].Url);
+                Invalidate();
+                return;
+            }
+
+            commandFocused = false;
+            Invalidate();
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            LayoutPortal();
+            int nextHover = -1;
+            int routeCount = Math.Min(routeRects.Length, routes == null ? 0 : routes.Length);
+            for (int i = 0; i < routeCount; i++)
+            {
+                if (routeRects[i].Contains(e.Location))
+                {
+                    nextHover = i;
+                    break;
+                }
+            }
+            bool nextOpen = openRect.Contains(e.Location);
+            bool nextSide = sideButtonRect.Contains(e.Location);
+            bool nextCommand = inputTextRect.Contains(e.Location) || commandRect.Contains(e.Location);
+
+            if (nextHover != hoverRoute || nextOpen != hoverOpen || nextSide != hoverSideButton)
+            {
+                hoverRoute = nextHover;
+                hoverOpen = nextOpen;
+                hoverSideButton = nextSide;
+                Invalidate();
+            }
+
+            Cursor = nextHover >= 0 || nextOpen || nextSide || nextCommand ? Cursors.Hand : Cursors.Default;
+        }
+
+        protected override void OnMouseLeave(EventArgs e)
+        {
+            base.OnMouseLeave(e);
+            hoverRoute = -1;
+            hoverOpen = false;
+            hoverSideButton = false;
+            Cursor = Cursors.Default;
+            Invalidate();
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (!commandFocused) return;
+
+            if (e.Control && e.KeyCode == Keys.V)
+            {
+                try
+                {
+                    string paste = Clipboard.GetText();
+                    if (!string.IsNullOrEmpty(paste))
+                    {
+                        commandText += paste.Trim();
+                        Invalidate(commandRect);
+                    }
+                }
+                catch
+                {
+                }
+                e.SuppressKeyPress = true;
+                return;
+            }
+
+            if (e.KeyCode == Keys.Back)
+            {
+                if (commandText.Length > 0)
+                {
+                    commandText = commandText.Substring(0, commandText.Length - 1);
+                    Invalidate(commandRect);
+                }
+                e.SuppressKeyPress = true;
+                return;
+            }
+
+            if (e.KeyCode == Keys.Delete)
+            {
+                commandText = string.Empty;
+                Invalidate(commandRect);
+                e.SuppressKeyPress = true;
+                return;
+            }
+
+            if (e.KeyCode == Keys.Enter)
+            {
+                SubmitCommand();
+                e.SuppressKeyPress = true;
+                return;
+            }
+
+            if (e.KeyCode == Keys.Escape)
+            {
+                commandFocused = false;
+                Invalidate(commandRect);
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        protected override void OnKeyPress(KeyPressEventArgs e)
+        {
+            base.OnKeyPress(e);
+            if (!commandFocused || char.IsControl(e.KeyChar)) return;
+            commandText += e.KeyChar;
+            Invalidate(commandRect);
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            LayoutPortal();
+
+            Graphics g = e.Graphics;
+            Rectangle rect = ClientRectangle;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            using (var bg = new LinearGradientBrush(rect, Color.FromArgb(255, 2, 4, 13), Color.FromArgb(255, 10, 18, 42), LinearGradientMode.ForwardDiagonal))
+            {
+                g.FillRectangle(bg, rect);
+            }
+
+            using (var gridPen = new Pen(Color.FromArgb(18, 130, 205, 255), 1f))
+            {
+                for (int x = 0; x < rect.Width; x += 72) g.DrawLine(gridPen, x, 0, x + 90, rect.Height);
+                for (int y = 30; y < rect.Height; y += 72) g.DrawLine(gridPen, 0, y, rect.Width, y - 64);
+            }
+
+            DrawPlasmaRibbon(g, rect);
+            string[] pills = texts.Pills ?? new string[] { "FUSION OS", "CHROMIUM 核心", "已預載" };
+            if (pills.Length > 0) DrawPill(g, pills[0], new Rectangle(42, 34, 96, 26));
+            if (pills.Length > 1) DrawPill(g, pills[1], new Rectangle(150, 34, 128, 26));
+            if (pills.Length > 2) DrawPill(g, pills[2], new Rectangle(290, 34, 106, 26));
+
+            using (var titleFont = new Font(Font.FontFamily, 34F, FontStyle.Bold))
+            using (var portalFont = new Font(Font.FontFamily, 18F, FontStyle.Bold))
+            using (var subFont = new Font(Font.FontFamily, 10.5F, FontStyle.Regular))
+            {
+                TextRenderer.DrawText(g, texts.HeroTitle, titleFont, new Rectangle(42, 84, commandRect.Width, 48), Color.FromArgb(242, 249, 255), TextFormatFlags.Left | TextFormatFlags.NoPadding);
+                TextRenderer.DrawText(g, texts.HeroKicker, portalFont, new Rectangle(46, 132, 220, 34), Color.FromArgb(125, 231, 255), TextFormatFlags.Left | TextFormatFlags.NoPadding);
+                TextRenderer.DrawText(g, texts.HeroSubtitle, subFont, new Rectangle(46, 170, Math.Max(260, commandRect.Width), 28), Color.FromArgb(166, 196, 226), TextFormatFlags.Left | TextFormatFlags.NoPadding);
+            }
+
+            DrawCommand(g);
+            int routeCount = Math.Min(routeRects.Length, routes == null ? 0 : routes.Length);
+            for (int i = 0; i < routeCount; i++)
+            {
+                DrawRouteCard(g, routes[i], routeRects[i], i == hoverRoute);
+            }
+            DrawSidePanel(g);
+        }
+
+        private void LayoutPortal()
+        {
+            int width = Math.Max(1, ClientSize.Width);
+            int height = Math.Max(1, ClientSize.Height);
+            int pad = Math.Max(34, Math.Min(52, width / 26));
+            int sideWidth = width >= 980 ? Math.Max(300, Math.Min(420, width / 4)) : 0;
+            int mainRight = sideWidth > 0 ? width - pad - sideWidth - 28 : width - pad;
+            int mainWidth = Math.Max(420, mainRight - pad);
+
+            commandRect = new Rectangle(pad, 214, mainWidth, 68);
+            openRect = new Rectangle(commandRect.Right - 128, commandRect.Y + 11, 108, 46);
+            inputTextRect = new Rectangle(commandRect.X + 22, commandRect.Y + 20, Math.Max(120, openRect.Left - commandRect.X - 44), 30);
+
+            int cardsTop = commandRect.Bottom + 34;
+            int cardGap = 14;
+            int cardWidth = Math.Max(136, (mainWidth - cardGap * 2) / 3);
+            int availableCardHeight = Math.Max(184, height - cardsTop - pad);
+            int cardHeight = Math.Max(82, Math.Min(126, (availableCardHeight - cardGap) / 2));
+            for (int i = 0; i < routeRects.Length; i++)
+            {
+                int col = i % 3;
+                int row = i / 3;
+                routeRects[i] = new Rectangle(commandRect.X + col * (cardWidth + cardGap), cardsTop + row * (cardHeight + cardGap), cardWidth, cardHeight);
+            }
+
+            if (sideWidth > 0)
+            {
+                sidePanelRect = new Rectangle(width - pad - sideWidth, 92, sideWidth, Math.Max(360, height - 132));
+                sideButtonRect = new Rectangle(sidePanelRect.X + 24, sidePanelRect.Bottom - 76, sidePanelRect.Width - 48, 48);
+            }
+            else
+            {
+                sidePanelRect = Rectangle.Empty;
+                sideButtonRect = Rectangle.Empty;
+            }
+        }
+
+        private void DrawCommand(Graphics g)
+        {
+            DrawRounded(g, commandRect, 26, Color.FromArgb(220, 7, 18, 42), Color.FromArgb(commandFocused ? 150 : 80, AccentColor));
+            DrawRounded(g, openRect, 18, hoverOpen ? Color.FromArgb(114, 99, 102, 241) : Color.FromArgb(82, 34, 211, 238), Color.FromArgb(150, 125, 231, 255));
+
+            string visible = string.IsNullOrWhiteSpace(commandText) ? texts.Placeholder : commandText;
+            Color inputColor = string.IsNullOrWhiteSpace(commandText) ? Color.FromArgb(136, 162, 193) : Color.FromArgb(226, 244, 255);
+            using (var inputFont = new Font(Font.FontFamily, 12.5F, FontStyle.Regular))
+            using (var openFont = new Font(Font.FontFamily, 10F, FontStyle.Bold))
+            {
+                TextRenderer.DrawText(g, visible, inputFont, inputTextRect, inputColor, TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+                TextRenderer.DrawText(g, texts.OpenButton, openFont, openRect, Color.White, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            }
+
+            if (commandFocused)
+            {
+                int caretX = inputTextRect.X + Math.Min(inputTextRect.Width - 8, TextRenderer.MeasureText(commandText, Font).Width + 2);
+                using (var caretPen = new Pen(Color.FromArgb(210, 190, 245, 255), 1.4f))
+                {
+                    g.DrawLine(caretPen, caretX, inputTextRect.Y + 4, caretX, inputTextRect.Bottom - 5);
+                }
+            }
+        }
+
+        private void DrawRouteCard(Graphics g, FusionWebPortalRoute route, Rectangle bounds, bool hover)
+        {
+            if (bounds.Width <= 0 || bounds.Height <= 0) return;
+            DrawRounded(g, bounds, 18, hover ? Color.FromArgb(226, 14, 35, 75) : Color.FromArgb(178, 9, 21, 48), Color.FromArgb(hover ? 170 : 105, route.Accent));
+
+            Rectangle icon = new Rectangle(bounds.X + 16, bounds.Y + 18, 34, 34);
+            DrawRounded(g, icon, 12, Color.FromArgb(52, route.Accent), Color.FromArgb(140, route.Accent));
+            using (var dot = new SolidBrush(Color.FromArgb(230, route.Accent)))
+            {
+                g.FillEllipse(dot, icon.X + 11, icon.Y + 11, 12, 12);
+            }
+
+            Rectangle titleRect = new Rectangle(bounds.X + 62, bounds.Y + 18, bounds.Width - 78, 28);
+            Rectangle subRect = new Rectangle(bounds.X + 62, bounds.Y + 48, bounds.Width - 78, 38);
+            using (var titleFont = new Font(Font.FontFamily, 10.5F, FontStyle.Bold))
+            using (var subFont = new Font(Font.FontFamily, 8.8F, FontStyle.Regular))
+            {
+                TextRenderer.DrawText(g, route.Title, titleFont, titleRect, Color.FromArgb(232, 246, 255), TextFormatFlags.Left | TextFormatFlags.EndEllipsis);
+                TextRenderer.DrawText(g, route.Subtitle, subFont, subRect, Color.FromArgb(151, 181, 214), TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.EndEllipsis);
+            }
+        }
+
+        private void DrawSidePanel(Graphics g)
+        {
+            if (sidePanelRect.IsEmpty) return;
+            DrawRounded(g, sidePanelRect, 26, Color.FromArgb(188, 9, 18, 40), Color.FromArgb(74, 119, 187, 255));
+
+            using (var titleFont = new Font(Font.FontFamily, 18F, FontStyle.Bold))
+            using (var rowFont = new Font(Font.FontFamily, 9.2F, FontStyle.Bold))
+            using (var subFont = new Font(Font.FontFamily, 8.5F, FontStyle.Regular))
+            {
+                TextRenderer.DrawText(g, texts.SideTitle, titleFont, new Rectangle(sidePanelRect.X + 24, sidePanelRect.Y + 26, sidePanelRect.Width - 48, 38), Color.FromArgb(240, 248, 255), TextFormatFlags.Left | TextFormatFlags.NoPadding | TextFormatFlags.EndEllipsis);
+                DrawStatusRow(g, rowFont, subFont, texts.ProfileLabel, texts.ProfileValue, 86);
+                DrawStatusRow(g, rowFont, subFont, texts.WindowsLabel, texts.WindowsValue, 144);
+                DrawStatusRow(g, rowFont, subFont, texts.EngineLabel, texts.EngineValue, 202);
+                DrawStatusRow(g, rowFont, subFont, texts.LocalTimeLabel, FormatLocalTime(), 260);
+                int introTop = sidePanelRect.Y + 328;
+                int introHeight = Math.Max(0, sideButtonRect.Top - introTop - 14);
+                if (introHeight > 18)
+                {
+                    TextRenderer.DrawText(g, texts.SideIntro, subFont, new Rectangle(sidePanelRect.X + 24, introTop, sidePanelRect.Width - 48, introHeight), Color.FromArgb(176, 204, 232), TextFormatFlags.Left | TextFormatFlags.WordBreak | TextFormatFlags.EndEllipsis);
+                }
+            }
+
+            DrawRounded(g, sideButtonRect, 18, hoverSideButton ? Color.FromArgb(112, 99, 102, 241) : Color.FromArgb(76, 34, 211, 238), Color.FromArgb(145, 125, 231, 255));
+            using (var buttonFont = new Font(Font.FontFamily, 9.5F, FontStyle.Bold))
+            {
+                TextRenderer.DrawText(g, texts.SideButton, buttonFont, sideButtonRect, Color.White, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            }
+        }
+
+        private string FormatLocalTime()
+        {
+            DateTime now = FusionLocale.Now(timezone);
+            CultureInfo culture = FusionLocale.CultureForLang(texts.Language);
+            string format = clock24 ? "yyyy/MM/dd HH:mm" : "yyyy/MM/dd tt h:mm";
+            return now.ToString(format, culture);
+        }
+
+        private void DrawStatusRow(Graphics g, Font rowFont, Font subFont, string label, string value, int yOffset)
+        {
+            Rectangle labelRect = new Rectangle(sidePanelRect.X + 24, sidePanelRect.Y + yOffset, sidePanelRect.Width - 48, 21);
+            Rectangle valueRect = new Rectangle(sidePanelRect.X + 24, sidePanelRect.Y + yOffset + 22, sidePanelRect.Width - 48, 26);
+            TextRenderer.DrawText(g, label, rowFont, labelRect, Color.FromArgb(220, 242, 255), TextFormatFlags.Left | TextFormatFlags.EndEllipsis);
+            TextRenderer.DrawText(g, value, subFont, valueRect, Color.FromArgb(148, 176, 206), TextFormatFlags.Left | TextFormatFlags.EndEllipsis);
+        }
+
+        private void DrawPlasmaRibbon(Graphics g, Rectangle rect)
+        {
+            using (var path = new GraphicsPath())
+            {
+                path.AddBezier(
+                    new PointF(rect.Left - 80, rect.Height * 0.72F),
+                    new PointF(rect.Width * 0.22F, rect.Height * 0.38F),
+                    new PointF(rect.Width * 0.62F, rect.Height * 0.82F),
+                    new PointF(rect.Right + 110, rect.Height * 0.34F));
+
+                using (var glow = new Pen(Color.FromArgb(28, AccentColor), 34f))
+                using (var core = new Pen(Color.FromArgb(116, 77, 208, 255), 9f))
+                using (var filament = new Pen(Color.FromArgb(150, 225, 246, 255), 2f))
+                {
+                    glow.StartCap = LineCap.Round;
+                    glow.EndCap = LineCap.Round;
+                    core.StartCap = LineCap.Round;
+                    core.EndCap = LineCap.Round;
+                    filament.DashPattern = new float[] { 8f, 12f };
+                    g.DrawPath(glow, path);
+                    g.DrawPath(core, path);
+                    g.DrawPath(filament, path);
+                }
+            }
+        }
+
+        private void DrawPill(Graphics g, string text, Rectangle bounds)
+        {
+            DrawRounded(g, bounds, 10, Color.FromArgb(68, 12, 35, 70), Color.FromArgb(74, 119, 187, 255));
+            using (var font = new Font(Font.FontFamily, 7.8F, FontStyle.Bold))
+            {
+                TextRenderer.DrawText(g, text, font, bounds, Color.FromArgb(198, 232, 255), TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+            }
+        }
+
+        private void DrawRounded(Graphics g, Rectangle bounds, int radius, Color fill, Color stroke)
+        {
+            using (var path = RoundRect(bounds, radius))
+            using (var brush = new SolidBrush(fill))
+            using (var pen = new Pen(stroke, 1f))
+            {
+                g.FillPath(brush, path);
+                g.DrawPath(pen, path);
+            }
+        }
+
+        private void SubmitCommand()
+        {
+            string fallback = routes != null && routes.Length > 0 ? routes[0].Url : "https://www.google.com";
+            string raw = string.IsNullOrWhiteSpace(commandText) ? fallback : commandText.Trim();
+            Navigate(raw);
+        }
+
+        private void Navigate(string raw)
+        {
+            Action<string> handler = NavigateRequested;
+            if (handler != null) handler(raw);
         }
 
         private static GraphicsPath RoundRect(Rectangle bounds, int radius)

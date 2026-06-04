@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 
-// Local, sandboxed FusionOS preferences. These ONLY change the look/feel of the
-// FusionOS desktop UI itself — they are persisted to localStorage and never sent
-// to the WinForms host, so they never touch the real machine's system settings.
+// Local, sandboxed FusionOS preferences. Most settings only change the React shell,
+// while Time & Language is forwarded to the WinForms host so native surfaces stay
+// in sync with the same FusionOS settings.
 
 export interface FusionSettingsState {
   // System

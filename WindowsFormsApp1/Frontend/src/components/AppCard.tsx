@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { AppConfig } from '../types';
-import { Monitor, Folder, Piano, Clapperboard, AudioWaveform, Hand, FileUser, Plus, Code, Wrench, Database, Globe, Gamepad2, Terminal, Settings } from 'lucide-react';
+import { Monitor, Folder, Piano, Clapperboard, AudioWaveform, Hand, FileUser, Plus, Code, Wrench, Database, Globe, Gamepad2, Terminal, Settings, Map } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
 
 const ICON_MAP: Record<string, any> = {
@@ -11,6 +11,7 @@ const ICON_MAP: Record<string, any> = {
   VID: Clapperboard,
   WAV: AudioWaveform,
   COS: Hand,
+  MAP: Map,
   USR: FileUser,
   '+': Plus,
   DEV: Code,

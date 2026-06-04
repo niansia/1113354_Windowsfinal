@@ -21,6 +21,65 @@ type Entry = Partial<Record<Exclude<Lang, 'zh-TW'>, string>>;
 
 export const TRANSLATIONS: Record<string, Entry> = {
   // ---------- Fusion OS home app registry ----------
+  '本機': { 'zh-CN': '本机', en: 'This PC', ja: 'この PC', ko: '내 PC' },
+  '專案檔案': { 'zh-CN': '项目文件', en: 'Project Files', ja: 'プロジェクトファイル', ko: '프로젝트 파일' },
+  '鋼琴工作室': { 'zh-CN': '钢琴工作室', en: 'Piano Studio', ja: 'ピアノスタジオ', ko: '피아노 스튜디오' },
+  'AURORA 影音中心': { 'zh-CN': 'AURORA 影音中心', en: 'AURORA Media Center', ja: 'AURORA メディアセンター', ko: 'AURORA 미디어 센터' },
+  '音訊工作室': { 'zh-CN': '音频工作室', en: 'Wave Studio', ja: 'オーディオスタジオ', ko: '오디오 스튜디오' },
+  '宇宙手勢': { 'zh-CN': '宇宙手势', en: 'Cosmic Gesture', ja: 'コズミックジェスチャー', ko: '코스믹 제스처' },
+  'MetroPulse 智慧交通': { 'zh-CN': 'MetroPulse 智慧交通', en: 'MetroPulse Smart Traffic', ja: 'MetroPulse スマート交通', ko: 'MetroPulse 스마트 교통' },
+  '使用者檔案': { 'zh-CN': '用户文件', en: 'User Files', ja: 'ユーザーファイル', ko: '사용자 파일' },
+  '新增檔案': { 'zh-CN': '新增文件', en: 'Add File', ja: 'ファイルを追加', ko: '파일 추가' },
+  '開發實驗室': { 'zh-CN': '开发实验室', en: 'Development Lab', ja: '開発ラボ', ko: '개발 연구실' },
+  '工具箱': { 'zh-CN': '工具箱', en: 'Toolbox', ja: 'ツールボックス', ko: '도구함' },
+  '資料庫': { 'zh-CN': '数据库', en: 'Database', ja: 'データベース', ko: '데이터베이스' },
+  '網頁區': { 'zh-CN': '网页区', en: 'Web Zone', ja: 'Web ゾーン', ko: '웹 구역' },
+  '終端機': { 'zh-CN': '终端机', en: 'Terminal', ja: 'ターミナル', ko: '터미널' },
+  '系統設定': { 'zh-CN': '系统设置', en: 'Settings', ja: '設定', ko: '설정' },
+  '即時城市中樞': { 'zh-CN': '实时城市中枢', en: 'Realtime City Hub', ja: 'リアルタイム都市中枢', ko: '실시간 도시 허브' },
+  '作品資料夾': { 'zh-CN': '作品文件夹', en: 'Project Folder', ja: '作品フォルダー', ko: '작품 폴더' },
+  '音樂互動作品': { 'zh-CN': '音乐互动作品', en: 'Interactive Music Work', ja: '音楽インタラクティブ作品', ko: '음악 인터랙션 작품' },
+  '多媒體播放作品': { 'zh-CN': '多媒体播放作品', en: 'Media Playback Work', ja: 'マルチメディア再生作品', ko: '멀티미디어 재생 작품' },
+  'WAV 與音訊工具': { 'zh-CN': 'WAV 与音频工具', en: 'WAV and Audio Tools', ja: 'WAV と音声ツール', ko: 'WAV 및 오디오 도구' },
+  'WebGL 手勢作品': { 'zh-CN': 'WebGL 手势作品', en: 'WebGL Gesture Work', ja: 'WebGL ジェスチャー作品', ko: 'WebGL 제스처 작품' },
+  '個人捷徑': { 'zh-CN': '个人快捷方式', en: 'Personal Shortcuts', ja: '個人ショートカット', ko: '개인 바로가기' },
+  '匯入捷徑': { 'zh-CN': '导入快捷方式', en: 'Import Shortcut', ja: 'ショートカットを取り込み', ko: '바로가기 가져오기' },
+  '程式整合區': { 'zh-CN': '程序整合区', en: 'Programming Integration', ja: 'プログラム統合エリア', ko: '프로그래밍 통합 구역' },
+  '實用工具': { 'zh-CN': '实用工具', en: 'Utilities', ja: 'ユーティリティ', ko: '유틸리티' },
+  '瀏覽與 WebView': { 'zh-CN': '浏览与 WebView', en: 'Browser and WebView', ja: 'ブラウザーと WebView', ko: '브라우저와 WebView' },
+  '命令面板': { 'zh-CN': '命令面板', en: 'Command Panel', ja: 'コマンドパネル', ko: '명령 패널' },
+  '語言與個人化': { 'zh-CN': '语言与个性化', en: 'Language and Personalization', ja: '言語と個人設定', ko: '언어 및 개인화' },
+  '查看 Fusion OS 的裝置狀態、資源使用、使用者資料與系統資訊。': {
+    'zh-CN': '查看 Fusion OS 的设备状态、资源使用、用户资料与系统信息。',
+    en: 'View Fusion OS device status, resource usage, user data, and system information.',
+    ja: 'Fusion OS のデバイス状態、リソース使用量、ユーザーデータ、システム情報を表示します。',
+    ko: 'Fusion OS 장치 상태, 리소스 사용량, 사용자 데이터, 시스템 정보를 확인합니다.'
+  },
+  '快速開啟期末專案與整合應用程式所在的本機資料夾。': {
+    'zh-CN': '快速打开期末项目与整合应用所在的本机文件夹。',
+    en: 'Quickly open local folders for the final project and integrated apps.',
+    ja: '期末プロジェクトと統合アプリのローカルフォルダーをすばやく開きます。',
+    ko: '기말 프로젝트와 통합 앱의 로컬 폴더를 빠르게 엽니다.'
+  },
+  '開啟 Fusion Web 入口，進入內嵌 Chromium 瀏覽器與網頁作品區。': {
+    'zh-CN': '打开 Fusion Web 入口，进入内嵌 Chromium 浏览器与网页作品区。',
+    en: 'Open the Fusion Web portal for the embedded Chromium browser and web works.',
+    ja: 'Fusion Web ポータルを開き、内蔵 Chromium ブラウザーと Web 作品エリアに入ります。',
+    ko: 'Fusion Web 포털을 열어 내장 Chromium 브라우저와 웹 작품 구역으로 들어갑니다.'
+  },
+  '結合定位、開放資料、Python broker 與原生模擬核心的智慧城市交通作品。': {
+    'zh-CN': '结合定位、开放数据、Python broker 与原生模拟核心的智慧城市交通作品。',
+    en: 'A smart-city traffic work combining location, open data, a Python broker, and a native simulation core.',
+    ja: '位置情報、オープンデータ、Python broker、ネイティブシミュレーションコアを組み合わせたスマート交通作品です。',
+    ko: '위치, 공개 데이터, Python broker, 네이티브 시뮬레이션 코어를 결합한 스마트시티 교통 작품입니다.'
+  },
+  '即時': { 'zh-CN': '实时', en: 'Live', ja: 'リアルタイム', ko: '실시간' },
+  '已就緒': { 'zh-CN': '已就绪', en: 'Ready', ja: '準備完了', ko: '준비됨' },
+  '已連結': { 'zh-CN': '已连接', en: 'Linked', ja: '接続済み', ko: '연결됨' },
+  '已預載': { 'zh-CN': '已预载', en: 'Preloaded', ja: 'プリロード済み', ko: '사전 로드됨' },
+  '可使用': { 'zh-CN': '可使用', en: 'Available', ja: '利用可能', ko: '사용 가능' },
+  '建置中': { 'zh-CN': '构建中', en: 'Building', ja: '構築中', ko: '구축 중' },
+  '可執行': { 'zh-CN': '可执行', en: 'Runnable', ja: '実行可能', ko: '실행 가능' },
   '工作區': { 'zh-CN': '工作区', en: 'Workspace', ja: 'ワークスペース', ko: '작업 공간' },
   '系統總覽': { 'zh-CN': '系统总览', en: 'System Overview', ja: 'システム概要', ko: '시스템 개요' },
   'Fusion OS 空間指揮中心與目前工作區。': {
@@ -135,21 +194,9 @@ export const TRANSLATIONS: Record<string, Entry> = {
   '準備啟動': { 'zh-CN': '准备启动', en: 'Ready to Launch', ja: '起動準備完了', ko: '실행 준비됨' },
 
   // ---------- App names (fusionApps titles) ----------
-  '本機': { 'zh-CN': '本机', en: 'This PC', ja: 'PC', ko: '내 PC' },
-  '專案檔案': { 'zh-CN': '项目文件', en: 'Project Files', ja: 'プロジェクトファイル', ko: '프로젝트 파일' },
-  '鋼琴工作室': { 'zh-CN': '钢琴工作室', en: 'Piano Studio', ja: 'ピアノスタジオ', ko: '피아노 스튜디오' },
   '影音中心': { 'zh-CN': '影音中心', en: 'Media Center', ja: 'メディアセンター', ko: '미디어 센터' },
-  '音訊工作室': { 'zh-CN': '音频工作室', en: 'Audio Studio', ja: 'オーディオスタジオ', ko: '오디오 스튜디오' },
-  '宇宙手勢': { 'zh-CN': '宇宙手势', en: 'Cosmic Gesture', ja: 'コスミックジェスチャー', ko: '코스믹 제스처' },
-  '使用者檔案': { 'zh-CN': '用户文件', en: 'User Files', ja: 'ユーザーファイル', ko: '사용자 파일' },
-  '新增檔案': { 'zh-CN': '新增文件', en: 'Add File', ja: 'ファイルを追加', ko: '파일 추가' },
   '語言實驗室': { 'zh-CN': '语言实验室', en: 'Language Lab', ja: '言語ラボ', ko: '언어 연구실' },
-  '工具箱': { 'zh-CN': '工具箱', en: 'Toolbox', ja: 'ツールボックス', ko: '도구 상자' },
-  '資料庫': { 'zh-CN': '数据库', en: 'Database', ja: 'データベース', ko: '데이터베이스' },
-  '網頁區': { 'zh-CN': '网页区', en: 'Web Zone', ja: 'ウェブゾーン', ko: '웹 존' },
   '遊戲室': { 'zh-CN': '游戏室', en: 'Game Room', ja: 'ゲームルーム', ko: '게임 룸' },
-  '終端機': { 'zh-CN': '终端机', en: 'Terminal', ja: 'ターミナル', ko: '터미널' },
-  '系統設定': { 'zh-CN': '系统设置', en: 'Settings', ja: '設定', ko: '설정' },
 
   // ---------- App subtitles ----------
   '系統資訊': { 'zh-CN': '系统信息', en: 'System Info', ja: 'システム情報', ko: '시스템 정보' },
@@ -157,7 +204,6 @@ export const TRANSLATIONS: Record<string, Entry> = {
   '內建應用程式': { 'zh-CN': '内置应用程序', en: 'Built-in App', ja: '内蔵アプリ', ko: '내장 앱' },
   '個人檔案': { 'zh-CN': '个人文件', en: 'Personal Files', ja: '個人ファイル', ko: '개인 파일' },
   '匯入': { 'zh-CN': '导入', en: 'Import', ja: 'インポート', ko: '가져오기' },
-  '開發實驗室': { 'zh-CN': '开发实验室', en: 'Dev Lab', ja: '開発ラボ', ko: '개발 연구실' },
   '工具': { 'zh-CN': '工具', en: 'Tools', ja: 'ツール', ko: '도구' },
   '資料': { 'zh-CN': '数据', en: 'Data', ja: 'データ', ko: '데이터' },
   '網路空間': { 'zh-CN': '网络空间', en: 'Web Space', ja: 'ウェブスペース', ko: '웹 공간' },
@@ -169,7 +215,6 @@ export const TRANSLATIONS: Record<string, Entry> = {
   '線上': { 'zh-CN': '在线', en: 'Online', ja: 'オンライン', ko: '온라인' },
   '已同步': { 'zh-CN': '已同步', en: 'Synced', ja: '同期済み', ko: '동기화됨' },
   '就緒': { 'zh-CN': '就绪', en: 'Ready', ja: '準備完了', ko: '준비됨' },
-  '已連結': { 'zh-CN': '已链接', en: 'Linked', ja: 'リンク済み', ko: '연결됨' },
   '可用': { 'zh-CN': '可用', en: 'Available', ja: '利用可能', ko: '사용 가능' },
   '已連線': { 'zh-CN': '已连接', en: 'Connected', ja: '接続済み', ko: '연결됨' },
   '執行中': { 'zh-CN': '运行中', en: 'Running', ja: '実行中', ko: '실행 중' },
@@ -330,6 +375,8 @@ export const TRANSLATIONS: Record<string, Entry> = {
   '建立帳戶': { 'zh-CN': '创建账户', en: 'Create account', ja: 'アカウントを作成', ko: '계정 만들기' },
   '密碼錯誤，請再試一次': { 'zh-CN': '密码错误，请重试', en: 'Wrong password, try again', ja: 'パスワードが違います。もう一度お試しください', ko: '비밀번호가 틀립니다. 다시 시도하세요' },
   '正在驗證…': { 'zh-CN': '正在验证…', en: 'Verifying…', ja: '確認中…', ko: '확인 중…' },
+  '歡迎回來': { 'zh-CN': '欢迎回来', en: 'Welcome back', ja: 'おかえりなさい', ko: '다시 오신 것을 환영합니다' },
+  '正在載入你的桌面…': { 'zh-CN': '正在加载你的桌面…', en: 'Loading your desktop…', ja: 'デスクトップを読み込んでいます…', ko: '바탕화면을 불러오는 중…' },
   '在此裝置上重設帳戶': { 'zh-CN': '在此设备上重置账户', en: 'Reset account on this device', ja: 'このデバイスでアカウントをリセット', ko: '이 기기에서 계정 재설정' },
   '這會清除本機帳戶並要求重新設定，確定嗎？': {
     'zh-CN': '这会清除本地账户并要求重新设置，确定吗？',

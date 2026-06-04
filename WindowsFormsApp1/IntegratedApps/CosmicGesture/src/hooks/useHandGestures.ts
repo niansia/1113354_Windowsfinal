@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FilesetResolver, HandLandmarker, type NormalizedLandmark } from "@mediapipe/tasks-vision";
-import type { GestureDebugState, GestureEvent, NumberGesture, NumberGestureValue } from "../types";
+import type { GestureDebugState, GestureEvent } from "../types";
 
 interface UseHandGesturesOptions {
   enabled: boolean;
@@ -28,8 +28,6 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
   const prevPointerRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const openSinceRef = useRef<number | null>(null);
   const fistSinceRef = useRef<number | null>(null);
-  const numberVotesRef = useRef<Array<NumberGestureValue | 0>>([]);
-  const numberStableRef = useRef<{ value: NumberGestureValue | 0; since: number }>({ value: 0, since: 0 });
   const cooldownUntilRef = useRef(0);
   const swipeCooldownRef = useRef(0);
   const frameTimesRef = useRef<number[]>([]);
@@ -230,10 +228,12 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
         // Decisive flicks => discrete navigation (object / category), with cooldown.
         if (now > swipeCooldownRef.current) {
           if (Math.abs(vx) > 0.0062 && Math.abs(vx) > Math.abs(vy) * 1.4) {
-            swipeCooldownRef.current = now + 720;
+            // Interstellar travel: a left/right sweep warps to the prev/next body.
+            // Short cooldown so repeated sweeps glide through the catalogue.
+            swipeCooldownRef.current = now + 500;
             onGesture({ type: "swipe", dir: vx < 0 ? "left" : "right" });
           } else if (Math.abs(vy) > 0.0062 && Math.abs(vy) > Math.abs(vx) * 1.4) {
-            swipeCooldownRef.current = now + 720;
+            swipeCooldownRef.current = now + 700;
             onGesture({ type: "tilt", dir: vy < 0 ? "up" : "down" });
           }
         }
@@ -289,16 +289,14 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
       }
 
       updateFps(now);
-      const numberGesture = !open && !fist ? classifySingleHandNumberGesture(hand, state) : null;
-      updateNumberVotes(numberGesture?.value ?? 0, numberGesture?.confidence ?? 0, now);
 
       if (now - lastDebugUpdateRef.current > 140) {
         lastDebugUpdateRef.current = now;
         setDebug({
           enabled,
           active: true,
-          label: numberGesture ? `辨識：${numberGesture.value}` : open ? "張掌" : fist ? "握拳" : "追蹤中",
-          confidence: numberGesture?.confidence ?? (open || fist ? 0.78 : 0.5),
+          label: open ? "張掌" : fist ? "握拳" : "追蹤中",
+          confidence: open || fist ? 0.78 : 0.5,
           fingerStates: [
             state.thumb ? "T" : "-",
             state.index ? "I" : "-",
@@ -308,20 +306,6 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
           ].join(""),
           fps: frameTimesRef.current.length
         });
-      }
-    };
-
-    const updateNumberVotes = (value: NumberGestureValue | 0, confidence: number, now: number) => {
-      const votes = numberVotesRef.current;
-      votes.push(confidence > 0.62 ? value : 0);
-      while (votes.length > 10) votes.shift();
-      const winner = majorityVote(votes);
-      if (winner !== numberStableRef.current.value) {
-        numberStableRef.current = { value: winner, since: now };
-      }
-      if (winner && now - numberStableRef.current.since > 680 && now > cooldownUntilRef.current) {
-        cooldownUntilRef.current = now + 1080;
-        onGesture({ type: "number", value: winner, confidence: Math.max(confidence, 0.72) });
       }
     };
 
@@ -340,42 +324,6 @@ export function useHandGestures({ enabled, onGesture }: UseHandGesturesOptions) 
   }, [enabled, onGesture, stop]);
 
   return { videoRef, debug, stop };
-}
-
-export function classifySingleHandNumberGesture(hand: NormalizedLandmark[], state = computeFingerState(hand)): NumberGesture | null {
-  const { thumb, index, middle, ring, pinky, palmScale } = state;
-  const tip = (i: number) => hand[i];
-  const thumbIndex = distance(tip(4), tip(8)) / palmScale;
-  const indexMiddle = distance(tip(8), tip(12)) / palmScale;
-  const thumbMiddle = distance(tip(4), tip(12)) / palmScale;
-  const thumbPinky = distance(tip(4), tip(20)) / palmScale;
-  const threeTipsCluster = thumbIndex < 0.56 && indexMiddle < 0.48 && thumbMiddle < 0.56;
-
-  if (thumb && !index && !middle && !ring && pinky && thumbPinky > 1.35) {
-    return { type: "number", value: 6, confidence: 0.9 };
-  }
-  if (!ring && !pinky && threeTipsCluster) {
-    return { type: "number", value: 7, confidence: 0.86 };
-  }
-  if (thumb && index && !middle && !ring && !pinky && thumbIndex > 0.68) {
-    return { type: "number", value: 8, confidence: 0.88 };
-  }
-  if (!thumb && index && !middle && !ring && !pinky) {
-    return { type: "number", value: 1, confidence: 0.85 };
-  }
-  if (!thumb && index && middle && !ring && !pinky) {
-    return { type: "number", value: 2, confidence: 0.86 };
-  }
-  if (!thumb && index && middle && ring && !pinky) {
-    return { type: "number", value: 3, confidence: 0.84 };
-  }
-  if (!thumb && index && middle && ring && pinky) {
-    return { type: "number", value: 4, confidence: 0.84 };
-  }
-  if (thumb && index && middle && ring && pinky) {
-    return { type: "number", value: 5, confidence: 0.78 };
-  }
-  return null;
 }
 
 function computeFingerState(hand: NormalizedLandmark[]): FingerState {
@@ -451,22 +399,6 @@ function distance(a: NormalizedLandmark, b: NormalizedLandmark): number {
 
 function countExtended(state: FingerState): number {
   return [state.thumb, state.index, state.middle, state.ring, state.pinky].filter(Boolean).length;
-}
-
-function majorityVote(votes: Array<NumberGestureValue | 0>): NumberGestureValue | 0 {
-  const counts = new Map<NumberGestureValue | 0, number>();
-  for (const vote of votes) {
-    counts.set(vote, (counts.get(vote) ?? 0) + 1);
-  }
-  let best: NumberGestureValue | 0 = 0;
-  let bestCount = 0;
-  counts.forEach((count, value) => {
-    if (value && count > bestCount) {
-      best = value;
-      bestCount = count;
-    }
-  });
-  return bestCount >= 6 ? best : 0;
 }
 
 function clamp(value: number, min: number, max: number): number {

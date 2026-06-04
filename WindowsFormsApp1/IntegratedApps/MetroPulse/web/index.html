@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MetroPulse</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="metro-shell">
+    <header class="metro-topbar">
+      <div>
+        <span class="eyebrow" data-i18n="productLabel">智慧城市交通中樞</span>
+        <h1>MetroPulse</h1>
+      </div>
+      <div class="top-actions">
+        <button id="locateBtn" type="button" data-i18n="useLocation">使用目前位置</button>
+        <span id="clock" class="clock">--:--</span>
+      </div>
+    </header>
+
+    <section class="hero-band">
+      <div>
+        <h2 data-i18n="headline">即時路網、天氣與事故調度整合</h2>
+        <p data-i18n="subhead">定位後會結合開放資料與本機原生模擬核心，產生目前地區的交通決策視圖。</p>
+      </div>
+      <div class="status-strip">
+        <span id="liveBadge" data-i18n="waiting">等待定位</span>
+        <span data-i18n="nativeCore">原生模擬核心</span>
+        <span data-i18n="broker">Python 即時資料 broker</span>
+      </div>
+    </section>
+
+    <section class="metro-grid">
+      <div class="map-panel">
+        <div class="panel-head">
+          <div>
+            <span data-i18n="mapLabel">城市脈流圖</span>
+            <strong id="locationLabel">--</strong>
+          </div>
+          <small id="generatedAt">--</small>
+        </div>
+        <canvas id="cityCanvas" width="1100" height="700" aria-label="MetroPulse city map"></canvas>
+      </div>
+
+      <aside class="metrics-panel">
+        <div class="metric">
+          <span data-i18n="eta">醫療優先路徑</span>
+          <strong id="etaValue">--</strong>
+          <small data-i18n="etaHint">即時壅塞權重後的 ETA</small>
+        </div>
+        <div class="metric">
+          <span data-i18n="pressure">路網壓力</span>
+          <strong id="pressureValue">--</strong>
+          <small data-i18n="pressureHint">天氣、空氣與道路密度加權</small>
+        </div>
+        <div class="metric">
+          <span data-i18n="air">空氣品質</span>
+          <strong id="airValue">--</strong>
+          <small>PM2.5 / AQI</small>
+        </div>
+        <div class="metric">
+          <span data-i18n="roads">附近道路</span>
+          <strong id="roadValue">--</strong>
+          <small data-i18n="roadsHint">OSM Overpass 即時摘要</small>
+        </div>
+      </aside>
+    </section>
+
+    <section class="lower-grid">
+      <section class="work-panel">
+        <div class="panel-head">
+          <span data-i18n="route">最佳路徑</span>
+          <small id="routeNodes">--</small>
+        </div>
+        <div id="segments" class="segment-list"></div>
+      </section>
+
+      <section class="work-panel">
+        <div class="panel-head">
+          <span data-i18n="signals">號誌策略</span>
+          <small data-i18n="adaptive">自適應週期</small>
+        </div>
+        <div id="signals" class="signal-list"></div>
+      </section>
+
+      <section class="work-panel">
+        <div class="panel-head">
+          <span data-i18n="incident">事故調度</span>
+          <small id="incidentEta">--</small>
+        </div>
+        <div id="units" class="unit-list"></div>
+      </section>
+    </section>
+
+    <section class="trend-panel">
+      <div class="panel-head">
+        <span data-i18n="forecast">兩小時流量預測</span>
+        <small data-i18n="forecastHint">由即時壓力驅動的離散模擬</small>
+      </div>
+      <canvas id="trendCanvas" width="1200" height="260" aria-label="MetroPulse trend chart"></canvas>
+    </section>
+  </main>
+
+  <script src="report.generated.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

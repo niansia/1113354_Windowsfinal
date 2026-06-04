@@ -43,10 +43,14 @@ export function SolarSystemScene({
       if (body.type === "sun") {
         vector.set(0, 0, 0);
       } else {
+        // Real revolution: each planet sweeps its orbit at its own (Kepler-scaled)
+        // speed, on a near-coplanar ecliptic with a small per-planet inclination
+        // so the system reads as a flat disc rather than a bobbing scatter.
         const angle = time * body.orbitSpeed + body.seed * 0.0021;
+        const inclination = 0.012 + (body.seed % 5) * 0.007;
         vector.set(
           Math.cos(angle) * body.orbitRadius,
-          Math.sin(angle * 0.71) * 0.22,
+          Math.sin(angle) * body.orbitRadius * inclination,
           Math.sin(angle) * body.orbitRadius
         );
       }

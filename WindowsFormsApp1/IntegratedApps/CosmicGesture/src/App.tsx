@@ -271,9 +271,6 @@ export default function App() {
             setMapMode(false);
             controlsRef.current.lastGestureLabel = "握拳 / 離開星圖";
             return;
-          case "number":
-            selectEntry(numberGestureMap[event.value]);
-            return;
         }
         return;
       }
@@ -302,11 +299,6 @@ export default function App() {
           case "closedFist":
             exitEarthExplore();
             return;
-          case "number":
-            setEarthExplore(false);
-            selectEntry(numberGestureMap[event.value]);
-            controlsRef.current.lastGestureLabel = `數字 ${event.value}`;
-            return;
         }
         return;
       }
@@ -320,28 +312,19 @@ export default function App() {
           controlsRef.current.lastGestureLabel = "手掌環繞";
           return;
         case "swipe":
+          // Interstellar travel — sweep to glide to the prev/next body.
           navigateObject(event.dir === "left" ? "prev" : "next");
-          controlsRef.current.lastGestureLabel = `揮動切換 ${event.dir === "left" ? "←" : "→"}`;
+          controlsRef.current.lastGestureLabel = `🚀 星際旅行 ${event.dir === "left" ? "←" : "→"}`;
           return;
         case "tilt":
           navigateCategory(event.dir === "up" ? "prev" : "next");
-          controlsRef.current.lastGestureLabel = `上下切換分類`;
+          controlsRef.current.lastGestureLabel = `切換星區分類`;
           return;
         case "openPalm":
           enterCore(event.amount);
           return;
         case "closedFist":
           exitCore();
-          return;
-        case "number":
-          {
-            const targetId = numberGestureMap[event.value];
-            const target = catalogById[targetId];
-            selectEntry(targetId);
-            setMode("focus");
-            controlsRef.current.lastGestureLabel = `數字 ${event.value}`;
-            setNotice(target ? `切換到 ${target.name}` : `數字 ${event.value}`);
-          }
           return;
       }
     },

@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import { useBootSequence } from './hooks/useBootSequence';
 import { FusionBootSequence } from './components/boot/FusionBootSequence';
 import { FusionHome } from './components/FusionHome';
-import { FusionLogin } from './components/FusionLogin';
+import { FusionLogin, type LoginPhase } from './components/FusionLogin';
 import { useAccount } from './account/AccountContext';
 import { addHostMessageListener, sendMessageToHost } from './utils/bridge';
 import { fusionRuntimeCache } from './boot/runtimeCache';
@@ -23,7 +23,7 @@ export default function App() {
   const [revealHome, setRevealHome] = useState(false);
   const [overlayGone, setOverlayGone] = useState(false);
   const [loginMounted, setLoginMounted] = useState(false);
-  const [loginExiting, setLoginExiting] = useState(false);
+  const [loginPhase, setLoginPhase] = useState<LoginPhase>('idle');
   const [hostFullscreen, setHostFullscreen] = useState(true);
   const bootDoneSentRef = useRef(false);
 
@@ -63,27 +63,31 @@ export default function App() {
   useEffect(() => {
     if (boot.done && !authed && (status === 'needsSetup' || status === 'locked')) {
       setLoginMounted(true);
-      setLoginExiting(false);
+      setLoginPhase('idle');
     }
   }, [boot.done, authed, status]);
 
-  // Once authenticated: mount Home and fade the login layer out over it.
+  // Once authenticated: mount Home, then play a Windows-style hand-off —
+  //   "歡迎" welcome beat → login zooms/blurs out → desktop settles in underneath.
   useEffect(() => {
     if (!authed) return;
     setShowHome(true);
     if (loginMounted) {
-      setLoginExiting(true);
-      const timer = window.setTimeout(() => setLoginMounted(false), 400);
-      return () => window.clearTimeout(timer);
+      setLoginPhase('welcome');
+      const toExit = window.setTimeout(() => {
+        setLoginPhase('exit'); // login zoom-fade begins
+        setRevealHome(true); // desktop animates in as the login dissolves
+      }, 880);
+      const toUnmount = window.setTimeout(() => setLoginMounted(false), 880 + 620);
+      return () => {
+        window.clearTimeout(toExit);
+        window.clearTimeout(toUnmount);
+      };
     }
-  }, [authed, loginMounted]);
-
-  // Reveal Home shortly after it mounts (its own crossfade-in).
-  useEffect(() => {
-    if (!showHome) return;
+    // Already authenticated at boot (no login shown): just reveal Home.
     const timer = window.setTimeout(() => setRevealHome(true), 30);
     return () => window.clearTimeout(timer);
-  }, [showHome]);
+  }, [authed, loginMounted]);
 
   const shellStyle = {
     '--fusion-sidebar-inset': '0px',
@@ -101,7 +105,7 @@ export default function App() {
           <FusionHome />
         </div>
       )}
-      {loginMounted && <FusionLogin exiting={loginExiting} />}
+      {loginMounted && <FusionLogin phase={loginPhase} />}
       {!overlayGone && <FusionBootSequence state={boot} fadingOut={bootReadyToLeave} onSkip={boot.skip} />}
     </>
   );

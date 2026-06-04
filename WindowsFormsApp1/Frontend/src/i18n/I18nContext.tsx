@@ -43,16 +43,20 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     [t]
   );
 
-  // Push the language to the WinForms host so native pop-up windows follow, and tag the
-  // document for CSS / font fallbacks. Runs whenever the language changes.
+  // Push Time & Language settings to the WinForms host so native surfaces follow the
+  // same system preferences as the React shell.
   useEffect(() => {
     try {
       document.documentElement.lang = lang;
     } catch {
       /* non-DOM env */
     }
-    sendMessageToHost('FUSION_SET_LANGUAGE', { language: lang });
-  }, [lang]);
+    sendMessageToHost('FUSION_SET_LANGUAGE', {
+      language: lang,
+      timezone: settings.timezone,
+      clock24: settings.clock24
+    });
+  }, [lang, settings.timezone, settings.clock24]);
 
   const value = useMemo<I18nValue>(() => ({ lang, t, tf }), [lang, t, tf]);
 

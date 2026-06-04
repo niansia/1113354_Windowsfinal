@@ -1,5 +1,5 @@
 import React from 'react';
-import { Monitor, Folder, Piano, Clapperboard, AudioWaveform, Hand, FileUser, Plus, Code, Wrench, Database, Globe, Gamepad2, Terminal, Settings } from 'lucide-react';
+import { Monitor, Folder, Piano, Clapperboard, AudioWaveform, Hand, FileUser, Plus, Code, Wrench, Database, Globe, Gamepad2, Terminal, Settings, Map } from 'lucide-react';
 import type { FusionApp } from '../data/fusionApps';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -10,6 +10,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?:
   VID: Clapperboard,
   WAV: AudioWaveform,
   COS: Hand,
+  MAP: Map,
   USR: FileUser,
   '+': Plus,
   DEV: Code,

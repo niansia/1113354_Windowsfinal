@@ -82,19 +82,14 @@ export interface BodyPositions {
   [key: string]: Vector3;
 }
 
+// Kept for the desktop keyboard shortcut map (1-8 → planet); the hand gesture
+// for number-counting has been removed in favour of movement-based travel.
 export type NumberGestureValue = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
-
-export interface NumberGesture {
-  type: "number";
-  value: NumberGestureValue;
-  confidence: number;
-}
 
 export type GestureEvent =
   | { type: "openPalm"; amount: number }
   | { type: "closedFist"; confidence: number }
   | { type: "orbit"; velocityX: number; velocityY: number }
-  | { type: "number"; value: NumberGestureValue; confidence: number }
   | { type: "pointer"; pointer: GesturePointer }
   | { type: "swipe"; dir: "left" | "right" }
   | { type: "tilt"; dir: "up" | "down" };
