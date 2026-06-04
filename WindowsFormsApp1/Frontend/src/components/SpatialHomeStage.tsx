@@ -37,12 +37,14 @@ import { FusionThisPc } from './FusionThisPc';
 import { FusionFiles } from './FusionFiles';
 import { FusionToolbox } from './FusionToolbox';
 import { FusionDatabase } from './FusionDatabase';
+import { DesktopPet } from './DesktopPet';
 import { WALLPAPERS } from '../hooks/useFusionSettings';
 import { useSettings } from '../state/SettingsContext';
 import { useI18n } from '../i18n/I18nContext';
 import { useAccount } from '../account/AccountContext';
 import { getPerformanceProfile } from '../utils/performanceProfile';
 import { addHostMessageListener, launchApp, sendMessageToHost } from '../utils/bridge';
+import { ACCOUNT_TEXT } from '../settings/settingsText';
 
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
 const CARD_W = 208;
@@ -417,7 +419,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
           <div className="fusion-user-pill">
             <span className="fusion-user-ring" />
             <div>
-              <strong>{userProfile.displayName || 'Avery'}</strong>
+              <strong>{userProfile.displayName || t(ACCOUNT_TEXT.guest)}</strong>
               <span>{t('專業使用者')}</span>
             </div>
           </div>
@@ -643,6 +645,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
 
       <div className="fusion-brightness-veil" style={{ opacity: veilOpacity }} aria-hidden="true" />
       <div className="fusion-night-veil" style={{ opacity: settings.nightLight ? 1 : 0 }} aria-hidden="true" />
+      <DesktopPet settings={settings} onChange={update} />
 
       <FusionSettings
         open={overlayApp === 'set'}

@@ -12,8 +12,9 @@ export interface ApodData {
   source: "live" | "cache" | "fallback";
 }
 
-// DEMO_KEY works without registration (low rate limit). Replace via env if desired.
-const APOD_ENDPOINT = "https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&thumbs=true";
+// Live APOD is opt-in. DEMO_KEY is intentionally not used here because its low rate
+// limit produces browser console 429 errors in normal previews.
+const APOD_ENDPOINT = String(import.meta.env.VITE_NASA_APOD_ENDPOINT ?? "");
 const CACHE_KEY = "cosmic.apod.v1";
 const FETCH_TIMEOUT_MS = 6000;
 
@@ -60,6 +61,11 @@ export async function fetchApod(): Promise<ApodData> {
   if (cached) {
     memoryCache = cached;
     return cached;
+  }
+
+  if (!APOD_ENDPOINT) {
+    memoryCache = FALLBACK;
+    return FALLBACK;
   }
 
   const controller = new AbortController();

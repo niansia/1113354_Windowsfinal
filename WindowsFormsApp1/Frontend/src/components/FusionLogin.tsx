@@ -4,6 +4,7 @@ import { useAccount } from '../account/AccountContext';
 import { useI18n } from '../i18n/I18nContext';
 import { useSettings } from '../state/SettingsContext';
 import { LANGS, LANG_LABELS, type Lang } from '../i18n/strings';
+import { ACCOUNT_TEXT } from '../settings/settingsText';
 
 // Fullscreen login / first-run setup gate shown between the boot loader and the desktop.
 // First run (no account) => create display name + password; afterwards => password lock.
@@ -15,7 +16,7 @@ export const FusionLogin: React.FC<{ phase?: LoginPhase }> = ({ phase = 'idle' }
   const { settings, update } = useSettings();
 
   const isSetup = status === 'needsSetup';
-  const [name, setName] = useState(profile.displayName || 'Avery');
+  const [name, setName] = useState(profile.displayName || '');
   const [email, setEmail] = useState(profile.email || '');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -40,7 +41,7 @@ export const FusionLogin: React.FC<{ phase?: LoginPhase }> = ({ phase = 'idle' }
         return;
       }
       setBusy(true);
-      const result = await setup({ displayName: name.trim() || 'Fusion User', email: email.trim(), password, language: lang });
+      const result = await setup({ displayName: name.trim() || t(ACCOUNT_TEXT.fusionUser), email: email.trim(), password, language: lang });
       setBusy(false);
       if (!result.ok) setError(t('密碼錯誤，請再試一次'));
     } else {
@@ -81,7 +82,14 @@ export const FusionLogin: React.FC<{ phase?: LoginPhase }> = ({ phase = 'idle' }
           <>
             <label className="fusion-login-field">
               <span>{t('名稱')}</span>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} autoFocus maxLength={40} />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t(ACCOUNT_TEXT.fusionUser)}
+                autoFocus
+                maxLength={40}
+              />
             </label>
             <label className="fusion-login-field">
               <span>{t('電子郵件')}</span>

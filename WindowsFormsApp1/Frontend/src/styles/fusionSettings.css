@@ -640,6 +640,124 @@
   color: #ff9bb0;
 }
 
+/* ---- desktop pet settings ---- */
+.set-pet-summary {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.set-pet-preview,
+.set-pet-tile-sprite {
+  width: 74px;
+  height: 80px;
+  flex: 0 0 auto;
+  background-repeat: no-repeat;
+  background-size: 592px 720px;
+  background-position: 0 0;
+  filter:
+    drop-shadow(0 10px 16px rgba(0, 0, 0, 0.34))
+    drop-shadow(0 0 12px color-mix(in srgb, var(--accent) 26%, transparent));
+}
+
+.set-pet-summary-text {
+  min-width: 0;
+}
+
+.set-pet-summary-text strong {
+  display: block;
+  font-size: 19px;
+}
+
+.set-pet-summary-text span {
+  display: block;
+  margin-top: 4px;
+  color: rgba(203, 213, 225, 0.64);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.set-pet-badge {
+  min-width: 78px;
+  text-align: center;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #061118;
+  background: #8cf6ff;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.set-pet-badge.custom {
+  background: #d9a7ff;
+}
+
+.set-pet-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.set-pet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+  padding: 16px 18px 18px;
+}
+
+.set-pet-tile {
+  min-height: 112px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(150deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015)),
+    rgba(7, 12, 28, 0.34);
+  color: #eef6ff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.set-pet-tile:hover,
+.set-pet-tile:focus-visible,
+.set-pet-tile.active {
+  outline: none;
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 58%, transparent);
+  background:
+    radial-gradient(90% 120% at 10% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
+    rgba(10, 18, 38, 0.52);
+}
+
+.set-pet-tile strong,
+.set-pet-tile small {
+  display: block;
+}
+
+.set-pet-tile strong {
+  font-size: 14px;
+}
+
+.set-pet-tile small {
+  margin-top: 4px;
+  color: rgba(203, 213, 225, 0.62);
+  font-size: 11px;
+}
+
 /* ---- scrollbars within settings ---- */
 .set-sidebar::-webkit-scrollbar,
 .set-content-scroll::-webkit-scrollbar {

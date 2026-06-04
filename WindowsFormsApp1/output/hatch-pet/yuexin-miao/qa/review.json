@@ -1,0 +1,962 @@
+{
+  "ok": true,
+  "frames_root": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames",
+  "errors": [],
+  "warnings": [],
+  "rows": [
+    {
+      "state": "idle",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\idle\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            21,
+            178,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\idle\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            20,
+            178,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\idle\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            19,
+            178,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\idle\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            20,
+            178,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\idle\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            21,
+            178,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\idle\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            20,
+            178,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "running-right",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-right\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            5,
+            21,
+            170,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-right\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            8,
+            19,
+            173,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-right\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            11,
+            20,
+            176,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-right\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            14,
+            19,
+            179,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-right\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            17,
+            21,
+            182,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-right\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            20,
+            19,
+            185,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 6,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-right\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            23,
+            20,
+            188,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 7,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-right\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            19,
+            21,
+            184,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "running-left",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-left\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            21,
+            21,
+            186,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-left\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            18,
+            19,
+            183,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-left\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            15,
+            20,
+            180,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-left\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            12,
+            19,
+            177,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-left\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            9,
+            21,
+            174,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-left\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            6,
+            19,
+            171,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 6,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-left\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            3,
+            20,
+            168,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 7,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running-left\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            7,
+            21,
+            172,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "waving",
+      "expected_frames": 4,
+      "actual_frames": 4,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\waving\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            21,
+            178,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\waving\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            19,
+            178,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\waving\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            20,
+            178,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\waving\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            21,
+            178,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "jumping",
+      "expected_frames": 5,
+      "actual_frames": 5,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\jumping\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            25,
+            178,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\jumping\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            20,
+            178,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\jumping\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            14,
+            178,
+            192
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\jumping\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            10,
+            178,
+            188
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\jumping\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            20,
+            178,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "failed",
+      "expected_frames": 8,
+      "actual_frames": 8,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\failed\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            21,
+            178,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\failed\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            23,
+            178,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\failed\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            21,
+            178,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\failed\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            24,
+            178,
+            202
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\failed\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            22,
+            178,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\failed\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            25,
+            178,
+            203
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 6,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\failed\\06.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            23,
+            178,
+            201
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 7,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\failed\\07.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            21,
+            178,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "waiting",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\waiting\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            11,
+            21,
+            176,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\waiting\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            20,
+            178,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\waiting\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            15,
+            21,
+            180,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\waiting\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            20,
+            178,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\waiting\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            12,
+            21,
+            177,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\waiting\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            21,
+            178,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "running",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            22,
+            178,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            19,
+            178,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            21,
+            178,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            19,
+            178,
+            197
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            22,
+            178,
+            200
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\running\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            20,
+            178,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    },
+    {
+      "state": "review",
+      "expected_frames": 6,
+      "actual_frames": 6,
+      "extraction_method": null,
+      "ok": true,
+      "errors": [],
+      "warnings": [],
+      "frames": [
+        {
+          "index": 0,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\review\\00.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            12,
+            21,
+            177,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 1,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\review\\01.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            20,
+            178,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 2,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\review\\02.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            14,
+            21,
+            179,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 3,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\review\\03.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            20,
+            178,
+            198
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 4,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\review\\04.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            12,
+            21,
+            177,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        },
+        {
+          "index": 5,
+          "file": "C:\\Users\\User\\OneDrive\\\u684c\u9762\\\u8996\u7a97\\\u8996\u7a97\u671f\u672b\\WindowsFormsApp1\\WindowsFormsApp1\\output\\hatch-pet\\yuexin-miao\\frames\\review\\05.png",
+          "width": 192,
+          "height": 208,
+          "nontransparent_pixels": 21843,
+          "bbox": [
+            13,
+            21,
+            178,
+            199
+          ],
+          "edge_pixels": 0,
+          "chroma_adjacent_pixels": 0
+        }
+      ]
+    }
+  ]
+}

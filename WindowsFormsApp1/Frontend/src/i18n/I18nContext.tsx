@@ -2,6 +2,7 @@ import React, { createContext, useContext, useCallback, useMemo, useEffect } fro
 import { TRANSLATIONS, type Lang } from './strings';
 import { useSettings } from '../state/SettingsContext';
 import { sendMessageToHost } from '../utils/bridge';
+import { SETTINGS_TRANSLATIONS } from '../settings/settingsText';
 
 // Source-as-key i18n: the Traditional-Chinese string in the JSX is itself the key. For
 // zh-TW we return it unchanged; for the other four languages we look it up in
@@ -25,7 +26,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const t = useCallback(
     (source: string): string => {
       if (lang === 'zh-TW') return source;
-      const entry = TRANSLATIONS[source];
+      const entry = SETTINGS_TRANSLATIONS[source] ?? TRANSLATIONS[source];
       return (entry && entry[lang]) || source;
     },
     [lang]

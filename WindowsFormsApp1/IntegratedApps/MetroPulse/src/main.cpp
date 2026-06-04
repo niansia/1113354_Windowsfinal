@@ -270,37 +270,38 @@ bool loadGraphFile(const std::string& path, Graph& g, std::string& outLabel) {
     return true;
 }
 
-// Deterministic district laid out at real-world offsets around the user, used
-// when no live OSM points are available so the map still shows real coordinates.
+// Honest fallback used only when no live OSM data is reachable: directional
+// road-network zones around the user at REAL coordinates. Labelled by compass
+// direction so the model never pretends a real landmark (hospital, harbour...)
+// exists where it does not.
 Graph syntheticGraph(const Args& a) {
-    struct Spec { double dist, bearing, demand; const char* id; const char* type; const char* key; const char* name; };
-    static const std::array<Spec, 10> specs = {{
-        {0.0,   0.0, 0.46, "user",        "origin",      "n_origin",      "Current Position"},
-        {1.1,  25.0, 0.90, "station",     "transit",     "n_station",     "Central Station"},
-        {1.6,  95.0, 0.84, "hospital",    "priority",    "n_hospital",    "Medical District"},
-        {0.9, 205.0, 0.78, "market",      "commerce",    "n_market",      "Civic Market"},
-        {1.8, 150.0, 0.66, "campus",      "education",   "n_campus",      "University Campus"},
-        {1.3, 300.0, 0.74, "mall",        "retail",      "n_mall",        "Riverside Mall"},
-        {2.1, 120.0, 0.34, "park",        "green",       "n_park",        "Riverside Park"},
-        {3.0,  60.0, 0.62, "airport",     "gateway",     "n_terminal",    "Sky Terminal"},
-        {2.4, 320.0, 0.72, "harbor",      "freight",     "n_harbor",      "Harbor Logistics"},
-        {1.5, 240.0, 0.50, "residential", "residential", "n_residential", "Garden Residences"},
+    struct Spec { double dist, bearing, demand; const char* id; const char* key; };
+    static const std::array<Spec, 9> specs = {{
+        {0.0,   0.0, 0.46, "origin", "z_origin"},
+        {1.3,   0.0, 0.70, "z_n",  "z_n"},
+        {1.5,  45.0, 0.64, "z_ne", "z_ne"},
+        {1.7,  90.0, 0.72, "z_e",  "z_e"},
+        {1.4, 135.0, 0.58, "z_se", "z_se"},
+        {1.6, 180.0, 0.66, "z_s",  "z_s"},
+        {1.5, 225.0, 0.60, "z_sw", "z_sw"},
+        {1.8, 270.0, 0.74, "z_w",  "z_w"},
+        {1.5, 315.0, 0.56, "z_nw", "z_nw"},
     }};
     Graph g;
     g.source = "synthetic";
     for (const auto& s : specs) {
         Node n;
         n.id = s.id;
-        n.type = s.type;
+        n.type = (std::string(s.id) == "origin") ? "origin" : "zone";
         n.nameKey = s.key;
-        n.name = s.name;
+        n.name = s.id;
         n.demand = s.demand;
         if (s.dist <= 0.0001) { n.lat = a.lat; n.lon = a.lon; }
         else { auto p = destPoint(a.lat, a.lon, s.dist, s.bearing); n.lat = p.first; n.lon = p.second; }
         g.nodes.push_back(n);
     }
     g.origin = 0;
-    g.priority = 2;  // hospital
+    g.priority = -1;  // auto-pick the busiest zone as the priority target
     return g;
 }
 
@@ -320,7 +321,7 @@ void buildEdges(Graph& g) {
         e.lengthKm = std::max(0.08, haversineKm(n[i].lat, n[i].lon, n[j].lat, n[j].lon));
         e.speedKmh = e.lengthKm > 2.5 ? 58.0 : e.lengthKm > 1.4 ? 48.0 : 38.0;
         auto major = [](const std::string& t) {
-            return t == "transit" || t == "priority" || t == "origin" || t == "gateway";
+            return t == "transit" || t == "priority" || t == "origin" || t == "gateway" || t == "road";
         };
         e.lanes = (major(n[i].type) || major(n[j].type)) ? 3 : 2;
         g.edges.push_back(e);
@@ -508,9 +509,8 @@ std::string reportJson(const Args& a) {
             const auto& e = g.edges[i];
             const std::string& ta = g.nodes[e.a].type;
             const std::string& tb = g.nodes[e.b].type;
-            bool relevant = ta == "freight" || tb == "freight" || ta == "transit" || tb == "transit";
-            if (!relevant) continue;
             double score = (g.nodes[e.a].demand + g.nodes[e.b].demand) * e.lengthKm;
+            if (ta == "freight" || tb == "freight" || ta == "transit" || tb == "transit") score *= 1.4;
             if (score > worstScore) { worstScore = score; worst = static_cast<int>(i); }
         }
         if (worst >= 0) g.edges[worst].incident = true;
@@ -607,7 +607,8 @@ std::string reportJson(const Args& a) {
     std::vector<Signal> signals;
     for (size_t i = 0; i < g.nodes.size(); ++i) {
         const std::string& t = g.nodes[i].type;
-        bool signalised = t == "transit" || t == "priority" || t == "commerce" || t == "retail" || t == "gateway";
+        bool signalised = t == "transit" || t == "priority" || t == "commerce" || t == "retail"
+                       || t == "gateway" || t == "road" || t == "zone";
         if (!signalised) continue;
         std::vector<double> approachVc;
         for (const auto& e : g.edges) {

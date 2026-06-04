@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": ["node"],
+    "rootDir": ".",
+    "outDir": "../output/pet-tests",
+    "noEmit": false
+  },
+  "include": ["src/i18n/strings.ts", "src/pets/desktopPetRegistry.ts", "src/settings/**/*.ts", "tests/**/*.ts"]
+}

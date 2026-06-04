@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Accessibility,
@@ -6,6 +6,7 @@ import {
   Battery,
   Bell,
   Bluetooth,
+  Bot,
   Check,
   ChevronRight,
   Clock,
@@ -25,10 +26,14 @@ import {
   Palette,
   Plane,
   RefreshCw,
+  RotateCcw,
   Search,
   Settings as SettingsIcon,
   Shield,
+  Sparkles,
   Sun,
+  Trash2,
+  Upload,
   User,
   Volume2,
   Wifi,
@@ -40,6 +45,9 @@ import { useSystemInfo } from '../hooks/useSystemInfo';
 import { useI18n } from '../i18n/I18nContext';
 import { useAccount } from '../account/AccountContext';
 import { LANG_LABELS, LANGS } from '../i18n/strings';
+import { DEFAULT_DESKTOP_PETS } from '../pets/defaultDesktopPets';
+import { buildImportedDesktopPet, mergeDesktopPetLibrary } from '../pets/desktopPetRegistry';
+import { ACCOUNT_TEXT, DESKTOP_PET_TEXT, SETTINGS_CATEGORY_LABELS } from '../settings/settingsText';
 
 interface FusionSettingsProps {
   open: boolean;
@@ -48,11 +56,14 @@ interface FusionSettingsProps {
   onChange: <K extends keyof FusionSettingsState>(key: K, value: FusionSettingsState[K]) => void;
 }
 
+type SettingsChange = FusionSettingsProps['onChange'];
+
 type CatId =
   | 'system'
   | 'devices'
   | 'network'
   | 'personalize'
+  | 'pet'
   | 'apps'
   | 'accounts'
   | 'time'
@@ -76,6 +87,21 @@ const CATEGORIES: Array<{ id: CatId; label: string; icon: LucideIcon }> = [
 ];
 
 const ACCENTS = ['#67e8ff', '#6aa8ff', '#9c7cff', '#d56bff', '#ff6a9e', '#55d7d0', '#7ef6c8', '#ffb45c'];
+
+const SETTINGS_CATEGORIES: Array<{ id: CatId; label: string; icon: LucideIcon }> = [
+  { id: 'system', label: SETTINGS_CATEGORY_LABELS.system, icon: Cpu },
+  { id: 'devices', label: SETTINGS_CATEGORY_LABELS.devices, icon: Bluetooth },
+  { id: 'network', label: SETTINGS_CATEGORY_LABELS.network, icon: Wifi },
+  { id: 'personalize', label: SETTINGS_CATEGORY_LABELS.personalize, icon: Palette },
+  { id: 'pet', label: SETTINGS_CATEGORY_LABELS.pet, icon: Bot },
+  { id: 'apps', label: SETTINGS_CATEGORY_LABELS.apps, icon: AppWindow },
+  { id: 'accounts', label: SETTINGS_CATEGORY_LABELS.accounts, icon: User },
+  { id: 'time', label: SETTINGS_CATEGORY_LABELS.time, icon: Languages },
+  { id: 'gaming', label: SETTINGS_CATEGORY_LABELS.gaming, icon: Gamepad2 },
+  { id: 'accessibility', label: SETTINGS_CATEGORY_LABELS.accessibility, icon: Accessibility },
+  { id: 'privacy', label: SETTINGS_CATEGORY_LABELS.privacy, icon: Shield },
+  { id: 'update', label: SETTINGS_CATEGORY_LABELS.update, icon: RefreshCw }
+];
 
 /* ---------- small reusable controls ---------- */
 
@@ -255,7 +281,7 @@ function AccountSection() {
         <div className="set-profile">
           <span className="set-profile-av">{avatar}</span>
           <div className="set-profile-text">
-            <strong>{profile.displayName || 'Fusion User'}</strong>
+            <strong>{profile.displayName || t(ACCOUNT_TEXT.fusionUser)}</strong>
             <span>
               {t('專業使用者')}
               {profile.email ? ` · ${profile.email}` : ''}
@@ -343,6 +369,164 @@ function AccountSection() {
   );
 }
 
+/* ---------- desktop pet section ---------- */
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error(DESKTOP_PET_TEXT.readSpritesheetError));
+    reader.readAsDataURL(file);
+  });
+}
+
+function DesktopPetSection({ settings, onChange }: { settings: FusionSettingsState; onChange: SettingsChange }) {
+  const { t, tf } = useI18n();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const library = useMemo(
+    () => mergeDesktopPetLibrary(DEFAULT_DESKTOP_PETS, settings.desktopPetCustoms),
+    [settings.desktopPetCustoms]
+  );
+  const selected = library.find((pet) => pet.id === settings.desktopPetSelectedId) ?? library[0];
+  const customSelected = selected?.source === 'custom';
+  const selectedDescription =
+    selected.source === 'default' || selected.description === DESKTOP_PET_TEXT.importedDescription ? t(selected.description) : selected.description;
+  const importErrorSources = new Set<string>([
+    DESKTOP_PET_TEXT.readSpritesheetError,
+    DESKTOP_PET_TEXT.importPairError,
+    DESKTOP_PET_TEXT.importTooLargeError,
+    DESKTOP_PET_TEXT.invalidManifestError,
+    DESKTOP_PET_TEXT.unsupportedSpritesheetError
+  ]);
+
+  const setTemporaryMessage = (value: string, isError = false) => {
+    setMessage(isError ? '' : value);
+    setError(isError ? value : '');
+    window.setTimeout(() => {
+      setMessage('');
+      setError('');
+    }, 2800);
+  };
+
+  const importFiles = async (files: FileList | null) => {
+    const selectedFiles = Array.from(files ?? []);
+    const manifestFile = selectedFiles.find((file) => file.name.toLowerCase().endsWith('.json'));
+    const imageFile = selectedFiles.find((file) => /\.(webp|png)$/i.test(file.name) || /image\/(webp|png)/i.test(file.type));
+
+    try {
+      if (!manifestFile || !imageFile) {
+        throw new Error(DESKTOP_PET_TEXT.importPairError);
+      }
+      if (imageFile.size > 2_800_000) {
+        throw new Error(DESKTOP_PET_TEXT.importTooLargeError);
+      }
+
+      const imported = buildImportedDesktopPet({
+        manifestText: await manifestFile.text(),
+        imageDataUrl: await readFileAsDataUrl(imageFile),
+        imageName: imageFile.name
+      });
+      const nextCustoms = [imported, ...settings.desktopPetCustoms.filter((pet) => pet.id !== imported.id)].slice(0, 6);
+      onChange('desktopPetCustoms', nextCustoms);
+      onChange('desktopPetSelectedId', imported.id);
+      onChange('desktopPetEnabled', true);
+      setTemporaryMessage(tf(DESKTOP_PET_TEXT.importedStatus, imported.displayName));
+    } catch (err) {
+      const errorSource =
+        err instanceof Error && importErrorSources.has(err.message) ? err.message : DESKTOP_PET_TEXT.importFallbackError;
+      setTemporaryMessage(t(errorSource), true);
+    }
+  };
+
+  const removeSelected = () => {
+    if (!customSelected || !selected) return;
+    onChange(
+      'desktopPetCustoms',
+      settings.desktopPetCustoms.filter((pet) => pet.id !== selected.id)
+    );
+    onChange('desktopPetSelectedId', DEFAULT_DESKTOP_PETS[0].id);
+    setTemporaryMessage(tf(DESKTOP_PET_TEXT.removedStatus, selected.displayName));
+  };
+
+  return (
+    <>
+      <Group title={t(DESKTOP_PET_TEXT.companion)}>
+        <div className="set-pet-summary">
+          <span className="set-pet-preview" style={{ backgroundImage: `url("${selected.spritesheetUrl}")` }} aria-hidden="true" />
+          <div className="set-pet-summary-text">
+            <strong>{selected.displayName}</strong>
+            <span>{selectedDescription}</span>
+          </div>
+          <span className={`set-pet-badge ${selected.source}`}>
+            {selected.source === 'default' ? t(DESKTOP_PET_TEXT.preset) : t(DESKTOP_PET_TEXT.imported)}
+          </span>
+        </div>
+        <Row icon={Bot} title={t(DESKTOP_PET_TEXT.showDesktopPet)} desc={t(DESKTOP_PET_TEXT.showDesktopPetDesc)}>
+          <Toggle on={settings.desktopPetEnabled} onChange={(value) => onChange('desktopPetEnabled', value)} />
+        </Row>
+        <Row icon={Sparkles} title={t(DESKTOP_PET_TEXT.activePet)} desc={t(DESKTOP_PET_TEXT.activePetDesc)}>
+          <Picker
+            value={selected.id}
+            onChange={(value) => onChange('desktopPetSelectedId', value)}
+            options={library.map((pet) => ({ value: pet.id, label: pet.displayName }))}
+          />
+        </Row>
+        <Row icon={MousePointer2} title={t(DESKTOP_PET_TEXT.size)} desc={t(DESKTOP_PET_TEXT.sizeDesc)}>
+          <Slider value={settings.desktopPetScale} min={45} max={120} onChange={(value) => onChange('desktopPetScale', value)} />
+        </Row>
+        <Row icon={RotateCcw} title={t(DESKTOP_PET_TEXT.resetPosition)} desc={t(DESKTOP_PET_TEXT.resetPositionDesc)}>
+          <button type="button" className="set-btn" onClick={() => onChange('desktopPetPosition', { x: -1, y: -1 })}>
+            <RotateCcw size={16} /> {t(DESKTOP_PET_TEXT.reset)}
+          </button>
+        </Row>
+      </Group>
+
+      <Group title={t(DESKTOP_PET_TEXT.petLibrary)}>
+        <div className="set-pet-actions">
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".json,image/png,image/webp"
+            multiple
+            hidden
+            onChange={(event) => {
+              void importFiles(event.currentTarget.files);
+              event.currentTarget.value = '';
+            }}
+          />
+          <button type="button" className="set-btn primary" onClick={() => inputRef.current?.click()}>
+            <Upload size={16} /> {t(DESKTOP_PET_TEXT.importPet)}
+          </button>
+          <button type="button" className="set-btn" onClick={removeSelected} disabled={!customSelected}>
+            <Trash2 size={16} /> {t(DESKTOP_PET_TEXT.remove)}
+          </button>
+          {message && <span className="set-ok">{message}</span>}
+          {error && <span className="set-err">{error}</span>}
+        </div>
+        <div className="set-pet-grid">
+          {library.map((pet) => (
+            <button
+              key={pet.id}
+              type="button"
+              className={`set-pet-tile ${pet.id === selected.id ? 'active' : ''}`}
+              onClick={() => onChange('desktopPetSelectedId', pet.id)}
+            >
+              <span className="set-pet-tile-sprite" style={{ backgroundImage: `url("${pet.spritesheetUrl}")` }} aria-hidden="true" />
+              <span>
+                <strong>{pet.displayName}</strong>
+                <small>{pet.source === 'default' ? t(DESKTOP_PET_TEXT.presetCompanion) : t(DESKTOP_PET_TEXT.importedCompanion)}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+      </Group>
+    </>
+  );
+}
+
 /* ---------- main component ---------- */
 
 export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, settings: s, onChange: set }) => {
@@ -374,7 +558,7 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
     return () => window.removeEventListener('keydown', onKey, true);
   }, [open, onClose]);
 
-  const activeMeta = useMemo(() => CATEGORIES.find((c) => c.id === active) ?? CATEGORIES[0], [active]);
+  const activeMeta = useMemo(() => SETTINGS_CATEGORIES.find((c) => c.id === active) ?? SETTINGS_CATEGORIES[0], [active]);
 
   const renderContent = () => {
     switch (active) {
@@ -556,6 +740,9 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
           </>
         );
 
+      case 'pet':
+        return <DesktopPetSection settings={s} onChange={set} />;
+
       case 'apps':
         return (
           <>
@@ -732,13 +919,13 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
             <div className="set-body">
               <nav className="set-sidebar" aria-label={t('設定分類')}>
                 <div className="set-account-chip">
-                  <span className="set-account-av">{(account.profile.displayName || 'A').trim().charAt(0).toUpperCase()}</span>
+                  <span className="set-account-av">{(account.profile.displayName || t(ACCOUNT_TEXT.guest)).trim().charAt(0).toUpperCase()}</span>
                   <div>
-                    <strong>{account.profile.displayName || 'Avery'}</strong>
-                    <span>{account.profile.email || 'avery@fusion.os'}</span>
+                    <strong>{account.profile.displayName || t(ACCOUNT_TEXT.guest)}</strong>
+                    <span>{account.profile.email || 'guest@fusion.os'}</span>
                   </div>
                 </div>
-                {CATEGORIES.map((category) => {
+                {SETTINGS_CATEGORIES.map((category) => {
                   const Icon = category.icon;
                   return (
                     <button

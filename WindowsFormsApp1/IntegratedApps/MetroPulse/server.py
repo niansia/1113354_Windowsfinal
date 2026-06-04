@@ -214,6 +214,7 @@ def collect_realtime(lat: float, lon: float) -> dict[str, Any]:
         "roadKm": float(max(0.1, road_km)),
         "errors": {"forecast": forecast_error, "air": air_error, "roads": roads_error},
         "live": bool(forecast or air or roads),
+        "_roadElements": road_elements,  # raw OSM ways, used to derive real road nodes
     }
 
 
@@ -282,24 +283,91 @@ def discover_pois(lat: float, lon: float, radius_m: int = 2600) -> list[dict[str
     return chosen
 
 
-def write_graph_file(lat: float, lon: float, place: str, pois: list[dict[str, Any]]) -> str:
-    """Serialise the area label + (when found) origin/POIs into the tab-separated
-    format the engine reads. Always written as UTF-8 -- this is also how the area
-    name reaches the engine, since non-ASCII argv is codepage-mangled on Windows.
-    A live node graph is only emitted when >= 2 real places were discovered;
-    otherwise the engine keeps its synthetic district but still uses the label."""
+MAJOR_ROAD_DEMAND = {"motorway": 0.84, "trunk": 0.82, "primary": 0.78, "secondary": 0.68, "tertiary": 0.6, "unclassified": 0.5, "residential": 0.46}
+
+
+def road_nodes_from_elements(lat: float, lon: float, road_elements: list[dict[str, Any]], exclude: list[dict[str, Any]], want: int) -> list[dict[str, Any]]:
+    """Turn the real OSM road network into named graph nodes (one per major road,
+    placed at the segment nearest the centre). Genuine streets at the location, so
+    the analysis reflects the actual area even without named POIs."""
+    if want <= 0 or not road_elements:
+        return []
+    by_name: dict[str, dict[str, Any]] = {}
+    for way in road_elements:
+        tags = way.get("tags") or {}
+        hw = tags.get("highway", "")
+        if hw not in MAJOR_ROAD_DEMAND:
+            continue
+        name = tags.get("name") or tags.get("name:en") or tags.get("ref")
+        if not name:
+            continue
+        geom = way.get("geometry") or []
+        if not geom:
+            continue
+        mid = geom[len(geom) // 2]
+        d = haversine_km(lat, lon, mid["lat"], mid["lon"])
+        cur = by_name.get(name)
+        if cur is None or d < cur["dist"]:
+            by_name[name] = {"lat": float(mid["lat"]), "lon": float(mid["lon"]), "type": "road",
+                             "demand": MAJOR_ROAD_DEMAND[hw], "name": str(name), "dist": d}
+    out: list[dict[str, Any]] = []
+    for r in sorted(by_name.values(), key=lambda x: x["dist"]):
+        if len(out) >= want:
+            break
+        if any(haversine_km(r["lat"], r["lon"], e["lat"], e["lon"]) < 0.18 for e in exclude + out):
+            continue
+        out.append({k: r[k] for k in ("lat", "lon", "type", "demand", "name")})
+    return out
+
+
+def build_real_nodes(lat: float, lon: float, pois: list[dict[str, Any]], road_elements: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Real, location-specific graph nodes: discovered POIs first, topped up with
+    real named roads so the network always describes the actual area."""
+    nodes = [{"lat": c["lat"], "lon": c["lon"], "type": c["type"], "demand": c["demand"], "name": c["name"]} for c in pois]
+    if len(nodes) < 9:
+        nodes.extend(road_nodes_from_elements(lat, lon, road_elements or [], nodes, 9 - len(nodes)))
+    return nodes
+
+
+def geocode_search(query: str) -> list[dict[str, Any]]:
+    """Free-text place / address / landmark search (Nominatim) for the search box."""
+    if not query.strip():
+        return []
+    url = "https://nominatim.openstreetmap.org/search?" + urllib.parse.urlencode(
+        {"q": query, "format": "jsonv2", "limit": "6", "accept-language": "zh-TW,en"}
+    )
+    data, _ = try_fetch_json(url, 6)
+    results: list[dict[str, Any]] = []
+    if isinstance(data, list):
+        for r in data:
+            try:
+                results.append({
+                    "label": str(r.get("display_name", "")).split(",")[0],
+                    "detail": r.get("display_name", ""),
+                    "lat": float(r["lat"]), "lon": float(r["lon"]),
+                })
+            except (KeyError, TypeError, ValueError):
+                continue
+    return results
+
+
+def write_graph_file(lat: float, lon: float, place: str, nodes: list[dict[str, Any]]) -> str:
+    """Serialise the area label + real nodes into the tab-separated format the
+    engine reads. Always UTF-8 -- also how the area name reaches the engine, since
+    non-ASCII argv is codepage-mangled on Windows. A live node graph is emitted
+    only when >= 2 real nodes exist; else the engine uses its honest fallback."""
     fd, path = tempfile.mkstemp(prefix="mp_graph_", suffix=".tsv")
     os.close(fd)
     label = (place or "Current district").replace("\t", " ").replace("\n", " ").strip()
     lines = [f"L\t{label}"]
-    if len(pois) >= 2:
+    if len(nodes) >= 2:
         lines.append(f"N\tuser\t{lat:.6f}\t{lon:.6f}\t0.46\torigin\tn_origin\tCurrent Position")
         priority_id = None
-        for i, c in enumerate(pois):
-            nid = f"poi{i}"
+        for i, c in enumerate(nodes):
+            nid = f"n{i}"
             if priority_id is None and c["type"] == "priority":
                 priority_id = nid
-            name = c["name"].replace("\t", " ").strip()
+            name = (c.get("name") or "").replace("\t", " ").strip() or "Node"
             lines.append(f"N\t{nid}\t{c['lat']:.6f}\t{c['lon']:.6f}\t{c['demand']:.2f}\t{c['type']}\t\t{name}")
         lines.append("O\tuser")
         if priority_id:
@@ -353,6 +421,10 @@ class MetroPulseHandler(SimpleHTTPRequestHandler):
             loc = ip_locate() or {"lat": DEFAULT_LAT, "lon": DEFAULT_LON, "label": "Taipei", "source": "default"}
             self.write_json(loc)
             return
+        if parsed.path == "/api/search":
+            params = urllib.parse.parse_qs(parsed.query)
+            self.write_json({"results": geocode_search(params.get("q", [""])[0])})
+            return
         if parsed.path == "/api/report":
             self.handle_report(parsed.query)
             return
@@ -375,12 +447,14 @@ class MetroPulseHandler(SimpleHTTPRequestHandler):
                 realtime = f_rt.result()
                 pois = f_pois.result()
                 place = f_place.result() or requested_place
-            graph_path = write_graph_file(lat, lon, place, pois)
+            real_nodes = build_real_nodes(lat, lon, pois, realtime.get("_roadElements") or [])
+            graph_path = write_graph_file(lat, lon, place, real_nodes)
             report = run_engine(lat, lon, lang, place, realtime, graph_path)
             report["broker"] = {
                 "language": "Python",
                 "realtimeLive": realtime["live"],
-                "placesFound": len(pois),
+                "placesFound": len(real_nodes),
+                "poiCount": len(pois),
                 "geocoded": place != requested_place,
                 "errors": realtime["errors"],
             }

@@ -126,14 +126,8 @@ function buildTasks(): BootTask[] {
       timeoutMs: 1200,
       optional: true,
       run: async () => {
-        const ctrl = new AbortController();
-        const t = window.setTimeout(() => ctrl.abort(), 1000);
-        try {
-          fusionRuntimeCache.apod = await warmApod(ctrl.signal);
-          return 'NASA APOD cached';
-        } finally {
-          window.clearTimeout(t);
-        }
+        fusionRuntimeCache.apod = await warmApod();
+        return 'APOD fallback ready';
       }
     },
     { id: 'reveal', label: 'Desktop surface reveal', phase: 'reveal', weight: 1, timeoutMs: 3000, run: warmRevealSurface }

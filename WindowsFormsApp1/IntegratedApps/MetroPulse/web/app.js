@@ -26,7 +26,7 @@
       nativeCore: 'C++ 原生模擬核心', broker: 'Python 即時資料 broker', mapEngine: 'Leaflet 地圖引擎',
       sourceLive: 'OSM 真實地點', sourceSynthetic: '本地模型',
       mapLabel: '城市路網地圖',
-      eta: '醫療優先路徑', etaHint: '即時壅塞權重後的 ETA',
+      eta: '優先路徑', etaMedical: '醫療優先路徑', etaHint: '即時壅塞權重後的 ETA',
       prediction: '路徑預測', predictionHint: '現在 / +30 / +60 分',
       avgSpeed: '平均車速', avgSpeedHint: '全網行程加權',
       pressure: '路網壓力', pressureHint: '天氣、空氣與道路密度加權',
@@ -44,6 +44,9 @@
       baseDark: '深色地圖', baseLight: '淺色地圖',
       layerNetwork: '路網壅塞', layerRoute: '最佳路徑', layerAccess: '可達性圈', layerHeat: '車流熱力',
       view2d: '2D 平面', view3d: '3D 立體', geoGps: 'GPS 精準定位', geoIp: 'IP 概略定位', geoDefault: '預設位置',
+      search: '搜尋地點 / 地址 / 地標', analyzeHere: '分析此區域', searching: '搜尋中…', noResults: '找不到地點',
+      type_road: '主要道路', type_zone: '區域路網', estimated: '估算模型',
+      z_origin: '目前位置', z_n: '北側路網', z_ne: '東北路網', z_e: '東側路網', z_se: '東南路網', z_s: '南側路網', z_sw: '西南路網', z_w: '西側路網', z_nw: '西北路網',
       legendFree: '順暢', legendBusy: '繁忙', legendJam: '壅塞', legendIncident: '事故點', legendOrigin: '目前位置', legendPriority: '醫療節點',
       placesFound: '個真實地點', within15: '15 分鐘可達', within30: '30 分鐘可達',
       type_origin: '起點', type_transit: '轉運站', type_priority: '醫療', type_commerce: '市場',
@@ -61,7 +64,7 @@
       nativeCore: 'C++ 原生模拟核心', broker: 'Python 实时数据 broker', mapEngine: 'Leaflet 地图引擎',
       sourceLive: 'OSM 真实地点', sourceSynthetic: '本地模型',
       mapLabel: '城市路网地图',
-      eta: '医疗优先路径', etaHint: '实时拥堵权重后的 ETA',
+      eta: '优先路径', etaMedical: '医疗优先路径', etaHint: '实时拥堵权重后的 ETA',
       prediction: '路径预测', predictionHint: '现在 / +30 / +60 分',
       avgSpeed: '平均车速', avgSpeedHint: '全网行程加权',
       pressure: '路网压力', pressureHint: '天气、空气与道路密度加权',
@@ -79,6 +82,9 @@
       baseDark: '深色地图', baseLight: '浅色地图',
       layerNetwork: '路网拥堵', layerRoute: '最佳路径', layerAccess: '可达性圈', layerHeat: '车流热力',
       view2d: '2D 平面', view3d: '3D 立体', geoGps: 'GPS 精准定位', geoIp: 'IP 概略定位', geoDefault: '默认位置',
+      search: '搜索地点 / 地址 / 地标', analyzeHere: '分析此区域', searching: '搜索中…', noResults: '找不到地点',
+      type_road: '主要道路', type_zone: '区域路网', estimated: '估算模型',
+      z_origin: '当前位置', z_n: '北侧路网', z_ne: '东北路网', z_e: '东侧路网', z_se: '东南路网', z_s: '南侧路网', z_sw: '西南路网', z_w: '西侧路网', z_nw: '西北路网',
       legendFree: '顺畅', legendBusy: '繁忙', legendJam: '拥堵', legendIncident: '事故点', legendOrigin: '当前位置', legendPriority: '医疗节点',
       placesFound: '个真实地点', within15: '15 分钟可达', within30: '30 分钟可达',
       type_origin: '起点', type_transit: '转运站', type_priority: '医疗', type_commerce: '市场',
@@ -96,7 +102,7 @@
       nativeCore: 'C++ native simulation core', broker: 'Python realtime broker', mapEngine: 'Leaflet map engine',
       sourceLive: 'Live OSM places', sourceSynthetic: 'Local model',
       mapLabel: 'City road network',
-      eta: 'Medical priority route', etaHint: 'ETA after live congestion weighting',
+      eta: 'Priority route', etaMedical: 'Medical priority route', etaHint: 'ETA after live congestion weighting',
       prediction: 'Route forecast', predictionHint: 'now / +30 / +60 min',
       avgSpeed: 'Average speed', avgSpeedHint: 'Network travel-time weighted',
       pressure: 'Network pressure', pressureHint: 'Weather, air, and road density weighted',
@@ -114,6 +120,9 @@
       baseDark: 'Dark map', baseLight: 'Light map',
       layerNetwork: 'Network load', layerRoute: 'Best route', layerAccess: 'Reach rings', layerHeat: 'Flow heat',
       view2d: '2D', view3d: '3D', geoGps: 'GPS fix', geoIp: 'IP region', geoDefault: 'Default',
+      search: 'Search place / address / landmark', analyzeHere: 'Analyze this area', searching: 'Searching…', noResults: 'No places found',
+      type_road: 'Major road', type_zone: 'Road sector', estimated: 'Estimated model',
+      z_origin: 'Current Position', z_n: 'North sector', z_ne: 'Northeast sector', z_e: 'East sector', z_se: 'Southeast sector', z_s: 'South sector', z_sw: 'Southwest sector', z_w: 'West sector', z_nw: 'Northwest sector',
       legendFree: 'Free', legendBusy: 'Busy', legendJam: 'Jam', legendIncident: 'Incident', legendOrigin: 'You', legendPriority: 'Medical',
       placesFound: 'real places', within15: 'reachable in 15 min', within30: 'reachable in 30 min',
       type_origin: 'Origin', type_transit: 'Transit', type_priority: 'Medical', type_commerce: 'Market',
@@ -131,7 +140,7 @@
       nativeCore: 'C++ ネイティブコア', broker: 'Python リアルタイム broker', mapEngine: 'Leaflet 地図エンジン',
       sourceLive: 'OSM 実在地点', sourceSynthetic: 'ローカルモデル',
       mapLabel: '都市道路ネットワーク',
-      eta: '医療優先ルート', etaHint: 'リアルタイム混雑重み付き ETA',
+      eta: '優先ルート', etaMedical: '医療優先ルート', etaHint: 'リアルタイム混雑重み付き ETA',
       prediction: 'ルート予測', predictionHint: '現在 / +30 / +60 分',
       avgSpeed: '平均速度', avgSpeedHint: 'ネットワーク所要時間加重',
       pressure: '道路網圧力', pressureHint: '天気・空気・道路密度の加重',
@@ -149,6 +158,9 @@
       baseDark: 'ダーク地図', baseLight: 'ライト地図',
       layerNetwork: '混雑', layerRoute: '最適ルート', layerAccess: '到達圏', layerHeat: '流量ヒート',
       view2d: '2D', view3d: '3D', geoGps: 'GPS 測位', geoIp: 'IP 概算', geoDefault: '既定位置',
+      search: '場所・住所・ランドマークを検索', analyzeHere: 'このエリアを分析', searching: '検索中…', noResults: '見つかりません',
+      type_road: '幹線道路', type_zone: 'エリア道路網', estimated: '推定モデル',
+      z_origin: '現在地', z_n: '北側道路網', z_ne: '北東道路網', z_e: '東側道路網', z_se: '南東道路網', z_s: '南側道路網', z_sw: '南西道路網', z_w: '西側道路網', z_nw: '北西道路網',
       legendFree: '順調', legendBusy: '混雑', legendJam: '渋滞', legendIncident: '事故', legendOrigin: '現在地', legendPriority: '医療',
       placesFound: '件の実在地点', within15: '15分で到達', within30: '30分で到達'
     },
@@ -160,7 +172,7 @@
       nativeCore: 'C++ 네이티브 코어', broker: 'Python 실시간 broker', mapEngine: 'Leaflet 지도 엔진',
       sourceLive: 'OSM 실제 장소', sourceSynthetic: '로컬 모델',
       mapLabel: '도시 도로망',
-      eta: '의료 우선 경로', etaHint: '실시간 혼잡 가중 ETA',
+      eta: '우선 경로', etaMedical: '의료 우선 경로', etaHint: '실시간 혼잡 가중 ETA',
       prediction: '경로 예측', predictionHint: '현재 / +30 / +60 분',
       avgSpeed: '평균 속도', avgSpeedHint: '네트워크 통행시간 가중',
       pressure: '도로망 압력', pressureHint: '날씨·공기·도로 밀도 가중',
@@ -178,6 +190,9 @@
       baseDark: '다크 지도', baseLight: '라이트 지도',
       layerNetwork: '혼잡', layerRoute: '최적 경로', layerAccess: '도달 범위', layerHeat: '흐름 히트',
       view2d: '2D', view3d: '3D', geoGps: 'GPS 측위', geoIp: 'IP 추정', geoDefault: '기본 위치',
+      search: '장소 / 주소 / 랜드마크 검색', analyzeHere: '이 지역 분석', searching: '검색 중…', noResults: '장소 없음',
+      type_road: '주요 도로', type_zone: '구역 도로망', estimated: '추정 모델',
+      z_origin: '현재 위치', z_n: '북측 도로망', z_ne: '북동 도로망', z_e: '동측 도로망', z_se: '남동 도로망', z_s: '남측 도로망', z_sw: '남서 도로망', z_w: '서측 도로망', z_nw: '북서 도로망',
       legendFree: '원활', legendBusy: '혼잡', legendJam: '정체', legendIncident: '사고', legendOrigin: '현재 위치', legendPriority: '의료',
       placesFound: '개 실제 장소', within15: '15분 내 도달', within30: '30분 내 도달'
     }
@@ -210,7 +225,7 @@
   function nodeColor(node) {
     if (node.isOrigin) return '#39d9f5';
     if (node.isPriority) return '#ff6f9f';
-    const palette = { transit: '#5b8dff', commerce: '#f7c86a', education: '#9b8cff', retail: '#f7c86a', green: '#5ee0b8', gateway: '#8fe0ff', freight: '#ffa46b', residential: '#9fb6d4' };
+    const palette = { transit: '#5b8dff', commerce: '#f7c86a', education: '#9b8cff', retail: '#f7c86a', green: '#5ee0b8', gateway: '#8fe0ff', freight: '#ffa46b', residential: '#9fb6d4', road: '#8fb4dd', zone: '#7e96b8' };
     return palette[node.type] || '#5ee0b8';
   }
 
@@ -399,6 +414,7 @@
       map3dReady = true;
       if (pending3d) { apply3DGeo(pending3d); pending3d = null; }
     });
+    map3d.on('moveend', checkReanalyze);
   }
 
   function add3DBuildings() {
@@ -512,13 +528,15 @@
       `${report.location?.label || '--'} · ${Number(report.location?.lat || 0).toFixed(3)}, ${Number(report.location?.lon || 0).toFixed(3)}` + (srcKey ? ` · ${t(srcKey)}` : '');
     document.getElementById('generatedAt').textContent = report.generatedAt || '--';
 
-    // source badge
+    // source badge — be honest when the area graph is an estimated model
     const sb = document.getElementById('sourceBadge');
     const live = report.graphSource === 'live-osm';
-    sb.textContent = live ? t('sourceLive') : t('sourceSynthetic');
-    sb.className = 'chip ' + (live ? 'chip-osm' : 'chip-muted');
+    sb.textContent = live ? t('sourceLive') : t('estimated');
+    sb.className = 'chip ' + (live ? 'chip-osm' : 'chip-fallback');
 
-    // KPI cards
+    // KPI cards — label the priority route as "medical" only when it truly ends at a hospital
+    const destNode = (report.nodes || []).find((n) => n.isPriority);
+    setText('etaLabel', destNode && destNode.type === 'priority' ? t('etaMedical') : t('eta'));
     setText('etaValue', fmtMin(route.etaMinutes));
     document.getElementById('etaSub').textContent = `${nameByRawName(route.from, report)} → ${nameByRawName(route.to, report)} · ${Number(route.distanceKm || 0).toFixed(1)} km`;
     setText('predictValue', `${Number(pred.now || 0).toFixed(0)}/${Number(pred.in30 || 0).toFixed(0)}/${Number(pred.in60 || 0).toFixed(0)}`);
@@ -688,6 +706,9 @@
     const lat = Number(loc.lat != null ? loc.lat : 25.033);
     const lon = Number(loc.lon != null ? loc.lon : 121.5654);
     state.coords = { lat, lon };
+    state.suppressReanalyzeUntil = Date.now() + 1800;  // ignore the programmatic recenter
+    const reBtn = document.getElementById('reanalyzeBtn');
+    if (reBtn) reBtn.hidden = true;
     const query = new URLSearchParams({
       lat: lat.toFixed(5), lon: lon.toFixed(5), lang: state.lang,
       timezone: state.timezone, clock24: String(state.clock24),
@@ -723,8 +744,82 @@
   function applyI18n() {
     document.documentElement.lang = state.lang;
     document.querySelectorAll('[data-i18n]').forEach((node) => { node.textContent = t(node.getAttribute('data-i18n')); });
+    document.querySelectorAll('[data-i18n-ph]').forEach((node) => { node.placeholder = t(node.getAttribute('data-i18n-ph')); });
     if (map) buildLayerControl();
     render();
+  }
+
+  // -------------------------------------------------- search + drag-to-analyze
+  // Free-text place / address / landmark search -> jump there and analyse.
+  function setupSearch() {
+    const input = document.getElementById('searchInput');
+    const box = document.getElementById('searchResults');
+    if (!input || !box) return;
+    let timer = null, lastQuery = '';
+    const close = () => { box.classList.remove('open'); box.innerHTML = ''; };
+    const run = async () => {
+      const qstr = input.value.trim();
+      if (qstr.length < 2) { close(); return; }
+      lastQuery = qstr;
+      box.classList.add('open');
+      box.innerHTML = `<div class="empty">${t('searching')}</div>`;
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(qstr)}`, { cache: 'no-store' });
+        const data = await res.json();
+        if (qstr !== lastQuery) return;
+        const results = (data && data.results) || [];
+        if (!results.length) { box.innerHTML = `<div class="empty">${t('noResults')}</div>`; return; }
+        box.innerHTML = '';
+        results.forEach((r) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.innerHTML = '<span></span><small></small>';
+          b.querySelector('span').textContent = r.label || r.detail || '';
+          b.querySelector('small').textContent = r.detail || '';
+          b.addEventListener('click', () => {
+            close();
+            input.value = r.label || '';
+            state.locSource = '';
+            loadReport({ lat: r.lat, lon: r.lon, label: r.label });
+          });
+          box.appendChild(b);
+        });
+      } catch { box.innerHTML = `<div class="empty">${t('noResults')}</div>`; }
+    };
+    input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(run, 350); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { clearTimeout(timer); run(); } });
+    document.addEventListener('click', (e) => { if (!e.target.closest('.search-box')) close(); });
+  }
+
+  function currentMapCenter() {
+    try {
+      if (state.view === '3d' && map3d) { const c = map3d.getCenter(); return { lat: c.lat, lon: c.lng }; }
+      if (map) { const c = map.getCenter(); return { lat: c.lat, lon: c.lng }; }
+    } catch { /* ignore */ }
+    return state.coords;
+  }
+
+  // Reveal the "analyze this area" button once the user has panned away from the
+  // analysed centre (ignoring the programmatic recenter right after a load).
+  function checkReanalyze() {
+    const btn = document.getElementById('reanalyzeBtn');
+    if (!btn) return;
+    if (Date.now() < (state.suppressReanalyzeUntil || 0)) { btn.hidden = true; return; }
+    const c = currentMapCenter();
+    const moved = haversineKm(c.lat, c.lon, state.coords.lat, state.coords.lon);
+    btn.hidden = !(moved > 0.45);
+  }
+
+  function setupReanalyze() {
+    const btn = document.getElementById('reanalyzeBtn');
+    if (!btn) return;
+    if (map) map.on('moveend', checkReanalyze);
+    btn.addEventListener('click', () => {
+      btn.hidden = true;
+      const c = currentMapCenter();
+      state.locSource = '';
+      loadReport({ lat: c.lat, lon: c.lon });
+    });
   }
 
   window.addEventListener('message', (event) => {
@@ -746,7 +841,9 @@
   document.getElementById('locateBtn').addEventListener('click', requestLocation);
   document.querySelectorAll('.view-toggle .vt').forEach((b) => b.addEventListener('click', () => setView(b.getAttribute('data-view'))));
   setupTabs();
+  setupSearch();
   initMap();
+  setupReanalyze();
   applyI18n();
   setInterval(updateClock, 1000);
   // gentle auto-refresh keeps the forecast and clock "live" without hammering OSM

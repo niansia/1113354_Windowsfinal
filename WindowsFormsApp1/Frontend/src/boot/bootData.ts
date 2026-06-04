@@ -168,9 +168,10 @@ export async function warmTheme(): Promise<void> {
   await Promise.resolve();
 }
 
-// Optional, non-blocking NASA APOD warm-up (DNS/cache). Times out gracefully.
-export async function warmApod(signal: AbortSignal): Promise<unknown> {
-  const res = await fetch('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&thumbs=true', { signal });
-  if (!res.ok) throw new Error('apod http ' + res.status);
-  return res.json();
+// Optional APOD placeholder. The real Cosmic app owns live NASA fetching and has its
+// own offline fallback; boot should not hit DEMO_KEY because 429 responses pollute
+// the browser console during normal startup.
+export async function warmApod(): Promise<unknown> {
+  await Promise.resolve();
+  return { source: 'offline', title: 'Fusion starfield seed' };
 }

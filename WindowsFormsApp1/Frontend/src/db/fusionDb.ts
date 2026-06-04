@@ -41,10 +41,10 @@ function seed(): DatabaseState {
           { name: 'joined', type: 'text' }
         ],
         rows: [
-          { id: 1, name: 'Avery', role: 'admin', joined: '2026-01-12' },
-          { id: 2, name: 'Nova', role: 'designer', joined: '2026-02-03' },
-          { id: 3, name: 'Kai', role: 'developer', joined: '2026-03-21' },
-          { id: 4, name: 'Lin', role: 'developer', joined: '2026-04-08' }
+          { id: 1, name: '若安', role: '管理員', joined: '2026-01-12' },
+          { id: 2, name: '星璃', role: '設計師', joined: '2026-02-03' },
+          { id: 3, name: '凱文', role: '開發者', joined: '2026-03-21' },
+          { id: 4, name: '林月', role: '開發者', joined: '2026-04-08' }
         ]
       },
       {
@@ -56,10 +56,10 @@ function seed(): DatabaseState {
           { name: 'owner', type: 'text' }
         ],
         rows: [
-          { id: 1, title: 'FusionOS Shell', status: 'active', owner: 'Avery' },
-          { id: 2, title: 'Gesture Engine', status: 'active', owner: 'Kai' },
-          { id: 3, title: 'Cosmic Atlas', status: 'paused', owner: 'Nova' },
-          { id: 4, title: 'Audio Studio', status: 'done', owner: 'Lin' }
+          { id: 1, title: 'FusionOS Shell', status: '執行中', owner: '若安' },
+          { id: 2, title: 'Gesture Engine', status: '執行中', owner: '凱文' },
+          { id: 3, title: 'Cosmic Atlas', status: '已暫停', owner: '星璃' },
+          { id: 4, title: 'Audio Studio', status: '已完成', owner: '林月' }
         ]
       }
     ]

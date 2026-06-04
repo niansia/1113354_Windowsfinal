@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { isDesktopPetAsset, type DesktopPetAsset, type DesktopPetPosition } from '../pets/desktopPetRegistry';
 
 // Local, sandboxed FusionOS preferences. Most settings only change the React shell,
 // while Time & Language is forwarded to the WinForms host so native surfaces stay
@@ -42,6 +43,12 @@ export interface FusionSettingsState {
   // Update / misc
   autoUpdate: boolean;
   notifications: boolean;
+  // Desktop pet
+  desktopPetEnabled: boolean;
+  desktopPetSelectedId: string;
+  desktopPetScale: number;
+  desktopPetPosition: DesktopPetPosition;
+  desktopPetCustoms: DesktopPetAsset[];
 }
 
 export const WALLPAPERS = [
@@ -83,15 +90,35 @@ export const DEFAULT_SETTINGS: FusionSettingsState = {
   microphone: true,
   location: false,
   autoUpdate: true,
-  notifications: true
+  notifications: true,
+  desktopPetEnabled: true,
+  desktopPetSelectedId: 'yuexin-miao',
+  desktopPetScale: 72,
+  desktopPetPosition: { x: -1, y: -1 },
+  desktopPetCustoms: []
 };
 
 const STORAGE_KEY = 'fusionOsSettings.v2';
 
+function normalizeSettings(value: Partial<FusionSettingsState>): FusionSettingsState {
+  const next = { ...DEFAULT_SETTINGS, ...value };
+  next.desktopPetScale = Math.min(120, Math.max(45, Number(next.desktopPetScale) || DEFAULT_SETTINGS.desktopPetScale));
+  next.desktopPetPosition =
+    next.desktopPetPosition &&
+    Number.isFinite(next.desktopPetPosition.x) &&
+    Number.isFinite(next.desktopPetPosition.y)
+      ? next.desktopPetPosition
+      : DEFAULT_SETTINGS.desktopPetPosition;
+  next.desktopPetCustoms = Array.isArray(next.desktopPetCustoms) ? next.desktopPetCustoms.filter(isDesktopPetAsset) : [];
+  next.desktopPetSelectedId = String(next.desktopPetSelectedId || DEFAULT_SETTINGS.desktopPetSelectedId);
+  next.desktopPetEnabled = Boolean(next.desktopPetEnabled);
+  return next;
+}
+
 function loadSettings(): FusionSettingsState {
   try {
     const raw = window.localStorage?.getItem(STORAGE_KEY);
-    if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    if (raw) return normalizeSettings(JSON.parse(raw) as Partial<FusionSettingsState>);
   } catch {
     /* ignore corrupt storage */
   }

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node scripts/copy-mediapipe.js && vite",
     "build": "node scripts/copy-mediapipe.js && tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:pet": "tsc -p tsconfig.pet-tests.json && node --test ../output/pet-tests/tests/desktopPetRegistry.test.js ../output/pet-tests/tests/settingsI18n.test.js"
   },
   "keywords": [],
   "author": "",

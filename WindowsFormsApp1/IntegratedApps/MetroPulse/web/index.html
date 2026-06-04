@@ -16,6 +16,10 @@
         <h1>MetroPulse</h1>
       </div>
       <div class="top-actions">
+        <div class="search-box">
+          <input id="searchInput" type="text" autocomplete="off" placeholder="搜尋地點 / 地址 / 地標" data-i18n-ph="search">
+          <div id="searchResults" class="search-results"></div>
+        </div>
         <span id="sourceBadge" class="chip chip-muted" data-i18n="sourceSynthetic">本地模型</span>
         <span id="liveBadge" class="chip" data-i18n="waiting">等待定位</span>
         <button id="locateBtn" type="button" data-i18n="useLocation">使用目前位置</button>
@@ -36,7 +40,7 @@
     </section>
 
     <section class="kpi-strip" id="kpiStrip">
-      <div class="kpi"><span data-i18n="eta">醫療優先路徑</span><strong id="etaValue">--</strong><small id="etaSub" data-i18n="etaHint">即時壅塞權重後的 ETA</small></div>
+      <div class="kpi"><span id="etaLabel" data-i18n="eta">優先路徑</span><strong id="etaValue">--</strong><small id="etaSub" data-i18n="etaHint">即時壅塞權重後的 ETA</small></div>
       <div class="kpi"><span data-i18n="prediction">路徑預測</span><strong id="predictValue">--</strong><small id="predictSub" data-i18n="predictionHint">現在 / +30 / +60 分</small></div>
       <div class="kpi"><span data-i18n="avgSpeed">平均車速</span><strong id="speedValue">--</strong><small data-i18n="avgSpeedHint">全網行程加權</small></div>
       <div class="kpi"><span data-i18n="pressure">路網壓力</span><strong id="pressureValue">--</strong><small data-i18n="pressureHint">天氣、空氣與道路密度加權</small></div>
@@ -65,6 +69,7 @@
           <div id="map"></div>
           <div id="map3d"></div>
           <div class="map-legend" id="mapLegend"></div>
+          <button id="reanalyzeBtn" class="reanalyze-btn" type="button" data-i18n="analyzeHere" hidden>分析此區域</button>
         </div>
       </div>
 

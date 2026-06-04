@@ -1,4 +1,5 @@
 import { hasHostBridge, sendMessageToHost, addHostMessageListener } from '../utils/bridge';
+import { ACCOUNT_TEXT } from '../settings/settingsText';
 
 // Account data access. When the WinForms host (WebView2) is present, every call goes
 // over the bridge to the SQLite-backed AccountStore. In a plain browser (dev preview),
@@ -184,7 +185,7 @@ const mockClient: AccountClient = {
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const hash = await pbkdf2(input.password, salt, MOCK_ITERATIONS);
     writeMock({
-      displayName: input.displayName || 'Fusion User',
+      displayName: input.displayName || ACCOUNT_TEXT.fusionUser,
       email: input.email || '',
       language: input.language || 'zh-TW',
       salt: toB64(salt),

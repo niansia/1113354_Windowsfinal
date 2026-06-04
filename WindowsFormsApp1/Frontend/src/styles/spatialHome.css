@@ -1297,3 +1297,55 @@
 .fusion-shell {
   zoom: var(--fusion-ui-scale, 1);
 }
+
+/* ==================================================================
+   DESKTOP PET
+   ================================================================== */
+.fusion-desktop-pet {
+  position: fixed;
+  z-index: 57;
+  width: calc(192px * var(--pet-scale, 0.72));
+  height: calc(208px * var(--pet-scale, 0.72));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  filter:
+    drop-shadow(0 18px 24px rgba(0, 0, 0, 0.34))
+    drop-shadow(0 0 18px rgba(103, 232, 255, 0.22));
+}
+
+.fusion-desktop-pet:active {
+  cursor: grabbing;
+}
+
+.fusion-desktop-pet:focus-visible {
+  outline: 2px solid var(--fusion-accent, #67e8ff);
+  outline-offset: 7px;
+  border-radius: 18px;
+}
+
+.fusion-desktop-pet-sprite {
+  display: block;
+  width: 192px;
+  height: 208px;
+  background-image: var(--pet-image);
+  background-repeat: no-repeat;
+  background-size: var(--pet-atlas-w, 1536px) var(--pet-atlas-h, 1872px);
+  background-position: 0 var(--pet-row-y, 0);
+  transform: scale(var(--pet-scale, 0.72));
+  transform-origin: top left;
+  animation: fusionDesktopPetWalk var(--pet-duration, 1.2s) steps(var(--pet-frames, 6)) infinite;
+  will-change: background-position;
+}
+
+@keyframes fusionDesktopPetWalk {
+  from {
+    background-position: 0 var(--pet-row-y, 0);
+  }
+  to {
+    background-position: var(--pet-end-x, -1152px) var(--pet-row-y, 0);
+  }
+}
