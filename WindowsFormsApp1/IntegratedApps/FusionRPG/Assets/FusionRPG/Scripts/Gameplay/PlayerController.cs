@@ -14,6 +14,7 @@ namespace FusionRPG
         [SerializeField] private float dashSpeed = 13f;
         [SerializeField] private float dashDuration = 0.18f;
         [SerializeField] private float dashCooldown = 0.55f;
+        [SerializeField] private float maxMoveStepDistance = 0.08f;
 
         private CharacterController controller;
         private Vector3 planarVelocity;
@@ -24,6 +25,8 @@ namespace FusionRPG
 
         public bool IsDashing => dashTimer > 0f;
         public Vector3 MoveDirection => planarVelocity.sqrMagnitude <= 0.001f ? transform.forward : planarVelocity.normalized;
+        public float CurrentPlanarSpeed => planarVelocity.magnitude;
+        public float NormalizedMoveAmount => Mathf.Clamp01(CurrentPlanarSpeed / sprintSpeed);
 
         public void SetCamera(Camera nextCamera)
         {
@@ -102,7 +105,24 @@ namespace FusionRPG
 
             var motion = horizontal;
             motion.y = verticalVelocity;
-            controller.Move(motion * deltaTime);
+            MoveWithCollisionSubsteps(motion * deltaTime);
+        }
+
+        private void MoveWithCollisionSubsteps(Vector3 motion)
+        {
+            var distance = motion.magnitude;
+            if (distance <= Mathf.Epsilon)
+            {
+                return;
+            }
+
+            var stepDistance = Mathf.Max(0.02f, maxMoveStepDistance);
+            var steps = Mathf.Clamp(Mathf.CeilToInt(distance / stepDistance), 1, 32);
+            var step = motion / steps;
+            for (var i = 0; i < steps; i++)
+            {
+                controller.Move(step);
+            }
         }
 
         private Vector3 CameraRelativeInput(Vector2 input)

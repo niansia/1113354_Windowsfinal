@@ -17,7 +17,15 @@ namespace FusionRPG.EditorTools
         private const string BuildPath = "Build/FusionRPG.exe";
         private const string MaterialsFolder = "Assets/FusionRPG/Materials";
         private const string AcademyEnvironmentPath = "Assets/FusionRPG/Art/References/sakura_academy_environment.png";
+        private const string TempleCourtyardGlbPath = "Assets/FusionRPG/Art/Models/traditional_temple_courtyard.glb";
+        private const string TempleCourtyardBaseColorPath = "Assets/FusionRPG/Art/Models/Textures/traditional_temple_courtyard_basecolor.jpg";
+        private const string TempleCourtyardNormalPath = "Assets/FusionRPG/Art/Models/Textures/traditional_temple_courtyard_normal.jpg";
+        private const string PinkCharacterGlbPath = "Assets/FusionRPG/Art/Models/pink_fantasy_character.glb";
+        private const string PinkCharacterBaseColorPath = "Assets/FusionRPG/Art/Models/Textures/pink_fantasy_character_basecolor.jpg";
+        private const string PinkCharacterNormalPath = "Assets/FusionRPG/Art/Models/Textures/pink_fantasy_character_normal.jpg";
         private const string PreviewOutputPath = "../../../output/fusion-rpg-unity-preview.png";
+        private const float ImportedCourtyardTargetSize = 52f;
+        private const float ImportedCharacterTargetHeight = 1.12f;
 
         private static readonly Color Navy = new Color(0.05f, 0.07f, 0.14f, 1f);
         private static readonly Color Indigo = new Color(0.16f, 0.14f, 0.35f, 1f);
@@ -33,15 +41,16 @@ namespace FusionRPG.EditorTools
         public static void BuildPrototypeScene()
         {
             EnsureFolders();
+            AssetDatabase.Refresh();
             var materials = CreateMaterials();
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "SakuraAcademyPrototype";
 
-            RenderSettings.ambientLight = new Color(0.78f, 0.84f, 0.92f, 1f);
+            RenderSettings.ambientLight = new Color(0.46f, 0.52f, 0.62f, 1f);
             RenderSettings.fog = true;
-            RenderSettings.fogColor = new Color(0.82f, 0.88f, 0.95f, 1f);
-            RenderSettings.fogDensity = 0.012f;
+            RenderSettings.fogColor = new Color(0.68f, 0.76f, 0.86f, 1f);
+            RenderSettings.fogDensity = 0.006f;
 
             var root = new GameObject("Sakura Academy Prototype");
             var environment = NewGroup("Environment", root.transform);
@@ -52,6 +61,8 @@ namespace FusionRPG.EditorTools
 
             var player = BuildPlayer(gameplay.transform, materials);
             var enemy = BuildEnemy(gameplay.transform, materials, player.transform);
+            SnapCharacterToImportedGround(player);
+            SnapCharacterToImportedGround(enemy);
             var camera = BuildCamera(player.transform);
             player.GetComponent<PlayerController>().SetCamera(camera);
 
@@ -114,13 +125,107 @@ namespace FusionRPG.EditorTools
                 throw new InvalidOperationException("Cannot capture Fusion RPG preview because no camera exists in the prototype scene.");
             }
 
-            camera.transform.position = new Vector3(0f, 4.8f, -10.2f);
-            camera.transform.rotation = Quaternion.Euler(25f, 0f, 0f);
-            camera.fieldOfView = 52f;
+            camera.transform.position = new Vector3(-11f, 5.4f, 13.6f);
+            camera.transform.rotation = Quaternion.LookRotation(new Vector3(-11f, 1f, 15f) - camera.transform.position, Vector3.up);
+            camera.fieldOfView = 50f;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.67f, 0.77f, 0.84f, 1f);
 
+            CaptureCameraToPng(camera, PreviewOutputPath);
+        }
+
+        public static void CapturePrototypeTopDown()
+        {
+            if (!File.Exists(ScenePath))
+            {
+                BuildPrototypeScene();
+            }
+
+            EditorSceneManager.OpenScene(ScenePath);
+            var camera = Camera.main ?? UnityEngine.Object.FindFirstObjectByType<Camera>();
+            if (camera == null)
+            {
+                throw new InvalidOperationException("Cannot capture Fusion RPG top-down preview because no camera exists in the prototype scene.");
+            }
+
+            camera.transform.position = new Vector3(0f, 68f, 0f);
+            camera.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            camera.orthographic = true;
+            camera.orthographicSize = 28f;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.67f, 0.77f, 0.84f, 1f);
+
+            CaptureCameraToPng(camera, "../../../output/fusion-rpg-unity-topdown.png");
+        }
+
+        public static void LogOpenSpawnCandidates()
+        {
+            if (!File.Exists(ScenePath))
+            {
+                BuildPrototypeScene();
+            }
+
+            EditorSceneManager.OpenScene(ScenePath);
+            var environment = GameObject.Find("Environment");
+            if (environment == null)
+            {
+                throw new InvalidOperationException("Cannot scan spawn candidates because the Environment root is missing.");
+            }
+
+            const float cellSize = 2f;
+            var cells = new Dictionary<long, SpawnCell>();
+            foreach (var meshFilter in environment.GetComponentsInChildren<MeshFilter>())
+            {
+                var mesh = meshFilter.sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                var vertices = mesh.vertices;
+                var sampleStep = Mathf.Max(1, vertices.Length / 250000);
+                for (var i = 0; i < vertices.Length; i += sampleStep)
+                {
+                    var world = meshFilter.transform.TransformPoint(vertices[i]);
+                    var xi = Mathf.FloorToInt(world.x / cellSize);
+                    var zi = Mathf.FloorToInt(world.z / cellSize);
+                    var key = ((long)xi << 32) ^ (uint)zi;
+                    if (!cells.TryGetValue(key, out var cell))
+                    {
+                        cell = new SpawnCell(xi, zi);
+                        cells.Add(key, cell);
+                    }
+
+                    if (world.y >= -0.25f && world.y <= 0.45f)
+                    {
+                        cell.lowVertices++;
+                    }
+                    else if (world.y >= 1.05f)
+                    {
+                        cell.highVertices++;
+                    }
+                }
+            }
+
+            var candidates = new List<SpawnCell>(cells.Values);
+            candidates.RemoveAll(cell => cell.lowVertices < 40 || cell.highVertices > 8);
+            candidates.Sort((left, right) => right.Score.CompareTo(left.Score));
+
+            var count = Mathf.Min(20, candidates.Count);
+            for (var i = 0; i < count; i++)
+            {
+                var cell = candidates[i];
+                var center = cell.GetCenter(cellSize);
+                Debug.Log("Open spawn candidate " + i + ": " + center + ", low=" + cell.lowVertices + ", high=" + cell.highVertices + ", score=" + cell.Score);
+            }
+        }
+
+        private static void CaptureCameraToPng(Camera camera, string relativeOutputPath)
+        {
             var renderTexture = new RenderTexture(1280, 720, 24);
             var previousTarget = camera.targetTexture;
             var previousActive = RenderTexture.active;
+            var previousOrthographic = camera.orthographic;
             camera.targetTexture = renderTexture;
             RenderTexture.active = renderTexture;
             camera.Render();
@@ -129,7 +234,7 @@ namespace FusionRPG.EditorTools
             texture.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0);
             texture.Apply();
 
-            var outputPath = Path.GetFullPath(Path.Combine(Application.dataPath, PreviewOutputPath));
+            var outputPath = Path.GetFullPath(Path.Combine(Application.dataPath, relativeOutputPath));
             var directory = Path.GetDirectoryName(outputPath);
             if (!string.IsNullOrEmpty(directory))
             {
@@ -138,10 +243,33 @@ namespace FusionRPG.EditorTools
 
             File.WriteAllBytes(outputPath, texture.EncodeToPNG());
             camera.targetTexture = previousTarget;
+            camera.orthographic = previousOrthographic;
             RenderTexture.active = previousActive;
             UnityEngine.Object.DestroyImmediate(renderTexture);
             UnityEngine.Object.DestroyImmediate(texture);
             Debug.Log("Fusion RPG preview captured at " + outputPath);
+        }
+
+        private sealed class SpawnCell
+        {
+            private readonly int xIndex;
+            private readonly int zIndex;
+
+            public int lowVertices;
+            public int highVertices;
+
+            public SpawnCell(int xIndex, int zIndex)
+            {
+                this.xIndex = xIndex;
+                this.zIndex = zIndex;
+            }
+
+            public int Score => lowVertices - highVertices * 16;
+
+            public Vector3 GetCenter(float cellSize)
+            {
+                return new Vector3((xIndex + 0.5f) * cellSize, 0.08f, (zIndex + 0.5f) * cellSize);
+            }
         }
 
         private static void EnsureFolders()
@@ -149,6 +277,8 @@ namespace FusionRPG.EditorTools
             var folders = new[]
             {
                 "Assets/FusionRPG/Art",
+                "Assets/FusionRPG/Art/Models",
+                "Assets/FusionRPG/Art/Models/Textures",
                 "Assets/FusionRPG/Art/References",
                 "Assets/FusionRPG/Materials",
                 "Assets/FusionRPG/Prefabs",
@@ -187,6 +317,8 @@ namespace FusionRPG.EditorTools
                 ["black"] = SaveMaterial("MAT_StockingBlack", new Color(0.02f, 0.018f, 0.026f, 1f), 0f, 0.52f),
                 ["water"] = SaveMaterial("MAT_PondWater", new Color(0.22f, 0.75f, 0.95f, 0.62f), 0f, 0.88f, true),
                 ["burst"] = SaveMaterial("MAT_SakuraFrostBurst", new Color(0.68f, 0.95f, 1f, 0.42f), 0f, 0.95f, true),
+                ["templeCourtyard"] = SaveTempleCourtyardMaterial(),
+                ["pinkCharacter"] = SavePinkCharacterMaterial(),
                 ["backdrop"] = SaveTextureMaterial("MAT_AcademyPaintedBackdrop", AcademyEnvironmentPath, Color.white)
             };
             return materials;
@@ -249,6 +381,80 @@ namespace FusionRPG.EditorTools
             return material;
         }
 
+        private static Material SaveTempleCourtyardMaterial()
+        {
+            var path = MaterialsFolder + "/MAT_ImportedTempleCourtyard.mat";
+            var shader = Shader.Find("Standard") ?? Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Unlit/Texture");
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.shader = shader;
+            var baseColor = AssetDatabase.LoadAssetAtPath<Texture2D>(TempleCourtyardBaseColorPath);
+            var normal = AssetDatabase.LoadAssetAtPath<Texture2D>(TempleCourtyardNormalPath);
+
+            if (baseColor != null)
+            {
+                if (material.HasProperty("_MainTex")) material.SetTexture("_MainTex", baseColor);
+                if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", baseColor);
+            }
+
+            if (normal != null)
+            {
+                if (material.HasProperty("_BumpMap")) material.SetTexture("_BumpMap", normal);
+                if (material.HasProperty("_BumpScale")) material.SetFloat("_BumpScale", 0.45f);
+                material.EnableKeyword("_NORMALMAP");
+            }
+
+            if (material.HasProperty("_Color")) material.SetColor("_Color", Color.white);
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", Color.white);
+            if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 0.04f);
+            if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", 0.34f);
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.34f);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material SavePinkCharacterMaterial()
+        {
+            var path = MaterialsFolder + "/MAT_PinkFantasyCharacter.mat";
+            var shader = Shader.Find("Standard") ?? Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Unlit/Texture");
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.shader = shader;
+            var baseColor = AssetDatabase.LoadAssetAtPath<Texture2D>(PinkCharacterBaseColorPath);
+            var normal = AssetDatabase.LoadAssetAtPath<Texture2D>(PinkCharacterNormalPath);
+
+            if (baseColor != null)
+            {
+                if (material.HasProperty("_MainTex")) material.SetTexture("_MainTex", baseColor);
+                if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", baseColor);
+            }
+
+            if (normal != null)
+            {
+                if (material.HasProperty("_BumpMap")) material.SetTexture("_BumpMap", normal);
+                if (material.HasProperty("_BumpScale")) material.SetFloat("_BumpScale", 0.55f);
+                material.EnableKeyword("_NORMALMAP");
+            }
+
+            if (material.HasProperty("_Color")) material.SetColor("_Color", Color.white);
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", Color.white);
+            if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 0.02f);
+            if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", 0.42f);
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.42f);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
         private static GameObject NewGroup(string name, Transform parent)
         {
             var group = new GameObject(name);
@@ -262,20 +468,26 @@ namespace FusionRPG.EditorTools
             var light = sun.AddComponent<Light>();
             light.type = LightType.Directional;
             light.color = new Color(1f, 0.88f, 0.82f, 1f);
-            light.intensity = 1.35f;
+            light.intensity = 0.85f;
             sun.transform.rotation = Quaternion.Euler(45f, -38f, 0f);
 
             var fill = new GameObject("Ice Blue Fill Light");
             var fillLight = fill.AddComponent<Light>();
             fillLight.type = LightType.Point;
             fillLight.color = IceBlue;
-            fillLight.intensity = 1.8f;
-            fillLight.range = 18f;
-            fill.transform.position = new Vector3(-4f, 5f, 2f);
+            fillLight.intensity = 0.55f;
+            fillLight.range = 34f;
+            fill.transform.position = new Vector3(-8f, 7f, 3f);
         }
 
         private static void BuildCourtyard(Transform parent, Dictionary<string, Material> materials)
         {
+            if (TryBuildImportedTempleCourtyard(parent, materials["templeCourtyard"]))
+            {
+                BuildPetalField(parent, materials);
+                return;
+            }
+
             BuildPaintedBackdrop(parent, materials);
             CreateCube("Foundation Slab", new Vector3(0f, -0.08f, 0f), new Vector3(28f, 0.12f, 24f), materials["paleStone"], parent);
 
@@ -321,6 +533,203 @@ namespace FusionRPG.EditorTools
             }
 
             BuildPetalField(parent, materials);
+        }
+
+        private static bool TryBuildImportedTempleCourtyard(Transform parent, Material courtyardMaterial)
+        {
+            var importedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(TempleCourtyardGlbPath);
+            if (importedPrefab == null)
+            {
+                Debug.LogWarning("Temple courtyard GLB is not available as an imported GameObject yet. Falling back to procedural Sakura Academy blockout.");
+                return false;
+            }
+
+            var group = NewGroup("Imported Temple Courtyard", parent);
+            var instance = PrefabUtility.InstantiatePrefab(importedPrefab, group.transform) as GameObject;
+            if (instance == null)
+            {
+                instance = UnityEngine.Object.Instantiate(importedPrefab, group.transform);
+            }
+
+            instance.name = "Traditional Temple Courtyard GLB";
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localRotation = Quaternion.identity;
+            instance.transform.localScale = Vector3.one;
+
+            NormalizeImportedModel(group.transform, instance.transform);
+            AssignImportedCourtyardMaterial(instance.transform, courtyardMaterial);
+            AddMeshColliders(instance.transform);
+            SetStaticRecursive(group);
+
+            Debug.Log("Using imported temple courtyard GLB for Sakura Academy terrain.");
+            return true;
+        }
+
+        private static void AssignImportedCourtyardMaterial(Transform root, Material material)
+        {
+            if (material == null)
+            {
+                return;
+            }
+
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>())
+            {
+                renderer.sharedMaterial = material;
+            }
+        }
+
+        private static void NormalizeImportedModel(Transform group, Transform instance)
+        {
+            if (!TryGetRendererBounds(group, out var bounds))
+            {
+                return;
+            }
+
+            var horizontalSize = Mathf.Max(bounds.size.x, bounds.size.z);
+            if (horizontalSize > 0.01f)
+            {
+                var scale = ImportedCourtyardTargetSize / horizontalSize;
+                instance.localScale *= scale;
+            }
+
+            if (!TryGetRendererBounds(group, out bounds))
+            {
+                return;
+            }
+
+            var offset = new Vector3(-bounds.center.x, -bounds.min.y, -bounds.center.z);
+            instance.position += offset;
+        }
+
+        private static bool TryGetRendererBounds(Transform root, out Bounds bounds)
+        {
+            var renderers = root.GetComponentsInChildren<Renderer>();
+            bounds = new Bounds(root.position, Vector3.zero);
+            var hasBounds = false;
+
+            foreach (var renderer in renderers)
+            {
+                if (!renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return hasBounds;
+        }
+
+        private static void AddMeshColliders(Transform root)
+        {
+            foreach (var meshFilter in root.GetComponentsInChildren<MeshFilter>())
+            {
+                if (meshFilter.sharedMesh == null || meshFilter.GetComponent<Collider>() != null)
+                {
+                    continue;
+                }
+
+                var collider = meshFilter.gameObject.AddComponent<MeshCollider>();
+                collider.convex = false;
+                collider.cookingOptions =
+                    MeshColliderCookingOptions.CookForFasterSimulation |
+                    MeshColliderCookingOptions.EnableMeshCleaning |
+                    MeshColliderCookingOptions.WeldColocatedVertices;
+                collider.sharedMesh = meshFilter.sharedMesh;
+                Debug.Log("Added precise MeshCollider for imported mesh '" + meshFilter.sharedMesh.name + "' (" + GetMeshTriangleCount(meshFilter.sharedMesh) + " triangles).");
+            }
+        }
+
+        private static long GetMeshTriangleCount(Mesh mesh)
+        {
+            long triangleCount = 0;
+            for (var subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
+            {
+                if (mesh.GetTopology(subMesh) == MeshTopology.Triangles)
+                {
+                    triangleCount += (long)mesh.GetIndexCount(subMesh) / 3;
+                }
+            }
+
+            return triangleCount;
+        }
+
+        private static void AddGameplayFloor(Transform parent)
+        {
+            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            floor.name = "Imported Courtyard Gameplay Floor";
+            floor.transform.SetParent(parent, false);
+            floor.transform.localPosition = new Vector3(0f, -0.08f, 0f);
+            floor.transform.localScale = new Vector3(54f, 0.12f, 42f);
+
+            var renderer = floor.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                UnityEngine.Object.DestroyImmediate(renderer);
+            }
+        }
+
+        private static void SnapCharacterToImportedGround(GameObject actor)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            Physics.SyncTransforms();
+            var origin = actor.transform.position + Vector3.up * 15f;
+            var hits = Physics.RaycastAll(origin, Vector3.down, 40f);
+            if (hits == null || hits.Length == 0)
+            {
+                return;
+            }
+
+            RaycastHit? bestHit = null;
+            foreach (var hit in hits)
+            {
+                if (hit.collider == null || hit.collider.isTrigger || hit.collider.transform.IsChildOf(actor.transform))
+                {
+                    continue;
+                }
+
+                if (!(hit.collider is MeshCollider))
+                {
+                    continue;
+                }
+
+                if (!bestHit.HasValue || hit.distance < bestHit.Value.distance)
+                {
+                    bestHit = hit;
+                }
+            }
+
+            if (!bestHit.HasValue)
+            {
+                return;
+            }
+
+            var controller = actor.GetComponent<CharacterController>();
+            var relativeBottom = controller != null ? controller.center.y - controller.height * 0.5f : 0f;
+            var position = actor.transform.position;
+            position.y = bestHit.Value.point.y - relativeBottom + 0.012f;
+            actor.transform.position = position;
+        }
+
+        private static void SetStaticRecursive(GameObject obj)
+        {
+            obj.isStatic = true;
+            foreach (Transform child in obj.transform)
+            {
+                SetStaticRecursive(child.gameObject);
+            }
         }
 
         private static void BuildPaintedBackdrop(Transform parent, Dictionary<string, Material> materials)
@@ -616,7 +1025,7 @@ namespace FusionRPG.EditorTools
         {
             var petals = new GameObject("Falling Sakura Petals");
             petals.transform.SetParent(parent, false);
-            petals.transform.position = new Vector3(0f, 7f, 0f);
+            petals.transform.position = new Vector3(0f, 8.5f, 0f);
             var ps = petals.AddComponent<ParticleSystem>();
             var main = ps.main;
             main.startColor = new ParticleSystem.MinMaxGradient(SoftPink, SakuraPink);
@@ -628,7 +1037,7 @@ namespace FusionRPG.EditorTools
             emission.rateOverTime = 26f;
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(22f, 1f, 18f);
+            shape.scale = new Vector3(44f, 1f, 32f);
             var renderer = petals.GetComponent<ParticleSystemRenderer>();
             renderer.sharedMaterial = materials["softPink"];
         }
@@ -637,13 +1046,17 @@ namespace FusionRPG.EditorTools
         {
             var player = new GameObject("Sakuraba Sakura");
             player.transform.SetParent(parent, false);
-            player.transform.position = new Vector3(0f, 0.08f, -3.7f);
+            player.transform.position = new Vector3(-11f, 0.08f, 15f);
             player.transform.rotation = Quaternion.Euler(0f, 0f, 0f);
 
             var controller = player.AddComponent<CharacterController>();
-            controller.center = new Vector3(0f, 0.95f, 0f);
-            controller.height = 1.9f;
-            controller.radius = 0.35f;
+            controller.center = new Vector3(0f, 0.6f, 0f);
+            controller.height = 1.16f;
+            controller.radius = 0.2f;
+            controller.skinWidth = 0.025f;
+            controller.stepOffset = 0.2f;
+            controller.slopeLimit = 55f;
+            controller.minMoveDistance = 0f;
 
             var health = player.AddComponent<Health>();
             health.ConfigureMaxHealth(120);
@@ -651,7 +1064,9 @@ namespace FusionRPG.EditorTools
             player.AddComponent<PlayerController>();
             player.AddComponent<PlayerCombat>();
 
-            var visuals = NewGroup("Stylized Character Visuals", player.transform);
+            var visuals = NewGroup("Player Character Visuals", player.transform);
+            if (!TryBuildImportedPlayerCharacter(visuals.transform, materials["pinkCharacter"]))
+            {
             CreateCapsule("Uniform Body", new Vector3(0f, 0.95f, 0f), new Vector3(0.42f, 0.72f, 0.42f), materials["navy"], visuals.transform, true);
             CreateSphere("Head", new Vector3(0f, 1.78f, 0f), Vector3.one * 0.42f, materials["white"], visuals.transform, true);
             CreateCapsule("Sakura Hair Fall", new Vector3(0f, 1.35f, 0.24f), new Vector3(0.55f, 1.35f, 0.55f), materials["sakura"], visuals.transform, true);
@@ -690,6 +1105,9 @@ namespace FusionRPG.EditorTools
             CreateVisualCube("Katana Sheath", new Vector3(0.72f, 0.84f, 0.08f), new Vector3(0.08f, 1.3f, 0.08f), materials["trimDark"], visuals.transform, Quaternion.Euler(0f, 0f, -34f));
             CreateVisualCube("Katana Blade Glint", new Vector3(0.91f, 1.16f, -0.04f), new Vector3(0.045f, 1.05f, 0.035f), materials["blade"], visuals.transform, Quaternion.Euler(0f, 0f, -34f));
             CreateVisualCube("Katana Guard", new Vector3(0.58f, 0.55f, 0.06f), new Vector3(0.26f, 0.05f, 0.08f), materials["gold"], visuals.transform, Quaternion.Euler(0f, 0f, -34f));
+            }
+
+            player.AddComponent<PlayerModelAnimator>().Configure(player.GetComponent<PlayerController>(), visuals.transform);
 
             var skillObject = new GameObject("Sakura Frost Burst Skill");
             skillObject.transform.SetParent(player.transform, false);
@@ -697,6 +1115,76 @@ namespace FusionRPG.EditorTools
             skillObject.AddComponent<SkillEffect>().Configure(materials["burst"], 48, 3.2f);
 
             return player;
+        }
+
+        private static bool TryBuildImportedPlayerCharacter(Transform parent, Material characterMaterial)
+        {
+            var importedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PinkCharacterGlbPath);
+            if (importedPrefab == null)
+            {
+                Debug.LogWarning("Pink fantasy character GLB is not available as an imported GameObject yet. Falling back to procedural character visuals.");
+                return false;
+            }
+
+            var instance = PrefabUtility.InstantiatePrefab(importedPrefab, parent) as GameObject;
+            if (instance == null)
+            {
+                instance = UnityEngine.Object.Instantiate(importedPrefab, parent);
+            }
+
+            instance.name = "Pink Fantasy Character GLB";
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localRotation = Quaternion.identity;
+            instance.transform.localScale = Vector3.one;
+
+            NormalizePlayerCharacterVisual(parent, instance.transform);
+            AssignImportedCharacterMaterial(instance.transform, characterMaterial);
+
+            Debug.Log("Using imported pink fantasy character GLB for player visuals.");
+            return true;
+        }
+
+        private static void NormalizePlayerCharacterVisual(Transform parent, Transform instance)
+        {
+            if (!TryGetRendererBounds(instance, out var bounds))
+            {
+                return;
+            }
+
+            if (bounds.size.y > 0.01f)
+            {
+                var scale = ImportedCharacterTargetHeight / bounds.size.y;
+                instance.localScale *= scale;
+            }
+
+            if (!TryGetRendererBounds(instance, out bounds))
+            {
+                return;
+            }
+
+            var targetBase = parent.position;
+            var offset = new Vector3(targetBase.x - bounds.center.x, targetBase.y - bounds.min.y, targetBase.z - bounds.center.z);
+            instance.position += offset;
+
+            if (TryGetRendererBounds(instance, out bounds))
+            {
+                Debug.Log("Imported player character normalized. Bounds size: " + bounds.size + ", center: " + bounds.center + ", scale: " + instance.localScale);
+            }
+        }
+
+        private static void AssignImportedCharacterMaterial(Transform root, Material material)
+        {
+            if (material == null)
+            {
+                return;
+            }
+
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>())
+            {
+                renderer.sharedMaterial = material;
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                renderer.receiveShadows = true;
+            }
         }
 
         private static void BuildHairFlower(Transform parent, Dictionary<string, Material> materials, Vector3 position)
@@ -724,11 +1212,11 @@ namespace FusionRPG.EditorTools
         {
             var enemy = new GameObject("Training Sentinel");
             enemy.transform.SetParent(parent, false);
-            enemy.transform.position = new Vector3(0f, 0.08f, 2.7f);
+            enemy.transform.position = new Vector3(-5f, 0.08f, 17f);
             var controller = enemy.AddComponent<CharacterController>();
-            controller.center = new Vector3(0f, 0.8f, 0f);
-            controller.height = 1.6f;
-            controller.radius = 0.33f;
+            controller.center = new Vector3(0f, 0.62f, 0f);
+            controller.height = 1.2f;
+            controller.radius = 0.28f;
 
             var health = enemy.AddComponent<Health>();
             health.ConfigureMaxHealth(100);
@@ -747,14 +1235,15 @@ namespace FusionRPG.EditorTools
         {
             var cameraObject = new GameObject("Third Person Camera");
             cameraObject.tag = "MainCamera";
-            cameraObject.transform.position = new Vector3(0f, 4.2f, -9f);
-            cameraObject.transform.rotation = Quaternion.Euler(24f, 0f, 0f);
+            cameraObject.transform.position = new Vector3(-11f, 5.4f, 13.6f);
+            cameraObject.transform.rotation = Quaternion.Euler(72f, 0f, 0f);
             var camera = cameraObject.AddComponent<Camera>();
-            camera.fieldOfView = 54f;
+            camera.fieldOfView = 50f;
             camera.nearClipPlane = 0.08f;
-            camera.farClipPlane = 120f;
+            camera.farClipPlane = 180f;
             var orbit = cameraObject.AddComponent<ThirdPersonCamera>();
             orbit.SetTarget(target);
+            orbit.ConfigureForPrototype(new Vector3(0f, 0.82f, 0f), 4.5f, 72f);
             return camera;
         }
 

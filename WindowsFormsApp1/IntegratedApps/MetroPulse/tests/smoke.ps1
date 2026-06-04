@@ -38,16 +38,39 @@ $text = Get-Content -LiteralPath $report -Raw -Encoding UTF8
 foreach ($needle in @(
     "window.METROPULSE_REPORT",
     '"city":"fusion-harbor"',
+    '"graphSource"',
+    '"nodes"',
+    '"edges"',
     '"optimizedRoute"',
+    '"predictedRoute"',
     '"signalPlan"',
     '"incidentResponse"',
-    '"districts"',
-    '"simulationFrames"',
+    '"accessibility"',
+    '"bottlenecks"',
+    '"kpis"',
+    '"forecast"',
     '"language":"zh-TW"'
 )) {
     if ($text -notlike "*$needle*") {
         throw "Report missing expected marker: $needle"
     }
 }
+
+# A live geographic graph fed via --graph must round-trip through the engine.
+$graphFile = Join-Path $build "_smoke_graph.tsv"
+@(
+    "N`tuser`t25.0330`t121.5654`t0.46`torigin`tn_origin`tCurrent Position",
+    "N`tpoi0`t25.0480`t121.5170`t0.90`ttransit`t`tTaipei Main Station",
+    "N`tpoi1`t25.0410`t121.5650`t0.84`tpriority`t`tCity Hospital",
+    "N`tpoi2`t25.0330`t121.5430`t0.78`tcommerce`t`tCentral Market",
+    "O`tuser",
+    "P`tpoi1"
+) -join "`n" | Out-File -LiteralPath $graphFile -Encoding utf8
+
+$live = & $exe --city fusion-harbor --lang zh-TW --lat 25.0330 --lon 121.5654 --graph $graphFile --out -
+if ($LASTEXITCODE -ne 0) { throw "MetroPulse engine failed on live graph with exit code $LASTEXITCODE" }
+if ($live -notlike '*"graphSource":"live-osm"*') { throw "Engine did not accept the live --graph input" }
+if ($live -notlike '*Taipei Main Station*') { throw "Live graph node name missing from report" }
+Remove-Item -LiteralPath $graphFile -Force -ErrorAction SilentlyContinue
 
 Write-Output "MetroPulse smoke test passed."

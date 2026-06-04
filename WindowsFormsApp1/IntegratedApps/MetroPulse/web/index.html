@@ -4,16 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MetroPulse</title>
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="vendor/maplibre/maplibre-gl.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main class="metro-shell">
     <header class="metro-topbar">
-      <div>
+      <div class="brand">
         <span class="eyebrow" data-i18n="productLabel">智慧城市交通中樞</span>
         <h1>MetroPulse</h1>
       </div>
       <div class="top-actions">
+        <span id="sourceBadge" class="chip chip-muted" data-i18n="sourceSynthetic">本地模型</span>
+        <span id="liveBadge" class="chip" data-i18n="waiting">等待定位</span>
         <button id="locateBtn" type="button" data-i18n="useLocation">使用目前位置</button>
         <span id="clock" class="clock">--:--</span>
       </div>
@@ -21,87 +25,94 @@
 
     <section class="hero-band">
       <div>
-        <h2 data-i18n="headline">即時路網、天氣與事故調度整合</h2>
-        <p data-i18n="subhead">定位後會結合開放資料與本機原生模擬核心，產生目前地區的交通決策視圖。</p>
+        <h2 data-i18n="headline">即時路網、預測與事故調度整合</h2>
+        <p data-i18n="subhead">定位後結合 OpenStreetMap 真實地點、開放天氣資料與本機 C++ 模擬核心，產生目前地區的交通決策視圖。</p>
       </div>
       <div class="status-strip">
-        <span id="liveBadge" data-i18n="waiting">等待定位</span>
-        <span data-i18n="nativeCore">原生模擬核心</span>
+        <span data-i18n="nativeCore">C++ 原生模擬核心</span>
         <span data-i18n="broker">Python 即時資料 broker</span>
+        <span data-i18n="mapEngine">Leaflet 地圖引擎</span>
       </div>
+    </section>
+
+    <section class="kpi-strip" id="kpiStrip">
+      <div class="kpi"><span data-i18n="eta">醫療優先路徑</span><strong id="etaValue">--</strong><small id="etaSub" data-i18n="etaHint">即時壅塞權重後的 ETA</small></div>
+      <div class="kpi"><span data-i18n="prediction">路徑預測</span><strong id="predictValue">--</strong><small id="predictSub" data-i18n="predictionHint">現在 / +30 / +60 分</small></div>
+      <div class="kpi"><span data-i18n="avgSpeed">平均車速</span><strong id="speedValue">--</strong><small data-i18n="avgSpeedHint">全網行程加權</small></div>
+      <div class="kpi"><span data-i18n="pressure">路網壓力</span><strong id="pressureValue">--</strong><small data-i18n="pressureHint">天氣、空氣與道路密度加權</small></div>
+      <div class="kpi"><span data-i18n="reliability">路網可靠度</span><strong id="reliabilityValue">--</strong><small data-i18n="reliabilityHint">行程時間穩定度</small></div>
+      <div class="kpi"><span data-i18n="air">空氣品質</span><strong id="airValue">--</strong><small>PM2.5 / AQI</small></div>
+      <div class="kpi"><span data-i18n="roads">附近道路</span><strong id="roadValue">--</strong><small data-i18n="roadsHint">OSM Overpass 即時摘要</small></div>
+      <div class="kpi"><span data-i18n="peak">尖峰預測</span><strong id="peakValue">--</strong><small data-i18n="peakHint">未來兩小時最高負載</small></div>
     </section>
 
     <section class="metro-grid">
       <div class="map-panel">
         <div class="panel-head">
           <div>
-            <span data-i18n="mapLabel">城市脈流圖</span>
+            <span data-i18n="mapLabel">城市路網地圖</span>
             <strong id="locationLabel">--</strong>
           </div>
-          <small id="generatedAt">--</small>
+          <div class="map-head-right">
+            <div class="view-toggle" id="viewToggle">
+              <button class="vt active" type="button" data-view="2d" data-i18n="view2d">2D 平面</button>
+              <button class="vt" type="button" data-view="3d" data-i18n="view3d">3D 立體</button>
+            </div>
+            <small id="generatedAt">--</small>
+          </div>
         </div>
-        <canvas id="cityCanvas" width="1100" height="700" aria-label="MetroPulse city map"></canvas>
+        <div class="map-stage">
+          <div id="map"></div>
+          <div id="map3d"></div>
+          <div class="map-legend" id="mapLegend"></div>
+        </div>
       </div>
 
-      <aside class="metrics-panel">
-        <div class="metric">
-          <span data-i18n="eta">醫療優先路徑</span>
-          <strong id="etaValue">--</strong>
-          <small data-i18n="etaHint">即時壅塞權重後的 ETA</small>
+      <aside class="side-panel">
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-tab="route" data-i18n="route">最佳路徑</button>
+          <button class="tab" data-tab="bottleneck" data-i18n="bottlenecks">瓶頸分析</button>
+          <button class="tab" data-tab="access" data-i18n="accessibility">可達性</button>
+          <button class="tab" data-tab="signals" data-i18n="signals">號誌策略</button>
+          <button class="tab" data-tab="incident" data-i18n="incident">事故調度</button>
         </div>
-        <div class="metric">
-          <span data-i18n="pressure">路網壓力</span>
-          <strong id="pressureValue">--</strong>
-          <small data-i18n="pressureHint">天氣、空氣與道路密度加權</small>
-        </div>
-        <div class="metric">
-          <span data-i18n="air">空氣品質</span>
-          <strong id="airValue">--</strong>
-          <small>PM2.5 / AQI</small>
-        </div>
-        <div class="metric">
-          <span data-i18n="roads">附近道路</span>
-          <strong id="roadValue">--</strong>
-          <small data-i18n="roadsHint">OSM Overpass 即時摘要</small>
+        <div class="tab-body">
+          <div class="tab-pane active" data-pane="route">
+            <p class="pane-lead"><span id="routeNodes">--</span></p>
+            <div id="segments" class="row-list"></div>
+          </div>
+          <div class="tab-pane" data-pane="bottleneck">
+            <p class="pane-lead" data-i18n="bottleneckHint">依車輛延誤排序的關鍵路段。</p>
+            <div id="bottlenecks" class="row-list"></div>
+          </div>
+          <div class="tab-pane" data-pane="access">
+            <p class="pane-lead"><span id="accessSummary">--</span></p>
+            <div id="accessibility" class="row-list"></div>
+          </div>
+          <div class="tab-pane" data-pane="signals">
+            <p class="pane-lead" data-i18n="signalHint">Webster 自適應週期最佳化。</p>
+            <div id="signals" class="row-list"></div>
+          </div>
+          <div class="tab-pane" data-pane="incident">
+            <p class="pane-lead"><span id="incidentTitle">--</span></p>
+            <div id="units" class="row-list"></div>
+          </div>
         </div>
       </aside>
-    </section>
-
-    <section class="lower-grid">
-      <section class="work-panel">
-        <div class="panel-head">
-          <span data-i18n="route">最佳路徑</span>
-          <small id="routeNodes">--</small>
-        </div>
-        <div id="segments" class="segment-list"></div>
-      </section>
-
-      <section class="work-panel">
-        <div class="panel-head">
-          <span data-i18n="signals">號誌策略</span>
-          <small data-i18n="adaptive">自適應週期</small>
-        </div>
-        <div id="signals" class="signal-list"></div>
-      </section>
-
-      <section class="work-panel">
-        <div class="panel-head">
-          <span data-i18n="incident">事故調度</span>
-          <small id="incidentEta">--</small>
-        </div>
-        <div id="units" class="unit-list"></div>
-      </section>
     </section>
 
     <section class="trend-panel">
       <div class="panel-head">
         <span data-i18n="forecast">兩小時流量預測</span>
-        <small data-i18n="forecastHint">由即時壓力驅動的離散模擬</small>
+        <small data-i18n="forecastHint">由 C++ 時段需求模型與即時壓力驅動</small>
       </div>
-      <canvas id="trendCanvas" width="1200" height="260" aria-label="MetroPulse trend chart"></canvas>
+      <canvas id="trendCanvas" width="1280" height="280" aria-label="MetroPulse forecast chart"></canvas>
     </section>
   </main>
 
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/leaflet/leaflet-heat.js"></script>
+  <script src="vendor/maplibre/maplibre-gl.js"></script>
   <script src="report.generated.js"></script>
   <script src="app.js"></script>
 </body>

@@ -13,12 +13,17 @@ namespace FusionRPG
         [SerializeField] private float attackForwardOffset = 1.25f;
         [SerializeField] private float attackCooldown = 0.28f;
         [SerializeField] private float skillCooldownSeconds = 4.5f;
+        [SerializeField] private float mouseClickDragThreshold = 8f;
         [SerializeField] private LayerMask targetLayers = ~0;
 
         private DamageHitbox hitbox;
         private CombatCombo combo;
         private SkillCooldown skillCooldown;
         private float nextAttackTime;
+        private Vector2 leftMouseDownPosition;
+        private Vector2 rightMouseDownPosition;
+        private bool leftMouseDragged;
+        private bool rightMouseDragged;
 
         public float SkillCooldownRemaining01 => skillCooldown == null ? 0f : skillCooldown.NormalizedRemaining;
 
@@ -37,15 +42,32 @@ namespace FusionRPG
         {
             skillCooldown.Tick(Time.deltaTime);
 
-            if (Input.GetMouseButtonDown(0))
+            if (ConsumeMouseClick(0, ref leftMouseDownPosition, ref leftMouseDragged))
             {
                 TryBasicAttack(Time.time);
             }
 
-            if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(1))
+            if (Input.GetKeyDown(KeyCode.E) || ConsumeMouseClick(1, ref rightMouseDownPosition, ref rightMouseDragged))
             {
                 TrySkill(Time.time);
             }
+        }
+
+        private bool ConsumeMouseClick(int button, ref Vector2 downPosition, ref bool dragged)
+        {
+            if (Input.GetMouseButtonDown(button))
+            {
+                downPosition = Input.mousePosition;
+                dragged = false;
+            }
+
+            if (Input.GetMouseButton(button))
+            {
+                var delta = (Vector2)Input.mousePosition - downPosition;
+                dragged |= delta.sqrMagnitude > mouseClickDragThreshold * mouseClickDragThreshold;
+            }
+
+            return Input.GetMouseButtonUp(button) && !dragged;
         }
 
         public bool TryBasicAttack(float time)
