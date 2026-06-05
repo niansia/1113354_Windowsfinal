@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Accessibility,
   AppWindow,
+  AudioLines,
   Battery,
   Bell,
   Bluetooth,
@@ -20,6 +21,7 @@ import {
   LogOut,
   Mail,
   KeyRound,
+  Mic,
   Monitor,
   Moon,
   MousePointer2,
@@ -36,6 +38,7 @@ import {
   Upload,
   User,
   Volume2,
+  WandSparkles,
   Wifi,
   X,
   type LucideIcon
@@ -48,12 +51,15 @@ import { LANG_LABELS, LANGS } from '../i18n/strings';
 import { DEFAULT_DESKTOP_PETS } from '../pets/defaultDesktopPets';
 import { buildImportedDesktopPet, mergeDesktopPetLibrary } from '../pets/desktopPetRegistry';
 import { ACCOUNT_TEXT, DESKTOP_PET_TEXT, SETTINGS_CATEGORY_LABELS } from '../settings/settingsText';
+import { ASSISTANT_TEXT } from '../assistant/assistantText';
+import { checkVoiceServer, type VoiceServerInfo } from '../assistant/voiceClient';
 
 interface FusionSettingsProps {
   open: boolean;
   onClose: () => void;
   settings: FusionSettingsState;
   onChange: <K extends keyof FusionSettingsState>(key: K, value: FusionSettingsState[K]) => void;
+  onOpenAssistant?: () => void;
 }
 
 type SettingsChange = FusionSettingsProps['onChange'];
@@ -64,6 +70,7 @@ type CatId =
   | 'network'
   | 'personalize'
   | 'pet'
+  | 'assistant'
   | 'apps'
   | 'accounts'
   | 'time'
@@ -77,6 +84,7 @@ const CATEGORIES: Array<{ id: CatId; label: string; icon: LucideIcon }> = [
   { id: 'devices', label: '藍牙與裝置', icon: Bluetooth },
   { id: 'network', label: '網路與網際網路', icon: Wifi },
   { id: 'personalize', label: '個人化', icon: Palette },
+  { id: 'assistant', label: '語音助理', icon: Mic },
   { id: 'apps', label: '應用程式', icon: AppWindow },
   { id: 'accounts', label: '帳戶', icon: User },
   { id: 'time', label: '時間與語言', icon: Languages },
@@ -94,6 +102,7 @@ const SETTINGS_CATEGORIES: Array<{ id: CatId; label: string; icon: LucideIcon }>
   { id: 'network', label: SETTINGS_CATEGORY_LABELS.network, icon: Wifi },
   { id: 'personalize', label: SETTINGS_CATEGORY_LABELS.personalize, icon: Palette },
   { id: 'pet', label: SETTINGS_CATEGORY_LABELS.pet, icon: Bot },
+  { id: 'assistant', label: SETTINGS_CATEGORY_LABELS.assistant, icon: Mic },
   { id: 'apps', label: SETTINGS_CATEGORY_LABELS.apps, icon: AppWindow },
   { id: 'accounts', label: SETTINGS_CATEGORY_LABELS.accounts, icon: User },
   { id: 'time', label: SETTINGS_CATEGORY_LABELS.time, icon: Languages },
@@ -527,9 +536,175 @@ function DesktopPetSection({ settings, onChange }: { settings: FusionSettingsSta
   );
 }
 
+/* ---------- voice assistant section ---------- */
+
+function AssistantSettingsSection({
+  settings: s,
+  onChange: set,
+  onOpenAssistant
+}: {
+  settings: FusionSettingsState;
+  onChange: SettingsChange;
+  onOpenAssistant?: () => void;
+}) {
+  const { t } = useI18n();
+  const [serverInfo, setServerInfo] = useState<VoiceServerInfo | null>(null);
+
+  // Live status of the local Fusion Voice Server so users can see whether to start it.
+  useEffect(() => {
+    let alive = true;
+    setServerInfo(null);
+    const probe = () => {
+      void checkVoiceServer(s.assistantServerUrl).then((info) => {
+        if (alive) setServerInfo(info);
+      });
+    };
+    probe();
+    const id = window.setInterval(probe, 4000);
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
+  }, [s.assistantServerUrl]);
+
+  const audio = serverInfo?.audio;
+  const signalKey = !audio || audio.rmsDbfs < -75
+    ? ASSISTANT_TEXT.signalSilent
+    : audio.rmsDbfs < -42
+      ? ASSISTANT_TEXT.signalAudible
+      : ASSISTANT_TEXT.signalSpeech;
+  const inputPercent = audio ? Math.max(0, Math.min(100, ((audio.peakDbfs + 90) / 60) * 100)) : 0;
+
+  return (
+    <>
+      <Group title={t(ASSISTANT_TEXT.title)}>
+        <Row icon={Mic} title={t(ASSISTANT_TEXT.settingEnable)} desc={t(ASSISTANT_TEXT.settingEnableDesc)}>
+          <Toggle on={s.assistantEnabled} onChange={(v) => set('assistantEnabled', v)} />
+        </Row>
+        <Row icon={Volume2} title={t(ASSISTANT_TEXT.settingVoice)} desc={t(ASSISTANT_TEXT.settingVoiceDesc)}>
+          <Toggle on={s.assistantVoice} onChange={(v) => set('assistantVoice', v)} />
+        </Row>
+        <Row icon={AudioLines} title={t(ASSISTANT_TEXT.settingWake)} desc={t(ASSISTANT_TEXT.settingWakeDesc)}>
+          <Toggle on={s.assistantWakeWord} onChange={(v) => set('assistantWakeWord', v)} />
+        </Row>
+      </Group>
+
+      <Group title={t(ASSISTANT_TEXT.settingServer)}>
+        <Row
+          icon={AudioLines}
+          title={t(ASSISTANT_TEXT.settingServer)}
+          desc={
+            serverInfo === null
+              ? '…'
+              : serverInfo.ok
+                ? `${t(ASSISTANT_TEXT.settingServerOn)} · ${serverInfo.sttEngine} + ${serverInfo.vadEngine}`
+                : t(ASSISTANT_TEXT.settingServerOff)
+          }
+        >
+          <span className={`set-voice-dot ${serverInfo?.ok ? 'on' : serverInfo?.ok === false ? 'off' : ''}`} />
+        </Row>
+        <div className="set-field">
+          <input
+            className="set-input"
+            value={s.assistantServerUrl}
+            placeholder="http://localhost:8770"
+            onChange={(e) => set('assistantServerUrl', e.target.value)}
+          />
+          <span className="set-field-hint">{t(ASSISTANT_TEXT.settingServerHint)}</span>
+        </div>
+        <div className="set-voice-diagnostics">
+          <div className="set-voice-diagnostics-head">
+            <span>
+              <AudioLines size={16} />
+              {t(ASSISTANT_TEXT.diagnosticsTitle)}
+            </span>
+            <span className={`set-voice-signal ${signalKey === ASSISTANT_TEXT.signalSilent ? 'silent' : signalKey === ASSISTANT_TEXT.signalSpeech ? 'speech' : 'audible'}`}>
+              {t(signalKey)}
+            </span>
+          </div>
+          <div className="set-voice-device">
+            <small>{t(ASSISTANT_TEXT.diagnosticsDevice)}</small>
+            <strong>{audio?.deviceLabel || '—'}</strong>
+          </div>
+          <div className="set-voice-meter-row">
+            <span>{t(ASSISTANT_TEXT.diagnosticsInputLevel)}</span>
+            <div className="set-voice-meter" aria-hidden="true">
+              <i style={{ width: `${inputPercent}%` }} />
+            </div>
+            <strong>{audio ? `${audio.rmsDbfs.toFixed(1)} dBFS` : '—'}</strong>
+          </div>
+          <div className="set-voice-diagnostics-grid">
+            <span>
+              <small>{t(ASSISTANT_TEXT.diagnosticsPackets)}</small>
+              <strong>{audio?.totalPackets.toLocaleString() ?? '0'}</strong>
+            </span>
+            <span>
+              <small>{t(ASSISTANT_TEXT.diagnosticsSessions)}</small>
+              <strong>{audio?.activeSessions ?? 0}</strong>
+            </span>
+            <span className="wide">
+              <small>{t(ASSISTANT_TEXT.diagnosticsLastText)}</small>
+              <strong>{audio?.lastText || t(ASSISTANT_TEXT.diagnosticsNoText)}</strong>
+            </span>
+          </div>
+        </div>
+      </Group>
+
+      <Group title={t(ASSISTANT_TEXT.settingAi)}>
+        <Row icon={WandSparkles} title={t(ASSISTANT_TEXT.settingAi)} desc={t(ASSISTANT_TEXT.settingAiDesc)}>
+          <Toggle on={s.assistantUseAI} onChange={(v) => set('assistantUseAI', v)} />
+        </Row>
+        <Row
+          icon={Cpu}
+          title="Gemma 4 12B"
+          desc={
+            serverInfo?.gemma
+              ? `${t(ASSISTANT_TEXT.aiReady)} · ${serverInfo.modelId}`
+              : serverInfo?.gemmaLoading
+                ? `${t(ASSISTANT_TEXT.statusModelLoading)} · ${serverInfo.modelId}`
+                : `${serverInfo?.modelId || 'google/gemma-4-12B-it'} · ${t(ASSISTANT_TEXT.aiFallback)}`
+          }
+        />
+        <Row
+          icon={KeyRound}
+          title="Hugging Face"
+          desc={t(serverInfo?.hfAuthenticated ? ASSISTANT_TEXT.hfAuthenticated : ASSISTANT_TEXT.hfPublicAccess)}
+        >
+          <span className={`set-voice-dot ${serverInfo?.hfAuthenticated ? 'on' : 'off'}`} />
+        </Row>
+        {s.assistantUseAI && (
+          <div className="set-field">
+            <label>
+              <Cpu size={15} strokeWidth={1.9} /> {t(ASSISTANT_TEXT.settingModel)}
+            </label>
+            <input
+              className="set-input"
+              value={s.assistantModel}
+              placeholder="gemma3:12b"
+              onChange={(e) => set('assistantModel', e.target.value)}
+            />
+            <span className="set-field-hint">{t(ASSISTANT_TEXT.settingModelHint)}</span>
+          </div>
+        )}
+      </Group>
+
+      <Group title={t(ASSISTANT_TEXT.settingHotkey)}>
+        <Row icon={Sparkles} title={t(ASSISTANT_TEXT.settingHotkey)} desc={t(ASSISTANT_TEXT.settingHotkeyDesc)}>
+          <span className="set-kbd">Alt + V</span>
+        </Row>
+        <div className="set-actions">
+          <button type="button" className="set-btn primary" onClick={() => onOpenAssistant?.()} disabled={!s.assistantEnabled}>
+            <Sparkles size={16} /> {t(ASSISTANT_TEXT.settingOpenNow)}
+          </button>
+        </div>
+      </Group>
+    </>
+  );
+}
+
 /* ---------- main component ---------- */
 
-export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, settings: s, onChange: set }) => {
+export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, settings: s, onChange: set, onOpenAssistant }) => {
   const [active, setActive] = useState<CatId>('system');
   const [query, setQuery] = useState('');
   const sys = useSystemInfo();
@@ -742,6 +917,9 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
 
       case 'pet':
         return <DesktopPetSection settings={s} onChange={set} />;
+
+      case 'assistant':
+        return <AssistantSettingsSection settings={s} onChange={set} onOpenAssistant={onOpenAssistant} />;
 
       case 'apps':
         return (

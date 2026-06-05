@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import type { AppId } from '../types';
 import type { GestureData, GestureStatus } from '../hooks/useHandGesture';
-import { FUSION_APPS, PRIMARY_SHELL_APPS, type FusionApp } from '../data/fusionApps';
+import { FUSION_APPS, PRIMARY_SHELL_APPS, getAppById, type FusionApp } from '../data/fusionApps';
 import { FusionDepthBackground } from './FusionDepthBackground';
 import { HeroEnergyCore } from './HeroEnergyCore';
 import { FusionSettings } from './FusionSettings';
@@ -41,6 +41,7 @@ import { FusionToolbox } from './FusionToolbox';
 import { FusionDatabase } from './FusionDatabase';
 import { FusionAppCenter } from './FusionAppCenter';
 import { FusionCircuitStudio } from './FusionCircuitStudio';
+import { FusionAssistant } from './FusionAssistant';
 import { DesktopPet } from './DesktopPet';
 import { WALLPAPERS } from '../hooks/useFusionSettings';
 import { useSettings } from '../state/SettingsContext';
@@ -129,6 +130,8 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   const [now, setNow] = useState(() => new Date());
   // In-shell app overlays (React pages instead of the host's placeholder windows).
   const [overlayApp, setOverlayApp] = useState<AppId | null>(null);
+  // Voice assistant overlay (summoned by orb / Alt+V / wake word).
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const [desktopContextMenu, setDesktopContextMenu] = useState<DesktopContextMenuState | null>(null);
   const [viewportW, setViewportW] = useState(0);
   const [dragDX, setDragDX] = useState(0);
@@ -186,6 +189,15 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       return next;
     });
   }, [t, tf]);
+
+  // Launch an app by id (used by the voice assistant); resolves to the same path as a
+  // dock/carousel launch so overlay apps open in-shell and host apps go to the host.
+  const launchAppById = useCallback((id: AppId): boolean => {
+    const app = getAppById(id);
+    if (!app) return false;
+    launchFusionApp(app);
+    return true;
+  }, [launchFusionApp]);
 
   const selectApp = useCallback((appId: AppId, shouldLaunch = false) => {
     const index = apps.findIndex((app) => app.id === appId);
@@ -662,6 +674,10 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
         onClose={() => setOverlayApp(null)}
         settings={settings}
         onChange={update}
+        onOpenAssistant={() => {
+          setOverlayApp(null);
+          setAssistantOpen(true);
+        }}
       />
       <FusionThisPc
         open={overlayApp === 'pc'}
@@ -694,6 +710,16 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
         open={overlayApp === 'circuit'}
         onClose={() => setOverlayApp('tool')}
         accent={settings.accent}
+      />
+
+      <FusionAssistant
+        enabled={settings.assistantEnabled}
+        open={assistantOpen}
+        onOpenChange={setAssistantOpen}
+        dimmed={Boolean(overlayApp)}
+        settings={settings}
+        onChange={update}
+        onLaunchAppId={launchAppById}
       />
     </div>
   );

@@ -44,6 +44,13 @@ export interface FusionSettingsState {
   // Update / misc
   autoUpdate: boolean;
   notifications: boolean;
+  // Voice assistant
+  assistantEnabled: boolean;
+  assistantVoice: boolean;
+  assistantWakeWord: boolean;
+  assistantUseAI: boolean;
+  assistantModel: string;
+  assistantServerUrl: string;
   // Desktop pet
   desktopPetEnabled: boolean;
   desktopPetSelectedId: string;
@@ -92,6 +99,12 @@ export const DEFAULT_SETTINGS: FusionSettingsState = {
   location: false,
   autoUpdate: true,
   notifications: true,
+  assistantEnabled: true,
+  assistantVoice: true,
+  assistantWakeWord: true,
+  assistantUseAI: true,
+  assistantModel: 'gemma3:12b',
+  assistantServerUrl: 'http://localhost:8770',
   desktopPetEnabled: true,
   desktopPetSelectedId: 'yuexin-miao',
   desktopPetScale: 72,
@@ -99,7 +112,8 @@ export const DEFAULT_SETTINGS: FusionSettingsState = {
   desktopPetCustoms: []
 };
 
-const STORAGE_KEY = 'fusionOsSettings.v2';
+const STORAGE_KEY = 'fusionOsSettings.v3';
+const LEGACY_STORAGE_KEY = 'fusionOsSettings.v2';
 
 function normalizeSettings(value: Partial<FusionSettingsState>): FusionSettingsState {
   const next = { ...DEFAULT_SETTINGS, ...value };
@@ -113,6 +127,12 @@ function normalizeSettings(value: Partial<FusionSettingsState>): FusionSettingsS
     Number.isFinite(next.desktopPetPosition.y)
       ? next.desktopPetPosition
       : DEFAULT_SETTINGS.desktopPetPosition;
+  next.assistantEnabled = Boolean(next.assistantEnabled);
+  next.assistantVoice = Boolean(next.assistantVoice);
+  next.assistantWakeWord = Boolean(next.assistantWakeWord);
+  next.assistantUseAI = Boolean(next.assistantUseAI);
+  next.assistantModel = String(next.assistantModel || DEFAULT_SETTINGS.assistantModel).trim() || DEFAULT_SETTINGS.assistantModel;
+  next.assistantServerUrl = String(next.assistantServerUrl || DEFAULT_SETTINGS.assistantServerUrl).trim() || DEFAULT_SETTINGS.assistantServerUrl;
   next.desktopPetCustoms = Array.isArray(next.desktopPetCustoms) ? next.desktopPetCustoms.filter(isDesktopPetAsset) : [];
   next.desktopPetSelectedId = String(next.desktopPetSelectedId || DEFAULT_SETTINGS.desktopPetSelectedId);
   next.desktopPetEnabled = Boolean(next.desktopPetEnabled);
@@ -123,6 +143,19 @@ function loadSettings(): FusionSettingsState {
   try {
     const raw = window.localStorage?.getItem(STORAGE_KEY);
     if (raw) return normalizeSettings(JSON.parse(raw) as Partial<FusionSettingsState>);
+
+    const legacyRaw = window.localStorage?.getItem(LEGACY_STORAGE_KEY);
+    if (legacyRaw) {
+      const legacy = JSON.parse(legacyRaw) as Partial<FusionSettingsState>;
+      return normalizeSettings({
+        ...legacy,
+        microphone: true,
+        assistantEnabled: true,
+        assistantVoice: true,
+        assistantWakeWord: true,
+        assistantUseAI: true
+      });
+    }
   } catch {
     /* ignore corrupt storage */
   }

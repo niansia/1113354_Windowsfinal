@@ -18,9 +18,13 @@
     "src/i18n/strings.ts",
     "src/i18n/featureTranslations.ts",
     "src/i18n/localeFormatting.ts",
+    "src/assistant/microphoneSelection.ts",
+    "src/assistant/wakeWords.ts",
     "src/circuit/**/*.ts",
     "tests/appCatalog.test.ts",
     "tests/circuitSimulator.test.ts",
-    "tests/localeFormatting.test.ts"
+    "tests/localeFormatting.test.ts",
+    "tests/microphoneSelection.test.ts",
+    "tests/wakeWords.test.ts"
   ]
 }

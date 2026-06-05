@@ -8,6 +8,7 @@ export type SettingsCategoryId =
   | 'network'
   | 'personalize'
   | 'pet'
+  | 'assistant'
   | 'apps'
   | 'accounts'
   | 'time'
@@ -22,6 +23,7 @@ export const SETTINGS_CATEGORY_LABELS: Record<SettingsCategoryId, string> = {
   network: '網路與網際網路',
   personalize: '個人化',
   pet: '桌面寵物',
+  assistant: '語音助理',
   apps: '應用程式',
   accounts: '帳戶',
   time: '時間與語言',
@@ -73,6 +75,7 @@ export const SETTINGS_TRANSLATIONS: Record<string, TranslationEntry> = {
   [SETTINGS_CATEGORY_LABELS.network]: { 'zh-CN': '网络和 Internet', en: 'Network & internet', ja: 'ネットワークとインターネット', ko: '네트워크 및 인터넷' },
   [SETTINGS_CATEGORY_LABELS.personalize]: { 'zh-CN': '个性化', en: 'Personalization', ja: '個人用設定', ko: '개인 설정' },
   [SETTINGS_CATEGORY_LABELS.pet]: { 'zh-CN': '桌面宠物', en: 'Desktop Pet', ja: 'デスクトップペット', ko: '데스크톱 펫' },
+  [SETTINGS_CATEGORY_LABELS.assistant]: { 'zh-CN': '语音助理', en: 'Voice Assistant', ja: '音声アシスタント', ko: '음성 비서' },
   [SETTINGS_CATEGORY_LABELS.apps]: { 'zh-CN': '应用程序', en: 'Apps', ja: 'アプリ', ko: '앱' },
   [SETTINGS_CATEGORY_LABELS.accounts]: { 'zh-CN': '帐户', en: 'Accounts', ja: 'アカウント', ko: '계정' },
   [SETTINGS_CATEGORY_LABELS.time]: { 'zh-CN': '时间和语言', en: 'Time & language', ja: '時刻と言語', ko: '시간 및 언어' },

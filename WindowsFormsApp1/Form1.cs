@@ -58,11 +58,13 @@ namespace WindowsFormsApp1
         private AccountStore AccountDb { get { return accountStore ?? (accountStore = new AccountStore()); } }
         private Process cosmicServerProcess;
         private Process metroPulseServerProcess;
+        private Process voiceServerProcess;
         private int cameraAppWindowCount = 0;
         private bool nativeWarmupStarted;
         private Task<CoreWebView2Environment> fusionBrowserEnvironmentTask;
         private CoreWebView2Environment fusionBrowserEnvironment;
         private Task metroPulseWarmupTask;
+        private Task voiceServiceWarmupTask;
         private string terminalWorkingDirectoryCache;
         private Font terminalOutputFont;
         private Font terminalInputFont;
@@ -372,6 +374,7 @@ namespace WindowsFormsApp1
             ScheduleWarmTerminalControls();
             WarmFusionBrowserEnvironment();
             WarmMetroPulseEngine();
+            WarmFusionVoiceService();
 
             Task.Run(delegate
             {
@@ -432,6 +435,100 @@ namespace WindowsFormsApp1
             {
                 try { EnsureMetroPulseEngineBuilt(); }
                 catch (Exception ex) { Debug.WriteLine("[MetroPulse] warmup failed: " + ex.Message); }
+            });
+        }
+
+        private void WarmFusionVoiceService()
+        {
+            if (voiceServiceWarmupTask != null) return;
+            voiceServiceWarmupTask = EnsureFusionVoiceServiceAsync();
+            voiceServiceWarmupTask.ContinueWith(delegate (Task task)
+            {
+                if (task.IsFaulted && task.Exception != null)
+                {
+                    Debug.WriteLine("[Fusion Voice] startup failed: " + task.Exception.GetBaseException().Message);
+                }
+            });
+        }
+
+        private async Task EnsureFusionVoiceServiceAsync()
+        {
+            if (await IsFusionVoiceServiceReadyAsync()) return;
+
+            string voiceRoot = FindProjectDirectory("fusion_voice");
+            string bootstrap = voiceRoot == null ? null : Path.Combine(voiceRoot, "bootstrap_voice.py");
+            if (bootstrap == null || !File.Exists(bootstrap))
+            {
+                Debug.WriteLine("[Fusion Voice] bootstrap_voice.py was not found.");
+                return;
+            }
+
+            string python = FindPythonCommand();
+            if (python == null)
+            {
+                Debug.WriteLine("[Fusion Voice] Python was not found.");
+                return;
+            }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = python,
+                Arguments = "\"" + bootstrap + "\" --gemma-model google/gemma-4-12B-it",
+                WorkingDirectory = voiceRoot,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            startInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
+
+            voiceServerProcess = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
+            voiceServerProcess.OutputDataReceived += delegate (object sender, DataReceivedEventArgs args)
+            {
+                if (!string.IsNullOrWhiteSpace(args.Data)) Debug.WriteLine("[Fusion Voice] " + args.Data);
+            };
+            voiceServerProcess.ErrorDataReceived += delegate (object sender, DataReceivedEventArgs args)
+            {
+                if (!string.IsNullOrWhiteSpace(args.Data)) Debug.WriteLine("[Fusion Voice] " + args.Data);
+            };
+            voiceServerProcess.Start();
+            voiceServerProcess.BeginOutputReadLine();
+            voiceServerProcess.BeginErrorReadLine();
+
+            for (int attempt = 0; attempt < 240; attempt++)
+            {
+                if (await IsFusionVoiceServiceReadyAsync())
+                {
+                    Debug.WriteLine("[Fusion Voice] local service is ready.");
+                    return;
+                }
+                if (voiceServerProcess.HasExited)
+                {
+                    Debug.WriteLine("[Fusion Voice] service exited with code " + voiceServerProcess.ExitCode);
+                    return;
+                }
+                await Task.Delay(500);
+            }
+        }
+
+        private Task<bool> IsFusionVoiceServiceReadyAsync()
+        {
+            return Task.Run(delegate
+            {
+                try
+                {
+                    var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8770/health");
+                    request.Timeout = 650;
+                    using (var response = (HttpWebResponse)request.GetResponse())
+                    {
+                        return response.StatusCode == HttpStatusCode.OK;
+                    }
+                }
+                catch
+                {
+                    return false;
+                }
             });
         }
 
@@ -1158,6 +1255,22 @@ namespace WindowsFormsApp1
                     }
                 };
                 Debug.WriteLine("[FusionOS WebView2] PermissionRequested handler registered");
+                try
+                {
+                    await carouselWebView.CoreWebView2.Profile.SetPermissionStateAsync(
+                        CoreWebView2PermissionKind.Microphone,
+                        "https://fusion.local",
+                        CoreWebView2PermissionState.Allow);
+                    await carouselWebView.CoreWebView2.Profile.SetPermissionStateAsync(
+                        CoreWebView2PermissionKind.Camera,
+                        "https://fusion.local",
+                        CoreWebView2PermissionState.Allow);
+                    Debug.WriteLine("[FusionOS WebView2] Persistent media permissions granted for fusion.local");
+                }
+                catch (Exception permissionError)
+                {
+                    Debug.WriteLine("[FusionOS WebView2] Could not persist media permissions: " + permissionError.Message);
+                }
 
                 string frontendGuardScript = @"
 (() => {
@@ -4706,6 +4819,7 @@ namespace WindowsFormsApp1
         {
             StopOwnedServerProcess(cosmicServerProcess);
             StopOwnedServerProcess(metroPulseServerProcess);
+            StopOwnedServerProcess(voiceServerProcess);
             base.OnFormClosing(e);
         }
 

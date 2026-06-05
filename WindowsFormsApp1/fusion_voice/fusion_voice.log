@@ -1,0 +1,5 @@
+2026-06-05T12:32:30.934799+00:00 [stt:4e5e0bcd] session started (lang=zh-TW)
+2026-06-05T12:32:30.937316+00:00 [stt:4e5e0bcd] microphone selected: ????? (Realtek(R) Audio)
+2026-06-05T12:32:30.940321+00:00 [stt:4e5e0bcd] audio received (rms=-33.3 dBFS, peak=-30.3 dBFS)
+2026-06-05T12:32:30.942381+00:00 [stt:4e5e0bcd] speech started
+2026-06-05T12:32:31.795375+00:00 [stt:4e5e0bcd] session ended

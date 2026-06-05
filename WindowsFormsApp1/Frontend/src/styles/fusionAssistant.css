@@ -1,0 +1,661 @@
+/* ===================================================================
+   FusionOS · Voice Assistant (liquid glass)
+   A summonable Siri-like assistant: a floating orb + a docked chat panel.
+   Accent colour is live via --accent (set inline from settings.accent).
+   =================================================================== */
+
+.fusion-assistant-orb,
+.fusion-assistant-panel {
+  font-family: "Microsoft JhengHei UI", "Noto Sans TC", "Segoe UI", system-ui, sans-serif;
+  --accent: #67e8ff;
+}
+
+/* ---------------- floating orb (summon button) ---------------- */
+.fusion-assistant-orb {
+  position: fixed;
+  right: 28px;
+  bottom: 128px;
+  z-index: 48;
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fusion-assistant-orb-core {
+  position: relative;
+  z-index: 2;
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #04111b;
+  background:
+    radial-gradient(120% 120% at 32% 26%, #ffffff 0%, color-mix(in srgb, var(--accent) 78%, #ffffff) 30%, var(--accent) 64%, color-mix(in srgb, var(--accent) 60%, #3b2aff) 100%);
+  box-shadow:
+    inset 0 2px 6px rgba(255, 255, 255, 0.65),
+    inset 0 -6px 14px rgba(0, 0, 0, 0.28),
+    0 12px 28px -8px color-mix(in srgb, var(--accent) 60%, transparent),
+    0 4px 16px -4px rgba(0, 0, 0, 0.55);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fusion-assistant-orb:hover .fusion-assistant-orb-core {
+  transform: scale(1.06);
+}
+
+.fusion-assistant-orb:active .fusion-assistant-orb-core {
+  transform: scale(0.96);
+}
+
+.fusion-assistant-orb-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  opacity: 0;
+  animation: fusion-orb-ring 2.8s ease-out infinite;
+}
+
+.fusion-assistant-orb-ring.two {
+  animation-delay: 1.4s;
+}
+
+@keyframes fusion-orb-ring {
+  0% { transform: scale(0.7); opacity: 0.55; }
+  70% { opacity: 0.12; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+
+.fusion-assistant-orb.is-listening .fusion-assistant-orb-core {
+  animation: fusion-orb-breathe 1.1s ease-in-out infinite;
+}
+
+@keyframes fusion-orb-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.fusion-assistant-orb.no-motion .fusion-assistant-orb-ring { animation: none; }
+.fusion-assistant-orb.no-motion.is-listening .fusion-assistant-orb-core { animation: none; }
+
+/* ---------------- docked chat panel ---------------- */
+.fusion-assistant-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 90;
+  width: min(420px, calc(100vw - 32px));
+  height: min(624px, calc(100vh - 120px));
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  overflow: hidden;
+  color: #eef6ff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(150deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.02) 24%, rgba(255, 255, 255, 0) 50%),
+    radial-gradient(120% 70% at 80% -8%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
+    linear-gradient(180deg, rgba(18, 26, 52, 0.86), rgba(7, 11, 26, 0.9));
+  -webkit-backdrop-filter: blur(38px) saturate(180%);
+  backdrop-filter: blur(38px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    0 36px 100px -28px rgba(0, 0, 0, 0.82),
+    0 10px 40px -20px rgba(0, 0, 0, 0.6);
+}
+
+/* ---- header ---- */
+.fusion-assistant-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fusion-assistant-head-orb {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #04111b;
+  background: radial-gradient(120% 120% at 32% 26%, #ffffff 0%, var(--accent) 62%, color-mix(in srgb, var(--accent) 60%, #3b2aff) 100%);
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--accent) 70%, transparent), inset 0 1px 4px rgba(255, 255, 255, 0.6);
+}
+
+.fusion-assistant-head-orb.is-listening { animation: fusion-orb-breathe 1.1s ease-in-out infinite; }
+.fusion-assistant-head-orb.is-speaking { animation: fusion-orb-breathe 0.7s ease-in-out infinite; }
+.fusion-assistant-panel.no-motion .fusion-assistant-head-orb { animation: none; }
+
+.fusion-assistant-head-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  margin-right: auto;
+}
+
+.fusion-assistant-head-text strong {
+  font-size: 15px;
+  font-weight: 800;
+  color: #f8fbff;
+}
+
+.fusion-assistant-head-text span {
+  font-size: 11.5px;
+  color: rgba(203, 224, 245, 0.62);
+}
+
+.fusion-assistant-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--accent) 80%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.fusion-assistant-close {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #eaf8ff;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
+}
+
+.fusion-assistant-close:hover {
+  background: rgba(255, 95, 124, 0.22);
+  border-color: rgba(255, 120, 140, 0.5);
+}
+
+/* ---- conversation ---- */
+.fusion-assistant-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 16px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.fusion-assistant-scroll::-webkit-scrollbar { width: 8px; }
+.fusion-assistant-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.16); border-radius: 8px; }
+
+.fusion-assistant-msg {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 86%;
+}
+
+.fusion-assistant-msg p {
+  margin: 0;
+  padding: 10px 13px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.55;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.fusion-assistant-msg.assistant {
+  align-self: flex-start;
+}
+
+.fusion-assistant-msg.assistant p {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom-left-radius: 6px;
+  color: #eef6ff;
+}
+
+.fusion-assistant-msg.user {
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.fusion-assistant-msg.user p {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 88%, #ffffff) 0%, var(--accent) 100%);
+  color: #051018;
+  font-weight: 600;
+  border-bottom-right-radius: 6px;
+}
+
+.fusion-assistant-msg.user.interim p {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: #eaf6ff;
+  font-weight: 500;
+  font-style: italic;
+  border: 1px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.fusion-assistant-msg-orb {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #04111b;
+  background: radial-gradient(120% 120% at 32% 26%, #ffffff 0%, var(--accent) 66%, color-mix(in srgb, var(--accent) 60%, #3b2aff) 100%);
+  margin-bottom: 2px;
+}
+
+.fusion-assistant-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(214, 230, 246, 0.78);
+}
+
+.spin { animation: fusion-spin 0.9s linear infinite; }
+@keyframes fusion-spin { to { transform: rotate(360deg); } }
+.fusion-assistant-panel.no-motion .spin { animation: none; }
+
+/* ---- suggestion chips ---- */
+.fusion-assistant-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 6px 16px 4px;
+}
+
+.fusion-assistant-chip {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  color: color-mix(in srgb, var(--accent) 70%, #eaf6ff);
+  background: color-mix(in srgb, var(--accent) 10%, rgba(255, 255, 255, 0.04));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, rgba(255, 255, 255, 0.1));
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.fusion-assistant-chip:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  transform: translateY(-1px);
+}
+
+.fusion-assistant-chip:disabled { opacity: 0.45; cursor: default; }
+
+/* ---- status line ---- */
+.fusion-assistant-statusline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px;
+  font-size: 12px;
+  color: rgba(203, 224, 245, 0.7);
+}
+
+.fusion-assistant-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(150, 170, 190, 0.6);
+}
+
+.fusion-assistant-status-dot.listening { background: #43e08a; box-shadow: 0 0 0 0 rgba(67, 224, 138, 0.6); animation: fusion-dot-pulse 1.2s ease-out infinite; }
+.fusion-assistant-status-dot.thinking { background: var(--accent); }
+.fusion-assistant-status-dot.speaking { background: #ffcf5c; }
+
+@keyframes fusion-dot-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(67, 224, 138, 0.55); }
+  100% { box-shadow: 0 0 0 7px rgba(67, 224, 138, 0); }
+}
+
+.fusion-assistant-engine-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 19px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #7df0c0;
+  background: rgba(67, 224, 138, 0.12);
+  border: 1px solid rgba(67, 224, 138, 0.32);
+}
+
+.fusion-assistant-engine-pill.ai {
+  color: color-mix(in srgb, var(--accent) 82%, #ffffff);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+.fusion-assistant-level-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 19px;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 750;
+  color: #8fa9c2;
+  background: rgba(143, 169, 194, 0.1);
+  border: 1px solid rgba(143, 169, 194, 0.22);
+}
+
+.fusion-assistant-level-pill.audible {
+  color: #76d7ff;
+  background: rgba(70, 190, 245, 0.11);
+  border-color: rgba(70, 190, 245, 0.3);
+}
+
+.fusion-assistant-level-pill.speech {
+  color: #7df0c0;
+  background: rgba(67, 224, 138, 0.12);
+  border-color: rgba(67, 224, 138, 0.32);
+}
+
+.fusion-assistant-voice-toggle {
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+  color: #d6e6f6;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.fusion-assistant-voice-toggle:hover { background: rgba(255, 255, 255, 0.1); }
+
+/* ---- input bar ---- */
+.fusion-assistant-inputbar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 16px 6px;
+}
+
+.fusion-assistant-mic {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, rgba(255, 255, 255, 0.12));
+  background: color-mix(in srgb, var(--accent) 12%, rgba(255, 255, 255, 0.04));
+  color: color-mix(in srgb, var(--accent) 75%, #eaf6ff);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fusion-assistant-mic:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 24%, transparent); }
+.fusion-assistant-mic:disabled { opacity: 0.4; cursor: default; }
+
+.fusion-assistant-mic.is-listening {
+  color: #04111b;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 88%, #ffffff), var(--accent));
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 60%, transparent);
+  animation: fusion-mic-pulse 1.2s ease-out infinite;
+}
+
+@keyframes fusion-mic-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
+  100% { box-shadow: 0 0 0 12px color-mix(in srgb, var(--accent) 0%, transparent); }
+}
+
+.fusion-assistant-panel.no-motion .fusion-assistant-mic.is-listening { animation: none; }
+
+.fusion-assistant-input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #eef6ff;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.fusion-assistant-input::placeholder { color: rgba(203, 213, 225, 0.5); }
+.fusion-assistant-input:focus { border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: rgba(255, 255, 255, 0.09); }
+
+.fusion-assistant-send {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  color: #051018;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 90%, #ffffff), var(--accent));
+  box-shadow: 0 8px 20px -10px color-mix(in srgb, var(--accent) 70%, transparent);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.fusion-assistant-send:hover:not(:disabled) { transform: translateY(-1px); }
+.fusion-assistant-send:disabled { opacity: 0.4; cursor: default; box-shadow: none; }
+
+.fusion-assistant-hint {
+  margin: 0;
+  padding: 2px 16px 14px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: rgba(184, 204, 224, 0.55);
+}
+
+/* ---------------- settings helpers (assistant section) ---------------- */
+.set-field-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(184, 204, 224, 0.6);
+}
+
+.set-voice-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(150, 170, 190, 0.5);
+}
+
+.set-voice-dot.on {
+  background: #43e08a;
+  box-shadow: 0 0 0 4px rgba(67, 224, 138, 0.18);
+}
+
+.set-voice-dot.off {
+  background: #ff6a7d;
+  box-shadow: 0 0 0 4px rgba(255, 106, 125, 0.16);
+}
+
+.set-voice-diagnostics {
+  margin: 12px 18px 18px;
+  padding: 16px;
+  border: 1px solid rgba(112, 200, 255, 0.17);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(69, 151, 216, 0.1), rgba(95, 71, 174, 0.08)),
+    rgba(8, 20, 42, 0.46);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.set-voice-diagnostics-head,
+.set-voice-diagnostics-head > span,
+.set-voice-meter-row {
+  display: flex;
+  align-items: center;
+}
+
+.set-voice-diagnostics-head {
+  justify-content: space-between;
+  gap: 12px;
+  color: #dbeeff;
+  font-size: 13px;
+  font-weight: 720;
+}
+
+.set-voice-diagnostics-head > span {
+  gap: 7px;
+}
+
+.set-voice-signal {
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: #86a0bb;
+  background: rgba(134, 160, 187, 0.1);
+  border: 1px solid rgba(134, 160, 187, 0.2);
+  font-size: 10.5px;
+}
+
+.set-voice-signal.audible {
+  color: #76d7ff;
+  border-color: rgba(70, 190, 245, 0.3);
+  background: rgba(70, 190, 245, 0.11);
+}
+
+.set-voice-signal.speech {
+  color: #7df0c0;
+  border-color: rgba(67, 224, 138, 0.32);
+  background: rgba(67, 224, 138, 0.12);
+}
+
+.set-voice-device {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+}
+
+.set-voice-device small,
+.set-voice-diagnostics-grid small {
+  color: rgba(184, 204, 224, 0.55);
+  font-size: 10.5px;
+}
+
+.set-voice-device strong {
+  overflow: hidden;
+  color: #eef8ff;
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-voice-meter-row {
+  gap: 10px;
+  margin-top: 13px;
+  color: rgba(210, 227, 242, 0.7);
+  font-size: 11px;
+}
+
+.set-voice-meter-row > span {
+  flex: 0 0 auto;
+}
+
+.set-voice-meter-row > strong {
+  flex: 0 0 72px;
+  color: #dff5ff;
+  font-size: 10.5px;
+  text-align: right;
+}
+
+.set-voice-meter {
+  flex: 1;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.set-voice-meter i {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #48c7f2, #72f0ca 72%, #f0cf72);
+  box-shadow: 0 0 10px rgba(72, 199, 242, 0.34);
+  transition: width 0.18s ease;
+}
+
+.set-voice-diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.set-voice-diagnostics-grid > span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.set-voice-diagnostics-grid > span.wide {
+  grid-column: 1 / -1;
+}
+
+.set-voice-diagnostics-grid strong {
+  overflow: hidden;
+  color: #ddecfa;
+  font-size: 11.5px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.set-kbd {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #eaf6ff;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* ---------------- small screens ---------------- */
+@media (max-width: 560px) {
+  .fusion-assistant-panel {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    width: auto;
+    height: min(76vh, 560px);
+  }
+  .fusion-assistant-orb { right: 18px; bottom: 96px; }
+}
