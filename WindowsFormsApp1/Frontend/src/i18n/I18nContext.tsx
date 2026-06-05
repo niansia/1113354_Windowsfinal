@@ -3,6 +3,8 @@ import { TRANSLATIONS, type Lang } from './strings';
 import { useSettings } from '../state/SettingsContext';
 import { sendMessageToHost } from '../utils/bridge';
 import { SETTINGS_TRANSLATIONS } from '../settings/settingsText';
+import { normalizeLanguage } from './localeFormatting';
+import { FEATURE_TRANSLATIONS } from './featureTranslations';
 
 // Source-as-key i18n: the Traditional-Chinese string in the JSX is itself the key. For
 // zh-TW we return it unchanged; for the other four languages we look it up in
@@ -21,12 +23,12 @@ export const useI18n = () => useContext(I18nContext);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const { settings } = useSettings();
-  const lang = ((settings.language as Lang) || 'zh-TW');
+  const lang = normalizeLanguage(settings.language);
 
   const t = useCallback(
     (source: string): string => {
       if (lang === 'zh-TW') return source;
-      const entry = SETTINGS_TRANSLATIONS[source] ?? TRANSLATIONS[source];
+      const entry = SETTINGS_TRANSLATIONS[source] ?? FEATURE_TRANSLATIONS[source] ?? TRANSLATIONS[source];
       return (entry && entry[lang]) || source;
     },
     [lang]

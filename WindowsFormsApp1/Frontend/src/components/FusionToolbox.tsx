@@ -18,6 +18,8 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
+import { useSettings } from '../state/SettingsContext';
+import { formatFusionDateTime } from '../i18n/localeFormatting';
 
 interface FusionToolboxProps {
   open: boolean;
@@ -306,7 +308,8 @@ function TextTool() {
 }
 
 function TimeTool() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const { settings } = useSettings();
   const [unix, setUnix] = useState(String(Math.floor(Date.now() / 1000)));
   const date = new Date(Number(unix) * 1000);
   const valid = !Number.isNaN(date.getTime());
@@ -316,7 +319,7 @@ function TimeTool() {
         <input value={unix} onChange={(e) => setUnix(e.target.value)} />
       </label>
       <button type="button" className="tool-btn" onClick={() => setUnix(String(Math.floor(Date.now() / 1000)))}>{t('目前時間')}</button>
-      <div className="tool-kv"><span>{t('本地時間')}</span><code>{valid ? date.toLocaleString() : '—'}</code></div>
+      <div className="tool-kv"><span>{t('本地時間')}</span><code>{valid ? formatFusionDateTime(date, lang, settings.timezone, settings.clock24) : '—'}</code></div>
       <div className="tool-kv"><span>UTC / ISO</span><code>{valid ? date.toISOString() : '—'}</code></div>
     </div>
   );

@@ -785,10 +785,10 @@ export const FusionSettings: React.FC<FusionSettingsProps> = ({ open, onClose, s
                   value={s.timezone}
                   onChange={(v) => set('timezone', v)}
                   options={[
-                    { value: 'Asia/Taipei', label: '(UTC+8) 台北' },
-                    { value: 'Asia/Tokyo', label: '(UTC+9) 東京' },
-                    { value: 'America/Los_Angeles', label: '(UTC-8) 洛杉磯' },
-                    { value: 'Europe/London', label: '(UTC+0) 倫敦' }
+                    { value: 'Asia/Taipei', label: t('(UTC+8) 台北') },
+                    { value: 'Asia/Tokyo', label: t('(UTC+9) 東京') },
+                    { value: 'America/Los_Angeles', label: t('(UTC-8) 洛杉磯') },
+                    { value: 'Europe/London', label: t('(UTC+0) 倫敦') }
                   ]}
                 />
               </Row>

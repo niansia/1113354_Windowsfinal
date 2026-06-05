@@ -20,6 +20,8 @@ import {
   type LucideIcon
 } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
+import { useSettings } from '../state/SettingsContext';
+import { formatFusionFileDate } from '../i18n/localeFormatting';
 
 interface FusionFilesProps {
   open: boolean;
@@ -96,7 +98,8 @@ function iconFor(name: string, isDir: boolean): LucideIcon {
 const supportsFSA = typeof window !== 'undefined' && typeof (window as any).showDirectoryPicker === 'function';
 
 export const FusionFiles: React.FC<FusionFilesProps> = ({ open, onClose, accent }) => {
-  const { t, tf } = useI18n();
+  const { t, tf, lang } = useI18n();
+  const { settings } = useSettings();
   const [mode, setMode] = useState<'virtual' | 'real'>('virtual');
   const [vstack, setVstack] = useState<VNode[]>([VIRTUAL_ROOT]);
   const [rstack, setRstack] = useState<any[]>([]);
@@ -134,7 +137,7 @@ export const FusionFiles: React.FC<FusionFilesProps> = ({ open, onClose, accent 
             try {
               const file = await handle.getFile();
               size = file.size;
-              modified = new Date(file.lastModified).toLocaleDateString('zh-TW');
+              modified = formatFusionFileDate(new Date(file.lastModified), lang, settings.timezone);
             } catch {
               /* ignore unreadable file */
             }
@@ -153,7 +156,7 @@ export const FusionFiles: React.FC<FusionFilesProps> = ({ open, onClose, accent 
     return () => {
       alive = false;
     };
-  }, [mode, rstack]);
+  }, [lang, mode, rstack, settings.timezone]);
 
   const entries: Entry[] = useMemo(() => {
     if (mode === 'real') return rentries;

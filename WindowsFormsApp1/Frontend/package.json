@@ -7,7 +7,8 @@
     "dev": "node scripts/copy-mediapipe.js && vite",
     "build": "node scripts/copy-mediapipe.js && tsc && vite build",
     "preview": "vite preview",
-    "test:pet": "tsc -p tsconfig.pet-tests.json && node --test ../output/pet-tests/tests/desktopPetRegistry.test.js ../output/pet-tests/tests/settingsI18n.test.js"
+    "test:pet": "tsc -p tsconfig.pet-tests.json && node --test ../output/pet-tests/tests/desktopPetRegistry.test.js ../output/pet-tests/tests/settingsI18n.test.js",
+    "test:features": "tsc -p tsconfig.feature-tests.json && node --test ../output/feature-tests/tests/appCatalog.test.js ../output/feature-tests/tests/circuitSimulator.test.js ../output/feature-tests/tests/localeFormatting.test.js"
   },
   "keywords": [],
   "author": "",

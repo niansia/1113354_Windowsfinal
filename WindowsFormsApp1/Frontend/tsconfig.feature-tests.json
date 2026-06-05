@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "types": ["node"],
+    "rootDir": ".",
+    "outDir": "../output/feature-tests",
+    "noEmit": false
+  },
+  "include": [
+    "src/types.ts",
+    "src/data/fusionApps.ts",
+    "src/i18n/strings.ts",
+    "src/i18n/featureTranslations.ts",
+    "src/i18n/localeFormatting.ts",
+    "src/circuit/**/*.ts",
+    "tests/appCatalog.test.ts",
+    "tests/circuitSimulator.test.ts",
+    "tests/localeFormatting.test.ts"
+  ]
+}

@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  CircuitBoard,
   Clapperboard,
   Circle,
   Code2,
@@ -25,11 +26,12 @@ import {
   Sparkles,
   Terminal,
   Volume2,
+  Wrench,
   Wifi
 } from 'lucide-react';
 import type { AppId } from '../types';
 import type { GestureData, GestureStatus } from '../hooks/useHandGesture';
-import { FUSION_APPS, type FusionApp } from '../data/fusionApps';
+import { FUSION_APPS, PRIMARY_SHELL_APPS, type FusionApp } from '../data/fusionApps';
 import { FusionDepthBackground } from './FusionDepthBackground';
 import { HeroEnergyCore } from './HeroEnergyCore';
 import { FusionSettings } from './FusionSettings';
@@ -37,6 +39,8 @@ import { FusionThisPc } from './FusionThisPc';
 import { FusionFiles } from './FusionFiles';
 import { FusionToolbox } from './FusionToolbox';
 import { FusionDatabase } from './FusionDatabase';
+import { FusionAppCenter } from './FusionAppCenter';
+import { FusionCircuitStudio } from './FusionCircuitStudio';
 import { DesktopPet } from './DesktopPet';
 import { WALLPAPERS } from '../hooks/useFusionSettings';
 import { useSettings } from '../state/SettingsContext';
@@ -45,6 +49,7 @@ import { useAccount } from '../account/AccountContext';
 import { getPerformanceProfile } from '../utils/performanceProfile';
 import { addHostMessageListener, launchApp, sendMessageToHost } from '../utils/bridge';
 import { ACCOUNT_TEXT } from '../settings/settingsText';
+import { formatFusionDate, formatFusionTime } from '../i18n/localeFormatting';
 
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
 const CARD_W = 208;
@@ -63,10 +68,9 @@ type DesktopContextMenuState = { x: number; y: number };
 
 const NAV_ITEMS: Array<{ label: string; icon: LucideIcon; appId: AppId; launch?: boolean }> = [
   { label: '首頁', icon: Home, appId: 'pc' },
-  { label: '檔案', icon: Folder, appId: 'dir', launch: true },
-  { label: '應用程式', icon: AppWindow, appId: 'tool' },
-  { label: '開發實驗室', icon: Code2, appId: 'dev' },
-  { label: '設定', icon: Settings, appId: 'set', launch: true }
+  { label: '專案檔案', icon: Folder, appId: 'dir', launch: true },
+  { label: '應用程式中心', icon: AppWindow, appId: 'tool' },
+  { label: '系統設定', icon: Settings, appId: 'set', launch: true }
 ];
 
 const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
@@ -81,6 +85,8 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   add: Plus,
   dev: Code2,
   tool: AppWindow,
+  toolbox: Wrench,
+  circuit: CircuitBoard,
   db: Database,
   web: Globe2,
   game: Gamepad2,
@@ -88,16 +94,10 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   set: Settings
 };
 
-const formatClock = (now: Date) =>
-  now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-
-const formatDate = (now: Date) =>
-  now.toLocaleDateString('zh-TW', { month: 'long', day: 'numeric', weekday: 'long' });
-
 const wrapIndex = (index: number, total: number) => ((index % total) + total) % total;
 
 function resolveApps() {
-  return FUSION_APPS;
+  return PRIMARY_SHELL_APPS;
 }
 
 function appIcon(appId: AppId) {
@@ -142,7 +142,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
 
   // Sandboxed FusionOS preferences (localStorage only — never touches the host OS).
   const { settings, update } = useSettings();
-  const { t, tf } = useI18n();
+  const { t, tf, lang } = useI18n();
   const { profile: userProfile } = useAccount();
 
   const profile = useMemo(() => getPerformanceProfile(), []);
@@ -161,12 +161,22 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   }, [apps.length, onIndexChange, onQueueChange]);
 
   const launchFusionApp = useCallback((app: FusionApp) => {
-    // 系統設定 / 本機 / 專案檔案 / 工具箱 / 資料庫 改為在桌面內開啟 React 頁面，而非請主機彈出預留視窗。
-    if (app.id === 'set' || app.id === 'pc' || app.id === 'dir' || app.id === 'tool' || app.id === 'db') {
+    // Native shell workspaces open inside React; external applications keep
+    // their stable WinForms launch ids.
+    if (
+      app.id === 'set' ||
+      app.id === 'pc' ||
+      app.id === 'dir' ||
+      app.id === 'tool' ||
+      app.id === 'db' ||
+      app.id === 'circuit' ||
+      app.id === 'toolbox'
+    ) {
       setOverlayApp(app.id);
       setLastLaunchMessage(tf('已開啟「{0}」。', t(app.title)));
       return;
     }
+    setOverlayApp(null);
     launchApp(app.id);
     setLastLaunchMessage(tf('已將「{0}」的啟動要求送至 Fusion 主機。', t(app.title)));
     setLaunchStates((prev) => ({ ...prev, [app.id]: 'open' }));
@@ -513,16 +523,16 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
 
         <aside className="fusion-widget-column">
           <section className="fusion-widget time-widget">
-            <strong>{formatClock(now)}</strong>
-            <span>{formatDate(now)}</span>
+            <strong>{formatFusionTime(now, lang, settings.timezone, settings.clock24)}</strong>
+            <span>{formatFusionDate(now, lang, settings.timezone)}</span>
             <div className="fusion-quick-toggles">
               <button type="button" title="Wi-Fi">
                 <Wifi size={17} />
               </button>
-              <button type="button" title="藍牙">
+              <button type="button" title={t('藍牙')}>
                 <Bluetooth size={17} />
               </button>
-              <button type="button" title="音訊">
+              <button type="button" title={t('音訊')}>
                 <Volume2 size={17} />
               </button>
             </div>
@@ -665,13 +675,24 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
         accent={settings.accent}
       />
       <FusionToolbox
-        open={overlayApp === 'tool'}
-        onClose={() => setOverlayApp(null)}
+        open={overlayApp === 'toolbox'}
+        onClose={() => setOverlayApp('tool')}
         accent={settings.accent}
       />
       <FusionDatabase
         open={overlayApp === 'db'}
+        onClose={() => setOverlayApp('tool')}
+        accent={settings.accent}
+      />
+      <FusionAppCenter
+        open={overlayApp === 'tool'}
         onClose={() => setOverlayApp(null)}
+        accent={settings.accent}
+        onLaunch={launchFusionApp}
+      />
+      <FusionCircuitStudio
+        open={overlayApp === 'circuit'}
+        onClose={() => setOverlayApp('tool')}
         accent={settings.accent}
       />
     </div>

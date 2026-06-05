@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { isDesktopPetAsset, type DesktopPetAsset, type DesktopPetPosition } from '../pets/desktopPetRegistry';
+import { normalizeLanguage, normalizeTimezone } from '../i18n/localeFormatting';
 
 // Local, sandboxed FusionOS preferences. Most settings only change the React shell,
 // while Time & Language is forwarded to the WinForms host so native surfaces stay
@@ -102,6 +103,9 @@ const STORAGE_KEY = 'fusionOsSettings.v2';
 
 function normalizeSettings(value: Partial<FusionSettingsState>): FusionSettingsState {
   const next = { ...DEFAULT_SETTINGS, ...value };
+  next.language = normalizeLanguage(next.language);
+  next.timezone = normalizeTimezone(next.timezone);
+  next.clock24 = Boolean(next.clock24);
   next.desktopPetScale = Math.min(120, Math.max(45, Number(next.desktopPetScale) || DEFAULT_SETTINGS.desktopPetScale));
   next.desktopPetPosition =
     next.desktopPetPosition &&
