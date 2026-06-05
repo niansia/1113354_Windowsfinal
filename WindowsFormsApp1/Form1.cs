@@ -4577,11 +4577,12 @@ namespace WindowsFormsApp1
         {
             if (string.IsNullOrWhiteSpace(input)) return fallback;
             input = input.Trim();
+            // Only allow web schemes. Notably NOT file: / edge: / javascript: — otherwise a
+            // page-driven window.open (NewWindowRequested) could open local files or internal
+            // pages inside the in-app browser. Anything else is treated as a search query below.
             if (input.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 input.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
-                input.StartsWith("about:", StringComparison.OrdinalIgnoreCase) ||
-                input.StartsWith("edge:", StringComparison.OrdinalIgnoreCase) ||
-                input.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+                input.Equals("about:blank", StringComparison.OrdinalIgnoreCase))
             {
                 return input;
             }

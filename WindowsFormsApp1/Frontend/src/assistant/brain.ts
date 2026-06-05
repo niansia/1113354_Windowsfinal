@@ -1,6 +1,6 @@
 import type { AppId } from '../types';
 import type { Lang } from '../i18n/strings';
-import { coerceParsed, ollamaUnderstand, type OllamaUnderstanding } from './ollama';
+import { MAX_REPLY_CHARS, coerceParsed, ollamaUnderstand, type OllamaUnderstanding } from './ollama';
 
 // The optional "brain": turns a free-form utterance into a structured action + reply.
 // Prefers the local Fusion Voice Server's /understand endpoint (which runs the user's own
@@ -27,7 +27,7 @@ async function understandViaServer(
     });
     if (!res.ok) return null; // 503 = Gemma still loading / disabled → caller falls back
     const data = await res.json();
-    return { parsed: coerceParsed(data), reply: data?.reply ? String(data.reply) : null };
+    return { parsed: coerceParsed(data), reply: data?.reply ? String(data.reply).slice(0, MAX_REPLY_CHARS) : null };
   } catch {
     return null;
   } finally {

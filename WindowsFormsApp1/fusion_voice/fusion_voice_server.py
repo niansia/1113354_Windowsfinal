@@ -30,6 +30,59 @@ VOSK_LANG = {
     "ko": "ko",
 }
 
+# --- Security: only the FusionOS WebView (and the dev/preview servers) may reach this
+# service. A browser ALWAYS sends a truthful Origin header on cross-origin fetch and on
+# WebSocket connections, so an Origin allowlist blocks arbitrary web pages the user might
+# visit — and also DNS-rebinding, whose Origin remains the attacker's domain. The Host
+# check is a second line against rebinding by hostname. Requests with no Origin (local
+# non-browser tools) are allowed, since a remote web page can never make a readable
+# no-Origin fetch/WebSocket to us. Bound to 127.0.0.1 so the ports are not on the network.
+_DEFAULT_ALLOWED_ORIGINS = {
+    "https://fusion.local",     # production WebView2 virtual host (SetVirtualHostNameToFolderMapping)
+    "http://localhost:5173",    # Vite dev server
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",    # Vite preview
+    "http://127.0.0.1:4173",
+}
+ALLOWED_ORIGINS = {
+    origin.strip().rstrip("/")
+    for origin in os.environ.get("FUSION_VOICE_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+} or _DEFAULT_ALLOWED_ORIGINS
+_ALLOWED_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+MAX_UNDERSTAND_BYTES = 64 * 1024  # reject oversized /understand bodies (memory-exhaustion guard)
+MAX_UTTERANCE_CHARS = 4000        # cap text handed to the model
+MAX_APPS = 64                     # cap the app list size
+MAX_WS_SESSIONS = 16              # cap concurrent recognition sessions (local DoS guard)
+
+
+def _origin_allowed(origin):
+    return bool(origin) and origin.rstrip("/") in ALLOWED_ORIGINS
+
+
+def _host_allowed(host_header):
+    if not host_header:
+        return True
+    hostname = host_header.rsplit(":", 1)[0].strip().lower().strip("[]")
+    return hostname in _ALLOWED_HOSTS
+
+
+def _request_allowed(origin, host):
+    """Block cross-origin browser callers; permit the WebView, dev servers, and local tools."""
+    if not _host_allowed(host):
+        return False
+    if origin in (None, ""):
+        return True  # non-browser local caller (browsers always send Origin cross-origin)
+    return _origin_allowed(origin)
+
+
+def _short_error(error):
+    """One short, single-line error summary — never a full stack trace or local path."""
+    if not error:
+        return ""
+    return str(error).splitlines()[0][:160]
+
 _args = None
 _vosk_models = {}
 _vosk_lock = threading.Lock()
@@ -98,6 +151,16 @@ def increment_audio(key, amount=1):
 def audio_snapshot():
     with _audio_lock:
         return dict(_audio)
+
+
+def public_audio_snapshot():
+    """Audio telemetry safe to return over HTTP: never the recognized text (the user's actual
+    speech) or raw error strings (which can contain local paths)."""
+    with _audio_lock:
+        snapshot = dict(_audio)
+    snapshot["last_text"] = ""   # spoken content stays internal / on the live WS only
+    snapshot["last_error"] = ""  # avoid leaking exception text / paths via /health
+    return snapshot
 
 
 def hf_authenticated():
@@ -256,6 +319,22 @@ async def stt_handler(websocket):
     query = parse_qs(urlparse(raw_path).query)
     fusion_lang = query.get("lang", ["zh-TW"])[0]
 
+    # Authorize the WebSocket the same way as HTTP: a foreign web page's Origin won't match.
+    headers = getattr(getattr(websocket, "request", None), "headers", None)
+    ws_origin = headers.get("Origin") if headers else None
+    ws_host = headers.get("Host") if headers else None
+    if not _request_allowed(ws_origin, ws_host):
+        log_event(f"[stt] rejected WebSocket from disallowed origin={ws_origin!r}")
+        await websocket.close(1008, "forbidden origin")
+        return
+
+    with _audio_lock:
+        at_capacity = _audio["active_sessions"] >= MAX_WS_SESSIONS
+    if at_capacity:
+        log_event("[stt] rejected WebSocket: too many concurrent sessions")
+        await websocket.close(1013, "server busy")
+        return
+
     segmenter = VoiceActivitySegmenter(
         frame_ms=20,
         pre_roll_ms=180,
@@ -287,7 +366,9 @@ async def stt_handler(websocket):
             return
         if text:
             update_audio(last_text=text, last_error="", speech_active=False)
-            log_event(f"[stt:{session_id}] recognized: {text}")
+            # Log only the length, never the transcript content, so the on-disk log file
+            # never accumulates a record of what the user said.
+            log_event(f"[stt:{session_id}] recognized ({len(text)} chars)")
             await _ws_send(websocket, {"text": text, "final": True})
 
     try:
@@ -528,73 +609,109 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_args):
         pass
 
-    def _cors(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+    def _cors(self, origin):
+        # Reflect ONLY an allowlisted origin (never "*"), so other web pages cannot read us.
+        if _origin_allowed(origin):
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
 
-    def _json(self, code, payload):
+    def _json(self, code, payload, origin=None):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
-        self._cors()
+        self._cors(origin)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
 
+    def _authorize(self):
+        """Return (origin, ok). Foreign web pages are rejected with 403."""
+        origin = self.headers.get("Origin")
+        if not _request_allowed(origin, self.headers.get("Host")):
+            self._json(403, {"error": "forbidden"}, origin)
+            return origin, False
+        return origin, True
+
     def do_OPTIONS(self):
+        origin = self.headers.get("Origin")
+        if origin is not None and not _origin_allowed(origin):
+            self.send_response(403)
+            self.end_headers()
+            return
         self.send_response(204)
-        self._cors()
+        self._cors(origin)
+        # Honor Chrome Private Network Access preflight so https://fusion.local can reach localhost.
+        if self.headers.get("Access-Control-Request-Private-Network") == "true" and _origin_allowed(origin):
+            self.send_header("Access-Control-Allow-Private-Network", "true")
         self.end_headers()
 
     def do_GET(self):
-        if urlparse(self.path).path != "/health":
-            self._json(404, {"error": "not found"})
+        origin, ok = self._authorize()
+        if not ok:
             return
+        if urlparse(self.path).path != "/health":
+            self._json(404, {"error": "not found"}, origin)
+            return
+        # Minimal, sanitized status. No transcripts, no raw error text/paths.
         self._json(200, {
             "ok": True,
             "service": "fusion-voice",
             "stt": True,
             "stt_engine": stt_engine_name(),
-            "stt_loading": _whisper["loading"],
-            "stt_error": _whisper["error"],
+            "stt_loading": bool(_whisper["loading"]),
+            "stt_error": _short_error(_whisper["error"]),
             "vad_engine": vad_engine_name(),
             "ws_port": WS_PORT,
-            "gemma": _gemma["ready"],
-            "gemma_loading": _gemma["loading"],
-            "gemma_error": _gemma["error"],
+            "gemma": bool(_gemma["ready"]),
+            "gemma_loading": bool(_gemma["loading"]),
+            "gemma_error": _short_error(_gemma["error"]),
             "gemma_model": _gemma["model_id"],
             "hf_authenticated": hf_authenticated(),
-            "audio": audio_snapshot(),
-        })
+            "audio": public_audio_snapshot(),
+        }, origin)
 
     def do_POST(self):
+        origin, ok = self._authorize()
+        if not ok:
+            return
         if urlparse(self.path).path != "/understand":
-            self._json(404, {"error": "not found"})
+            self._json(404, {"error": "not found"}, origin)
             return
         try:
             length = int(self.headers.get("Content-Length", 0))
+        except (TypeError, ValueError):
+            length = 0
+        if length <= 0 or length > MAX_UNDERSTAND_BYTES:
+            self._json(413, {"error": "request too large"}, origin)
+            return
+        try:
             body = json.loads(self.rfile.read(length) or b"{}")
         except (ValueError, TypeError):
-            self._json(400, {"error": "bad json"})
+            self._json(400, {"error": "bad json"}, origin)
+            return
+        if not isinstance(body, dict):
+            self._json(400, {"error": "bad json"}, origin)
             return
 
         if not _gemma["ready"]:
-            self._json(503, {
-                "error": "gemma not ready",
-                "loading": _gemma["loading"],
-                "detail": _gemma["error"],
-            })
+            self._json(503, {"error": "model not ready", "loading": bool(_gemma["loading"])}, origin)
             return
+
+        utterance = str(body.get("utterance", ""))[:MAX_UTTERANCE_CHARS]
+        lang = str(body.get("lang", "zh-TW"))[:16]
+        apps = body.get("apps", [])
+        if not isinstance(apps, list):
+            apps = []
+        apps = apps[:MAX_APPS]
         try:
-            result = gemma_understand(
-                str(body.get("utterance", "")),
-                str(body.get("lang", "zh-TW")),
-                body.get("apps", []),
-            )
-            self._json(200, result or {"action": "chat", "reply": ""})
+            result = gemma_understand(utterance, lang, apps)
+            self._json(200, result or {"action": "chat", "reply": ""}, origin)
         except Exception as exc:
-            self._json(500, {"error": str(exc)})
+            # Log details server-side; return a generic message (no stack/paths to the client).
+            log_event(f"[understand] error: {exc}")
+            self._json(500, {"error": "internal error"}, origin)
 
 
 def start_http():

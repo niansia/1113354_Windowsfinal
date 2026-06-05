@@ -1,6 +1,41 @@
 import type { AppId } from '../types';
 import type { Lang } from '../i18n/strings';
 import type { ParsedIntent, SettingTarget } from './nlu';
+import { FUSION_APPS } from '../data/fusionApps';
+
+// Treat the model as an UNTRUSTED black box: its JSON output drives real actions (opening
+// apps, changing settings), so every field is validated against an allowlist below before it
+// is ever executed. A hallucinated or prompt-injected response can therefore only ever map to
+// a known-safe action or be dropped — never to something arbitrary.
+const VALID_APP_IDS = new Set<string>(FUSION_APPS.map((app) => app.id));
+const VALID_LANGS = new Set<Lang>(['zh-TW', 'zh-CN', 'en', 'ja', 'ko']);
+export const MAX_REPLY_CHARS = 2000;
+
+const clampText = (value: unknown, max: number): string | undefined => {
+  const text = String(value ?? '').trim();
+  return text ? text.slice(0, max) : undefined;
+};
+
+function coerceSettingValue(target: SettingTarget, raw: unknown): string | number | undefined {
+  const value = String(raw ?? '').trim().toLowerCase();
+  switch (target) {
+    case 'theme':
+      return value === 'dark' || value === 'light' ? value : undefined;
+    case 'brightness':
+      return value === 'up' || value === 'down' ? value : undefined;
+    case 'volume':
+      if (/^\d{1,3}$/.test(value)) return Math.max(0, Math.min(100, Number(value)));
+      return ['up', 'down', 'mute', 'unmute'].includes(value) ? value : undefined;
+    case 'language':
+      if (value === 'zh-cn') return 'zh-CN';
+      if (value === 'zh-tw') return 'zh-TW';
+      return VALID_LANGS.has(value as Lang) ? value : undefined;
+    case 'wallpaper':
+      return undefined; // no value needed (cycles to next)
+    default: // night | transparency | animations | contrast → boolean toggles
+      return ['on', 'off', 'toggle'].includes(value) ? value : 'toggle';
+  }
+}
 
 // Optional local LLM bridge (Ollama). When the user enables "Advanced AI understanding"
 // and is running Ollama locally with a Gemma model, the assistant asks the model to map a
@@ -60,21 +95,25 @@ function buildSystemPrompt(apps: Array<{ id: AppId; name: string }>, lang: Lang)
 export function coerceParsed(data: any): ParsedIntent | null {
   const action = String(data?.action ?? '').trim();
   switch (action) {
-    case 'open_app':
-      return { kind: 'open_app', appId: (data.app || undefined) as AppId | undefined };
+    case 'open_app': {
+      const appId = String(data?.app ?? '').trim();
+      // Only ever an app that actually exists; an unknown id becomes a no-op "not found".
+      return { kind: 'open_app', appId: VALID_APP_IDS.has(appId) ? (appId as AppId) : undefined };
+    }
     case 'weather':
-      return { kind: 'weather', query: data.query ? String(data.query) : undefined };
+      return { kind: 'weather', query: clampText(data?.query, 80) };
     case 'time':
       return { kind: 'time' };
     case 'date':
       return { kind: 'date' };
     case 'search':
-      return { kind: 'search', query: data.query ? String(data.query) : undefined };
+      return { kind: 'search', query: clampText(data?.query, 200) };
     case 'setting': {
-      const target = String(data.setting ?? '') as SettingTarget;
+      const target = String(data?.setting ?? '').trim() as SettingTarget;
       if (!VALID_SETTINGS.includes(target)) return null;
-      let value: string | number | undefined = data.value;
-      if (target === 'volume' && /^\d+$/.test(String(data.value))) value = Number(data.value);
+      const value = coerceSettingValue(target, data?.value);
+      // Drop settings whose value we can't validate (except wallpaper, which needs none).
+      if (target !== 'wallpaper' && value === undefined) return null;
       return { kind: 'setting', setTarget: target, setValue: value };
     }
     default:
@@ -125,7 +164,7 @@ export async function ollamaUnderstand(opts: {
 
     return {
       parsed: coerceParsed(data),
-      reply: data?.reply ? String(data.reply) : null
+      reply: data?.reply ? String(data.reply).slice(0, MAX_REPLY_CHARS) : null
     };
   } catch {
     return null; // unreachable / aborted / bad response → caller uses offline parser

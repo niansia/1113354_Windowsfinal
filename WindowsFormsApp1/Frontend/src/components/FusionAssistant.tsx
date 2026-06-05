@@ -136,7 +136,9 @@ export const FusionAssistant: React.FC<FusionAssistantProps> = ({
           return tf(ASSISTANT_TEXT.weatherResult, wx.city, wx.temperature, condition, wx.apparent, wx.humidity);
         }
         case 'search': {
-          const q = (parsed.query || raw).trim();
+          // Cap length and always funnel through a fixed, encoded search URL — never navigate
+          // to a raw model- or user-supplied URL.
+          const q = (parsed.query || raw).trim().slice(0, 200);
           let opened: Window | null = null;
           try {
             opened = window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank', 'noopener');
