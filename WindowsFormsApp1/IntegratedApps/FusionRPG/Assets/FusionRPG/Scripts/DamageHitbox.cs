@@ -17,8 +17,14 @@ namespace FusionRPG
 
         public int Apply(Vector3 center, Transform ignoredRoot)
         {
-            var count = Physics.OverlapSphereNonAlloc(center, radius, hits, targetLayers, QueryTriggerInteraction.Ignore);
-            var damaged = new HashSet<Health>();
+            return Apply(center, ignoredRoot, null);
+        }
+
+        public int Apply(Vector3 center, Transform ignoredRoot, HashSet<Health> alreadyDamaged)
+        {
+            var count = Physics.OverlapSphereNonAlloc(center, radius, hits, targetLayers, QueryTriggerInteraction.Collide);
+            var damaged = alreadyDamaged ?? new HashSet<Health>();
+            var initialCount = damaged.Count;
             for (var i = 0; i < count; i++)
             {
                 var health = hits[i].GetComponentInParent<Health>();
@@ -27,7 +33,7 @@ namespace FusionRPG
                 health.ApplyDamage(damage);
                 damaged.Add(health);
             }
-            return damaged.Count;
+            return damaged.Count - initialCount;
         }
 
         public void Configure(int nextDamage, float nextRadius, LayerMask nextLayers)

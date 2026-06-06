@@ -15,7 +15,7 @@ public sealed class ImportedCourtyardCollisionTests
     }
 
     [Test]
-    public void ImportedCourtyardUsesMeshCollidersForEveryMeshFilter()
+    public void ImportedCourtyardUsesExactChunkedMeshColliders()
     {
         var imported = GameObject.Find("Traditional Temple Courtyard GLB");
         Assert.NotNull(imported, "The prototype scene should use the imported courtyard GLB.");
@@ -25,17 +25,22 @@ public sealed class ImportedCourtyardCollisionTests
             .Where(filter => filter.sharedMesh != null)
             .ToArray();
         Assert.Greater(meshFilters.Length, 0, "The imported courtyard should contain renderable mesh filters.");
-
-        foreach (var meshFilter in meshFilters)
+        var sourceTriangleCount = meshFilters.Sum(filter => TriangleCount(filter.sharedMesh));
+        var colliders = imported.GetComponentsInChildren<MeshCollider>();
+        Assert.Greater(colliders.Length, 1, "The high-density courtyard collider should be split into exact static chunks.");
+        var collisionTriangleCount = 0L;
+        foreach (var collider in colliders)
         {
-            var collider = meshFilter.GetComponent<MeshCollider>();
-            Assert.NotNull(collider, meshFilter.name + " is missing a precise MeshCollider.");
-            Assert.AreSame(meshFilter.sharedMesh, collider.sharedMesh, meshFilter.name + " collider should use the same mesh as the visible GLB geometry.");
-            Assert.IsFalse(collider.convex, meshFilter.name + " should use a non-convex static MeshCollider for precise walls and floors.");
+            Assert.NotNull(collider.sharedMesh, collider.name + " has no collision mesh.");
+            Assert.IsFalse(collider.convex, collider.name + " should use a non-convex static MeshCollider for precise walls and floors.");
             Assert.IsFalse(
                 collider.cookingOptions.HasFlag(MeshColliderCookingOptions.UseFastMidphase),
-                meshFilter.name + " should disable Fast Midphase because this high-density GLB can otherwise miss wall collisions.");
+                collider.name + " should disable Fast Midphase because high-density GLBs can otherwise miss wall collisions.");
+            var chunkTriangles = TriangleCount(collider.sharedMesh);
+            Assert.LessOrEqual(chunkTriangles, 350000, collider.name + " is still too large for reliable PhysX midphase collision.");
+            collisionTriangleCount += chunkTriangles;
         }
+        Assert.AreEqual(sourceTriangleCount, collisionTriangleCount, "Chunking must preserve every visible courtyard triangle.");
     }
 
     [Test]
@@ -65,5 +70,40 @@ public sealed class ImportedCourtyardCollisionTests
             .Any(component => component != null && component.GetType().Name == "PlayerModelAnimator");
 
         Assert.IsTrue(hasWalkDriver, "The imported GLB player should have a runtime walk animation driver so it does not slide rigidly.");
+    }
+
+    [Test]
+    public void ThirdPersonCameraPullsInFrontOfBlockingGeometry()
+    {
+        var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        wall.transform.position = new Vector3(0f, 0f, -3f);
+        wall.transform.localScale = new Vector3(4f, 4f, 0.5f);
+        Physics.SyncTransforms();
+
+        var resolvedDistance = FusionRPG.ThirdPersonCamera.ResolveObstructedDistance(
+            Vector3.zero,
+            Vector3.back,
+            10f,
+            0.28f,
+            0.12f,
+            null,
+            ~0);
+
+        Object.DestroyImmediate(wall);
+        Assert.Less(resolvedDistance, 3f, "The camera must move in front of a wall instead of rendering from inside it.");
+        Assert.Greater(resolvedDistance, 0.35f);
+    }
+
+    private static long TriangleCount(Mesh mesh)
+    {
+        long total = 0;
+        for (var subMesh = 0; subMesh < mesh.subMeshCount; subMesh++)
+        {
+            if (mesh.GetTopology(subMesh) == MeshTopology.Triangles)
+            {
+                total += (long)mesh.GetIndexCount(subMesh) / 3;
+            }
+        }
+        return total;
     }
 }

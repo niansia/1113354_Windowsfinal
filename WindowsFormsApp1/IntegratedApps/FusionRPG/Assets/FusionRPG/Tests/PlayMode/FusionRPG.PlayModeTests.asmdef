@@ -1,0 +1,9 @@
+{
+    "name": "FusionRPG.PlayModeTests",
+    "references": [
+        "FusionRPG"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

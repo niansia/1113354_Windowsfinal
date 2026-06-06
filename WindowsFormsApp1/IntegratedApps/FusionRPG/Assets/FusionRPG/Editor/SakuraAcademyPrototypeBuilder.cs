@@ -7,6 +7,7 @@ using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace FusionRPG.EditorTools
@@ -16,6 +17,8 @@ namespace FusionRPG.EditorTools
         private const string ScenePath = "Assets/FusionRPG/Scenes/SakuraAcademyPrototype.unity";
         private const string BuildPath = "Build/FusionRPG.exe";
         private const string MaterialsFolder = "Assets/FusionRPG/Materials";
+        private const string CollisionFolder = "Assets/FusionRPG/Collision";
+        private const int MaximumCollisionChunkTriangles = 350000;
         private const string AcademyEnvironmentPath = "Assets/FusionRPG/Art/References/sakura_academy_environment.png";
         private const string TempleCourtyardGlbPath = "Assets/FusionRPG/Art/Models/traditional_temple_courtyard.glb";
         private const string TempleCourtyardBaseColorPath = "Assets/FusionRPG/Art/Models/Textures/traditional_temple_courtyard_basecolor.jpg";
@@ -23,9 +26,20 @@ namespace FusionRPG.EditorTools
         private const string PinkCharacterGlbPath = "Assets/FusionRPG/Art/Models/pink_fantasy_character.glb";
         private const string PinkCharacterBaseColorPath = "Assets/FusionRPG/Art/Models/Textures/pink_fantasy_character_basecolor.jpg";
         private const string PinkCharacterNormalPath = "Assets/FusionRPG/Art/Models/Textures/pink_fantasy_character_normal.jpg";
+        private const string LesserEnemyGlbPath = "Assets/FusionRPG/Art/Models/lesser_sakura_beast.glb";
+        private const string LesserEnemyBaseColorPath = "Assets/FusionRPG/Art/Models/Textures/lesser_sakura_beast_basecolor.jpg";
+        private const string LesserEnemyNormalPath = "Assets/FusionRPG/Art/Models/Textures/lesser_sakura_beast_normal.jpg";
+        private const string BossEnemyGlbPath = "Assets/FusionRPG/Art/Models/crimson_sakura_beast_boss.glb";
+        private const string BossEnemyBaseColorPath = "Assets/FusionRPG/Art/Models/Textures/crimson_sakura_beast_boss_basecolor.jpg";
+        private const string BossEnemyNormalPath = "Assets/FusionRPG/Art/Models/Textures/crimson_sakura_beast_boss_normal.jpg";
+        private const string FlowerExplosionPrefabPath = "Assets/ImagyVFX/Prefabs/Flowers/Common/FlowerExplostionParticles.prefab";
+        private const string FlowerParticlesPrefabPath = "Assets/ImagyVFX/Prefabs/Flowers/Common/FlowerParticles.prefab";
+        private const string FlowerPetalTexturePath = "Assets/ImagyVFX/Textures/Flowers/PetalMultiple.psd";
         private const string PreviewOutputPath = "../../../output/fusion-rpg-unity-preview.png";
         private const float ImportedCourtyardTargetSize = 52f;
         private const float ImportedCharacterTargetHeight = 1.12f;
+        private const float ImportedLesserEnemyTargetHeight = 1.35f;
+        private const float ImportedBossTargetHeight = 3.05f;
 
         private static readonly Color Navy = new Color(0.05f, 0.07f, 0.14f, 1f);
         private static readonly Color Indigo = new Color(0.16f, 0.14f, 0.35f, 1f);
@@ -59,19 +73,56 @@ namespace FusionRPG.EditorTools
             BuildLighting();
             BuildCourtyard(environment.transform, materials);
 
+            var combatVfx = BuildCompatibleCombatVfx(materials["combatVfx"]);
             var player = BuildPlayer(gameplay.transform, materials);
-            var enemy = BuildEnemy(gameplay.transform, materials, player.transform);
             SnapCharacterToImportedGround(player);
-            SnapCharacterToImportedGround(enemy);
             var camera = BuildCamera(player.transform);
             player.GetComponent<PlayerController>().SetCamera(camera);
 
             var skillEffect = player.GetComponentInChildren<SkillEffect>();
-            player.GetComponent<PlayerCombat>().ConfigureForPrototype(skillEffect, ~0);
+            var playerCombat = player.GetComponent<PlayerCombat>();
+            playerCombat.ConfigureForPrototype(skillEffect, ~0);
+            playerCombat.ConfigureVfx(
+                combatVfx.hit,
+                combatVfx.projectile,
+                combatVfx.area,
+                combatVfx.dash,
+                combatVfx.ultimate,
+                materials["burst"]);
 
-            var hud = BuildHud(player.GetComponent<Health>(), enemy.GetComponent<Health>(), player.GetComponent<PlayerCombat>());
-            var manager = new GameObject("Prototype Game Manager").AddComponent<PrototypeGameManager>();
-            manager.ConfigureForPrototype(player.GetComponent<Health>(), enemy.GetComponent<Health>(), player.GetComponent<PlayerCombat>(), hud);
+            var waveOne = new[]
+            {
+                BuildLesserEnemy(gameplay.transform, materials, combatVfx.enemy, player.transform, "緋櫻幼獸・壹", new Vector3(-5f, 0.08f, 17f), 95, 2.75f, 12),
+                BuildLesserEnemy(gameplay.transform, materials, combatVfx.enemy, player.transform, "緋櫻幼獸・貳", new Vector3(-13f, 0.08f, 17f), 95, 2.75f, 12)
+            };
+            var waveTwo = new[]
+            {
+                BuildLesserEnemy(gameplay.transform, materials, combatVfx.enemy, player.transform, "緋櫻獸・迅", new Vector3(-7f, 0.08f, 15f), 135, 3.2f, 16),
+                BuildLesserEnemy(gameplay.transform, materials, combatVfx.enemy, player.transform, "緋櫻獸・牙", new Vector3(-13f, 0.08f, 13f), 150, 2.85f, 19),
+                BuildLesserEnemy(gameplay.transform, materials, combatVfx.enemy, player.transform, "緋櫻獸・影", new Vector3(-11f, 0.08f, 17f), 125, 3.45f, 15)
+            };
+            var boss = BuildBoss(gameplay.transform, materials, combatVfx.boss, player.transform, new Vector3(-5f, 0.08f, 15f));
+
+            foreach (var enemy in waveOne)
+            {
+                SnapCharacterToImportedGround(enemy);
+                enemy.SetActive(false);
+            }
+            foreach (var enemy in waveTwo)
+            {
+                SnapCharacterToImportedGround(enemy);
+                enemy.SetActive(false);
+            }
+            SnapCharacterToImportedGround(boss);
+            boss.SetActive(false);
+
+            var targetSelection = camera.gameObject.AddComponent<TargetSelectionController>();
+            targetSelection.Configure(camera);
+            var hud = BuildHud(player.GetComponent<Health>(), playerCombat, targetSelection, boss.GetComponent<Health>());
+            var managerObject = new GameObject("Prototype Game Manager");
+            managerObject.AddComponent<RuntimeSmokeCapture>();
+            var manager = managerObject.AddComponent<PrototypeGameManager>();
+            manager.ConfigureEncounter(player.GetComponent<Health>(), playerCombat, targetSelection, hud, waveOne, waveTwo, boss);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -125,9 +176,15 @@ namespace FusionRPG.EditorTools
                 throw new InvalidOperationException("Cannot capture Fusion RPG preview because no camera exists in the prototype scene.");
             }
 
-            camera.transform.position = new Vector3(-11f, 5.4f, 13.6f);
-            camera.transform.rotation = Quaternion.LookRotation(new Vector3(-11f, 1f, 15f) - camera.transform.position, Vector3.up);
-            camera.fieldOfView = 50f;
+            var enemies = UnityEngine.Object.FindObjectsByType<EnemyController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            for (var i = 0; i < enemies.Length; i++)
+            {
+                enemies[i].gameObject.SetActive(i < 2);
+            }
+
+            camera.transform.position = new Vector3(-11f, 3.3f, 20.3f);
+            camera.transform.rotation = Quaternion.LookRotation(new Vector3(-11f, 0.9f, 15f) - camera.transform.position, Vector3.up);
+            camera.fieldOfView = 56f;
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.67f, 0.77f, 0.84f, 1f);
 
@@ -281,6 +338,7 @@ namespace FusionRPG.EditorTools
                 "Assets/FusionRPG/Art/Models/Textures",
                 "Assets/FusionRPG/Art/References",
                 "Assets/FusionRPG/Materials",
+                "Assets/FusionRPG/Collision",
                 "Assets/FusionRPG/Prefabs",
                 "Assets/FusionRPG/Scenes",
                 "Assets/FusionRPG/UI"
@@ -319,6 +377,10 @@ namespace FusionRPG.EditorTools
                 ["burst"] = SaveMaterial("MAT_SakuraFrostBurst", new Color(0.68f, 0.95f, 1f, 0.42f), 0f, 0.95f, true),
                 ["templeCourtyard"] = SaveTempleCourtyardMaterial(),
                 ["pinkCharacter"] = SavePinkCharacterMaterial(),
+                ["lesserEnemy"] = SaveImportedModelMaterial("MAT_LesserSakuraBeast", LesserEnemyBaseColorPath, LesserEnemyNormalPath, 0.3f),
+                ["bossEnemy"] = SaveImportedModelMaterial("MAT_CrimsonSakuraBeast", BossEnemyBaseColorPath, BossEnemyNormalPath, 0.48f),
+                ["combatVfx"] = SaveParticleMaterial(),
+                ["target"] = SaveMaterial("MAT_TargetSelection", new Color(0.35f, 0.95f, 1f, 0.72f), 0f, 0.92f, true),
                 ["backdrop"] = SaveTextureMaterial("MAT_AcademyPaintedBackdrop", AcademyEnvironmentPath, Color.white)
             };
             return materials;
@@ -451,6 +513,70 @@ namespace FusionRPG.EditorTools
             if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 0.02f);
             if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", 0.42f);
             if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.42f);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material SaveImportedModelMaterial(string name, string baseColorPath, string normalPath, float smoothness)
+        {
+            var path = MaterialsFolder + "/" + name + ".mat";
+            var shader = Shader.Find("Standard") ?? Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Unlit/Texture");
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.shader = shader;
+            var baseColor = AssetDatabase.LoadAssetAtPath<Texture2D>(baseColorPath);
+            var normal = AssetDatabase.LoadAssetAtPath<Texture2D>(normalPath);
+            if (baseColor != null)
+            {
+                if (material.HasProperty("_MainTex")) material.SetTexture("_MainTex", baseColor);
+                if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", baseColor);
+            }
+            if (normal != null)
+            {
+                if (material.HasProperty("_BumpMap")) material.SetTexture("_BumpMap", normal);
+                if (material.HasProperty("_BumpScale")) material.SetFloat("_BumpScale", 0.5f);
+                material.EnableKeyword("_NORMALMAP");
+            }
+
+            if (material.HasProperty("_Color")) material.SetColor("_Color", Color.white);
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", Color.white);
+            if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", 0.04f);
+            if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", smoothness);
+            if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", smoothness);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material SaveParticleMaterial()
+        {
+            var path = MaterialsFolder + "/MAT_ImagySakuraParticles.mat";
+            var shader =
+                Shader.Find("Particles/Standard Unlit") ??
+                Shader.Find("Universal Render Pipeline/Particles/Unlit") ??
+                Shader.Find("Unlit/Transparent") ??
+                Shader.Find("Standard");
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.shader = shader;
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(FlowerPetalTexturePath);
+            if (texture != null)
+            {
+                if (material.HasProperty("_MainTex")) material.SetTexture("_MainTex", texture);
+                if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", texture);
+            }
+            if (material.HasProperty("_Color")) material.SetColor("_Color", new Color(1f, 0.48f, 0.75f, 0.9f));
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", new Color(1f, 0.48f, 0.75f, 0.9f));
+            material.renderQueue = 3000;
             EditorUtility.SetDirty(material);
             return material;
         }
@@ -630,22 +756,138 @@ namespace FusionRPG.EditorTools
 
         private static void AddMeshColliders(Transform root)
         {
-            foreach (var meshFilter in root.GetComponentsInChildren<MeshFilter>())
+            var meshFilters = root.GetComponentsInChildren<MeshFilter>();
+            for (var meshIndex = 0; meshIndex < meshFilters.Length; meshIndex++)
             {
-                if (meshFilter.sharedMesh == null || meshFilter.GetComponent<Collider>() != null)
+                var meshFilter = meshFilters[meshIndex];
+                if (meshFilter.sharedMesh == null)
                 {
                     continue;
                 }
 
+                var existingCollider = meshFilter.GetComponent<MeshCollider>();
+                if (existingCollider != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(existingCollider);
+                }
+
+                var triangleCount = GetMeshTriangleCount(meshFilter.sharedMesh);
+                if (triangleCount > MaximumCollisionChunkTriangles)
+                {
+                    AddExactCollisionChunks(meshFilter, meshIndex);
+                    continue;
+                }
+
                 var collider = meshFilter.gameObject.AddComponent<MeshCollider>();
-                collider.convex = false;
-                collider.cookingOptions =
-                    MeshColliderCookingOptions.CookForFasterSimulation |
-                    MeshColliderCookingOptions.EnableMeshCleaning |
-                    MeshColliderCookingOptions.WeldColocatedVertices;
+                ConfigurePreciseMeshCollider(collider);
                 collider.sharedMesh = meshFilter.sharedMesh;
-                Debug.Log("Added precise MeshCollider for imported mesh '" + meshFilter.sharedMesh.name + "' (" + GetMeshTriangleCount(meshFilter.sharedMesh) + " triangles).");
+                Debug.Log("Added precise MeshCollider for imported mesh '" + meshFilter.sharedMesh.name + "' (" + triangleCount + " triangles).");
             }
+        }
+
+        private static void AddExactCollisionChunks(MeshFilter sourceFilter, int meshIndex)
+        {
+            var sourceMesh = sourceFilter.sharedMesh;
+            var totalTriangles = GetMeshTriangleCount(sourceMesh);
+            var expectedChunkCount = Mathf.CeilToInt((float)totalTriangles / MaximumCollisionChunkTriangles);
+            var chunks = LoadCollisionChunks(meshIndex, expectedChunkCount, totalTriangles);
+            if (chunks == null)
+            {
+                chunks = GenerateCollisionChunks(sourceMesh, meshIndex, expectedChunkCount);
+            }
+
+            for (var i = 0; i < chunks.Count; i++)
+            {
+                var chunkObject = new GameObject("Exact Collision Chunk " + (i + 1).ToString("00"));
+                chunkObject.transform.SetParent(sourceFilter.transform, false);
+                var collider = chunkObject.AddComponent<MeshCollider>();
+                ConfigurePreciseMeshCollider(collider);
+                collider.sharedMesh = chunks[i];
+            }
+
+            Debug.Log(
+                "Split imported courtyard collider into " + chunks.Count +
+                " exact chunks while preserving " + totalTriangles + " triangles.");
+        }
+
+        private static List<Mesh> LoadCollisionChunks(int meshIndex, int expectedChunkCount, long expectedTriangles)
+        {
+            var chunks = new List<Mesh>(expectedChunkCount);
+            long triangleCount = 0;
+            for (var i = 0; i < expectedChunkCount; i++)
+            {
+                var chunk = AssetDatabase.LoadAssetAtPath<Mesh>(CollisionChunkPath(meshIndex, i));
+                if (chunk == null || GetMeshTriangleCount(chunk) > MaximumCollisionChunkTriangles)
+                {
+                    return null;
+                }
+
+                chunks.Add(chunk);
+                triangleCount += GetMeshTriangleCount(chunk);
+            }
+
+            return triangleCount == expectedTriangles ? chunks : null;
+        }
+
+        private static List<Mesh> GenerateCollisionChunks(Mesh sourceMesh, int meshIndex, int expectedChunkCount)
+        {
+            for (var i = 0; i < expectedChunkCount + 8; i++)
+            {
+                AssetDatabase.DeleteAsset(CollisionChunkPath(meshIndex, i));
+            }
+
+            var sourceVertices = sourceMesh.vertices;
+            var sourceTriangles = sourceMesh.triangles;
+            var chunks = new List<Mesh>(expectedChunkCount);
+            var indicesPerChunk = MaximumCollisionChunkTriangles * 3;
+            for (var chunkIndex = 0; chunkIndex < expectedChunkCount; chunkIndex++)
+            {
+                var firstIndex = chunkIndex * indicesPerChunk;
+                var indexCount = Mathf.Min(indicesPerChunk, sourceTriangles.Length - firstIndex);
+                var vertexMap = new Dictionary<int, int>(Mathf.Min(indexCount, 500000));
+                var chunkVertices = new List<Vector3>(Mathf.Min(indexCount, 500000));
+                var chunkTriangles = new int[indexCount];
+                for (var localIndex = 0; localIndex < indexCount; localIndex++)
+                {
+                    var sourceVertexIndex = sourceTriangles[firstIndex + localIndex];
+                    if (!vertexMap.TryGetValue(sourceVertexIndex, out var chunkVertexIndex))
+                    {
+                        chunkVertexIndex = chunkVertices.Count;
+                        vertexMap.Add(sourceVertexIndex, chunkVertexIndex);
+                        chunkVertices.Add(sourceVertices[sourceVertexIndex]);
+                    }
+                    chunkTriangles[localIndex] = chunkVertexIndex;
+                }
+
+                var chunkMesh = new Mesh
+                {
+                    name = "Temple Courtyard Collision " + (chunkIndex + 1).ToString("00"),
+                    indexFormat = chunkVertices.Count > 65535
+                        ? UnityEngine.Rendering.IndexFormat.UInt32
+                        : UnityEngine.Rendering.IndexFormat.UInt16
+                };
+                chunkMesh.SetVertices(chunkVertices);
+                chunkMesh.SetTriangles(chunkTriangles, 0, true);
+                chunkMesh.RecalculateBounds();
+                AssetDatabase.CreateAsset(chunkMesh, CollisionChunkPath(meshIndex, chunkIndex));
+                chunks.Add(chunkMesh);
+            }
+
+            return chunks;
+        }
+
+        private static string CollisionChunkPath(int meshIndex, int chunkIndex)
+        {
+            return CollisionFolder + "/TempleCourtyard_" + meshIndex.ToString("00") + "_" + chunkIndex.ToString("00") + ".asset";
+        }
+
+        private static void ConfigurePreciseMeshCollider(MeshCollider collider)
+        {
+            collider.convex = false;
+            collider.cookingOptions =
+                MeshColliderCookingOptions.CookForFasterSimulation |
+                MeshColliderCookingOptions.EnableMeshCleaning |
+                MeshColliderCookingOptions.WeldColocatedVertices;
         }
 
         private static long GetMeshTriangleCount(Mesh mesh)
@@ -1208,66 +1450,376 @@ namespace FusionRPG.EditorTools
             CreateSphere("Hair Ornament Tassel", new Vector3(0.08f, -0.38f, 0.02f), Vector3.one * 0.08f, materials["sakura"], flower.transform, true);
         }
 
-        private static GameObject BuildEnemy(Transform parent, Dictionary<string, Material> materials, Transform target)
+        private static GameObject BuildLesserEnemy(
+            Transform parent,
+            Dictionary<string, Material> materials,
+            GameObject attackVfx,
+            Transform target,
+            string displayName,
+            Vector3 position,
+            int maxHealth,
+            float speed,
+            int damage)
         {
-            var enemy = new GameObject("Training Sentinel");
+            var enemy = new GameObject(displayName);
             enemy.transform.SetParent(parent, false);
-            enemy.transform.position = new Vector3(-5f, 0.08f, 17f);
+            enemy.transform.position = position;
+
             var controller = enemy.AddComponent<CharacterController>();
-            controller.center = new Vector3(0f, 0.62f, 0f);
-            controller.height = 1.2f;
-            controller.radius = 0.28f;
+            controller.center = new Vector3(0f, 0.68f, 0f);
+            controller.height = 1.32f;
+            controller.radius = 0.36f;
+            controller.skinWidth = 0.035f;
+            controller.stepOffset = 0.22f;
+            controller.slopeLimit = 52f;
+            controller.minMoveDistance = 0f;
 
             var health = enemy.AddComponent<Health>();
-            health.ConfigureMaxHealth(100);
+            health.ConfigureMaxHealth(maxHealth);
+            var enemyAttack = enemy.AddComponent<EnemyAttack>();
+            enemyAttack.Configure(~0, attackVfx, materials["burst"]);
             var ai = enemy.AddComponent<EnemyController>();
             ai.SetTarget(target);
+            ai.Configure(speed, 18f, 1.75f, 0.72f, damage);
 
-            var visuals = NewGroup("Sentinel Visuals", enemy.transform);
-            CreateCapsule("Navy Core", new Vector3(0f, 0.78f, 0f), new Vector3(0.46f, 0.82f, 0.46f), materials["indigo"], visuals.transform, true);
-            CreateSphere("Ice Sensor", new Vector3(0f, 1.42f, -0.02f), Vector3.one * 0.35f, materials["ice"], visuals.transform, true);
-            CreateCube("Gold Guard", new Vector3(0f, 1.05f, -0.35f), new Vector3(0.8f, 0.16f, 0.1f), materials["gold"], visuals.transform);
-            CreateCube("Pink Sigil", new Vector3(0f, 1.25f, -0.43f), new Vector3(0.38f, 0.38f, 0.08f), materials["sakura"], visuals.transform);
+            var visuals = NewGroup("Lesser Sakura Beast Visuals", enemy.transform);
+            BuildImportedActorVisual(visuals.transform, LesserEnemyGlbPath, materials["lesserEnemy"], ImportedLesserEnemyTargetHeight);
+            var animator = enemy.AddComponent<EnemyProceduralAnimator>();
+            animator.Configure(visuals.transform);
+
+            AddCompoundHurtboxes(enemy.transform, 1.35f, 0.38f);
+            var marker = BuildSelectionMarker(enemy.transform, materials["target"], 1.55f, 0.52f);
+            enemy.AddComponent<CombatTarget>().Configure(displayName, marker);
             return enemy;
+        }
+
+        private static GameObject BuildBoss(
+            Transform parent,
+            Dictionary<string, Material> materials,
+            GameObject attackVfx,
+            Transform target,
+            Vector3 position)
+        {
+            var boss = new GameObject("緋櫻獸");
+            boss.transform.SetParent(parent, false);
+            boss.transform.position = position;
+
+            var controller = boss.AddComponent<CharacterController>();
+            controller.center = new Vector3(0f, 1.2f, 0f);
+            controller.height = 2.35f;
+            controller.radius = 0.86f;
+            controller.skinWidth = 0.055f;
+            controller.stepOffset = 0.3f;
+            controller.slopeLimit = 48f;
+            controller.minMoveDistance = 0f;
+
+            var health = boss.AddComponent<Health>();
+            health.ConfigureMaxHealth(980);
+            var enemyAttack = boss.AddComponent<EnemyAttack>();
+            enemyAttack.Configure(~0, attackVfx, materials["burst"]);
+            var controllerScript = boss.AddComponent<BossController>();
+            controllerScript.SetTarget(target);
+            controllerScript.Configure(~0);
+
+            var visuals = NewGroup("Crimson Sakura Beast Visuals", boss.transform);
+            BuildImportedActorVisual(visuals.transform, BossEnemyGlbPath, materials["bossEnemy"], ImportedBossTargetHeight);
+            var animator = boss.AddComponent<EnemyProceduralAnimator>();
+            animator.Configure(visuals.transform);
+
+            AddCompoundHurtboxes(boss.transform, 2.55f, 0.92f);
+            var marker = BuildSelectionMarker(boss.transform, materials["target"], 3.25f, 1.15f);
+            boss.AddComponent<CombatTarget>().Configure("緋櫻獸", marker);
+            return boss;
+        }
+
+        private static void BuildImportedActorVisual(Transform parent, string assetPath, Material material, float targetHeight)
+        {
+            var importedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+            if (importedPrefab == null)
+            {
+                CreateCapsule("Fallback Beast Body", new Vector3(0f, targetHeight * 0.45f, 0f), new Vector3(0.8f, targetHeight * 0.45f, 0.8f), material, parent, true);
+                return;
+            }
+
+            var instance = PrefabUtility.InstantiatePrefab(importedPrefab, parent) as GameObject;
+            if (instance == null)
+            {
+                instance = UnityEngine.Object.Instantiate(importedPrefab, parent);
+            }
+            instance.name = Path.GetFileNameWithoutExtension(assetPath);
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localRotation = Quaternion.identity;
+            instance.transform.localScale = Vector3.one;
+
+            foreach (var collider in instance.GetComponentsInChildren<Collider>(true))
+            {
+                UnityEngine.Object.DestroyImmediate(collider);
+            }
+
+            NormalizeActorVisual(parent, instance.transform, targetHeight);
+            AssignImportedCharacterMaterial(instance.transform, material);
+        }
+
+        private static void NormalizeActorVisual(Transform parent, Transform instance, float targetHeight)
+        {
+            if (!TryGetRendererBounds(instance, out var bounds) || bounds.size.y <= 0.01f)
+            {
+                return;
+            }
+
+            instance.localScale *= targetHeight / bounds.size.y;
+            if (!TryGetRendererBounds(instance, out bounds))
+            {
+                return;
+            }
+
+            var targetBase = parent.position;
+            instance.position += new Vector3(
+                targetBase.x - bounds.center.x,
+                targetBase.y - bounds.min.y,
+                targetBase.z - bounds.center.z);
+        }
+
+        private static void AddCompoundHurtboxes(Transform root, float height, float radius)
+        {
+            AddHurtbox(root, "Lower Hurtbox", new Vector3(0f, height * 0.26f, 0f), radius * 1.02f, height * 0.48f);
+            AddHurtbox(root, "Core Hurtbox", new Vector3(0f, height * 0.58f, 0f), radius, height * 0.52f);
+            AddHurtbox(root, "Upper Hurtbox", new Vector3(0f, height * 0.84f, 0f), radius * 0.82f, height * 0.34f);
+        }
+
+        private static void AddHurtbox(Transform root, string name, Vector3 center, float radius, float height)
+        {
+            var hurtbox = new GameObject(name);
+            hurtbox.transform.SetParent(root, false);
+            hurtbox.transform.localPosition = center;
+            var collider = hurtbox.AddComponent<CapsuleCollider>();
+            collider.radius = Mathf.Max(0.05f, radius);
+            collider.height = Mathf.Max(collider.radius * 2f, height);
+            collider.isTrigger = true;
+            hurtbox.AddComponent<CombatHurtbox>();
+        }
+
+        private static GameObject BuildSelectionMarker(Transform parent, Material material, float height, float radius)
+        {
+            var marker = CreateCylinder(
+                "Target Selection Marker",
+                new Vector3(0f, height, 0f),
+                new Vector3(radius, 0.025f, radius),
+                material,
+                parent,
+                Quaternion.identity);
+            var collider = marker.GetComponent<Collider>();
+            if (collider != null)
+            {
+                UnityEngine.Object.DestroyImmediate(collider);
+            }
+            marker.SetActive(false);
+            return marker;
+        }
+
+        private sealed class CombatVfxSet
+        {
+            public GameObject hit;
+            public GameObject projectile;
+            public GameObject area;
+            public GameObject dash;
+            public GameObject ultimate;
+            public GameObject enemy;
+            public GameObject boss;
+        }
+
+        private static CombatVfxSet BuildCompatibleCombatVfx(Material particleMaterial)
+        {
+            return new CombatVfxSet
+            {
+                hit = SaveCompatibleVfxPrefab(FlowerExplosionPrefabPath, "VFX_SakuraBasicHit", particleMaterial, new Color(1f, 0.55f, 0.78f, 1f), 0.75f),
+                projectile = SaveCompatibleVfxPrefab(FlowerParticlesPrefabPath, "VFX_SakuraProjectile", particleMaterial, new Color(0.55f, 0.92f, 1f, 1f), 0.55f),
+                area = SaveCompatibleVfxPrefab(FlowerExplosionPrefabPath, "VFX_SakuraArea", particleMaterial, new Color(1f, 0.42f, 0.72f, 1f), 1.35f),
+                dash = SaveCompatibleVfxPrefab(FlowerParticlesPrefabPath, "VFX_SakuraDash", particleMaterial, new Color(0.62f, 0.86f, 1f, 1f), 1.1f),
+                ultimate = SaveCompatibleVfxPrefab(FlowerExplosionPrefabPath, "VFX_SakuraUltimate", particleMaterial, new Color(1f, 0.32f, 0.64f, 1f), 2.25f),
+                enemy = SaveCompatibleVfxPrefab(FlowerExplosionPrefabPath, "VFX_EnemyAttack", particleMaterial, new Color(0.82f, 0.2f, 0.5f, 1f), 1.05f),
+                boss = SaveCompatibleVfxPrefab(FlowerExplosionPrefabPath, "VFX_BossAttack", particleMaterial, new Color(1f, 0.12f, 0.38f, 1f), 1.8f)
+            };
+        }
+
+        private static GameObject SaveCompatibleVfxPrefab(
+            string sourcePath,
+            string outputName,
+            Material material,
+            Color color,
+            float scale)
+        {
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath);
+            if (source == null)
+            {
+                return null;
+            }
+
+            var instance = PrefabUtility.InstantiatePrefab(source) as GameObject;
+            if (instance == null)
+            {
+                instance = UnityEngine.Object.Instantiate(source);
+            }
+            instance.name = outputName;
+            instance.transform.localScale *= scale;
+            foreach (var particleSystem in instance.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main = particleSystem.main;
+                main.startColor = new ParticleSystem.MinMaxGradient(color);
+                var renderer = particleSystem.GetComponent<ParticleSystemRenderer>();
+                if (renderer != null)
+                {
+                    renderer.sharedMaterial = material;
+                    renderer.trailMaterial = material;
+                }
+            }
+
+            var outputPath = "Assets/FusionRPG/Prefabs/" + outputName + ".prefab";
+            var prefab = PrefabUtility.SaveAsPrefabAsset(instance, outputPath);
+            UnityEngine.Object.DestroyImmediate(instance);
+            return prefab;
         }
 
         private static Camera BuildCamera(Transform target)
         {
             var cameraObject = new GameObject("Third Person Camera");
             cameraObject.tag = "MainCamera";
-            cameraObject.transform.position = new Vector3(-11f, 5.4f, 13.6f);
-            cameraObject.transform.rotation = Quaternion.Euler(72f, 0f, 0f);
+            cameraObject.transform.position = new Vector3(-11f, 3.3f, 20.3f);
+            cameraObject.transform.rotation = Quaternion.Euler(25f, 180f, 0f);
             var camera = cameraObject.AddComponent<Camera>();
             camera.fieldOfView = 50f;
             camera.nearClipPlane = 0.08f;
             camera.farClipPlane = 180f;
             var orbit = cameraObject.AddComponent<ThirdPersonCamera>();
             orbit.SetTarget(target);
-            orbit.ConfigureForPrototype(new Vector3(0f, 0.82f, 0f), 4.5f, 72f);
+            orbit.ConfigureForPrototype(new Vector3(0f, 0.82f, 0f), 5.8f, 25f);
             return camera;
         }
 
-        private static GameHud BuildHud(Health playerHealth, Health enemyHealth, PlayerCombat playerCombat)
+        private static GameHud BuildHud(
+            Health playerHealth,
+            PlayerCombat playerCombat,
+            TargetSelectionController targetSelection,
+            Health bossHealth)
         {
             var canvasObject = new GameObject("Fusion RPG HUD");
             var canvas = canvasObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            var scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1280f, 720f);
+            scaler.matchWidthOrHeight = 0.5f;
             canvasObject.AddComponent<GraphicRaycaster>();
+            if (UnityEngine.Object.FindFirstObjectByType<EventSystem>() == null)
+            {
+                var eventSystem = new GameObject("Event System");
+                eventSystem.AddComponent<EventSystem>();
+                eventSystem.AddComponent<StandaloneInputModule>();
+            }
 
-            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf") ?? Font.CreateDynamicFontFromOSFont("Arial", 18);
-            var playerFill = CreateHudBar(canvasObject.transform, "Player HP", new Vector2(24f, -24f), new Color(0.12f, 0.22f, 0.35f, 0.82f), SakuraPink);
-            var enemyFill = CreateHudBar(canvasObject.transform, "Enemy HP", new Vector2(24f, -62f), new Color(0.12f, 0.22f, 0.35f, 0.82f), IceBlue);
-            var skillFill = CreateHudBar(canvasObject.transform, "Sakura Frost Burst", new Vector2(24f, -100f), new Color(0.12f, 0.22f, 0.35f, 0.82f), Gold);
-            var objective = CreateHudText(canvasObject.transform, "Objective", "Sakura Frost Burst ready", font, new Vector2(24f, -136f), 18, TextAnchor.UpperLeft);
+            var font = Font.CreateDynamicFontFromOSFont(
+                new[] { "Microsoft JhengHei UI", "Microsoft JhengHei", "Arial Unicode MS", "Arial" },
+                20);
+            CreateHudText(canvasObject.transform, "玩家生命標籤", "櫻庭 さくら", font, new Vector2(24f, -18f), 17, TextAnchor.UpperLeft);
+            var playerFill = CreateHudBar(canvasObject.transform, "玩家生命", new Vector2(24f, -44f), new Color(0.05f, 0.07f, 0.14f, 0.9f), SakuraPink);
+
+            var selectedFill = CreateHudBar(canvasObject.transform, "鎖定目標", new Vector2(24f, -82f), new Color(0.05f, 0.07f, 0.14f, 0.86f), IceBlue);
+            var selectedPanel = selectedFill.transform.parent.gameObject;
+            var targetText = CreateHudText(selectedPanel.transform, "目標名稱", string.Empty, font, new Vector2(4f, 24f), 14, TextAnchor.LowerLeft);
+            targetText.rectTransform.sizeDelta = new Vector2(260f, 22f);
+
+            var objective = CreateHudText(canvasObject.transform, "戰鬥目標", "第一波：擊敗緋櫻幼獸", font, new Vector2(24f, -122f), 18, TextAnchor.UpperLeft);
+            var controls = CreateHudText(canvasObject.transform, "操作提示", "方向鍵 移動　A 攻擊　Space 跳躍　Shift 衝刺　滑鼠拖曳視角", font, Vector2.zero, 14, TextAnchor.LowerLeft);
+            controls.rectTransform.anchorMin = Vector2.zero;
+            controls.rectTransform.anchorMax = Vector2.zero;
+            controls.rectTransform.pivot = Vector2.zero;
+            controls.rectTransform.anchoredPosition = new Vector2(24f, 20f);
+            controls.rectTransform.sizeDelta = new Vector2(680f, 28f);
+
+            var quickFill = CreateSkillGauge(canvasObject.transform, "W 小技能", "W", font, new Vector2(-250f, 24f), IceBlue);
+            var areaFill = CreateSkillGauge(canvasObject.transform, "Q 範圍技能", "Q", font, new Vector2(-180f, 24f), SakuraPink);
+            var dashFill = CreateSkillGauge(canvasObject.transform, "E 突進", "E", font, new Vector2(-110f, 24f), Gold);
+            var ultimateFill = CreateSkillGauge(canvasObject.transform, "R 大招", "R", font, new Vector2(-40f, 24f), new Color(0.84f, 0.38f, 1f, 1f));
+
+            var bossFill = CreateHudBar(canvasObject.transform, "Boss 生命", Vector2.zero, new Color(0.05f, 0.07f, 0.14f, 0.9f), new Color(0.9f, 0.16f, 0.38f, 1f));
+            var bossPanel = bossFill.transform.parent.gameObject;
+            var bossRect = bossPanel.GetComponent<RectTransform>();
+            bossRect.anchorMin = new Vector2(0.5f, 1f);
+            bossRect.anchorMax = new Vector2(0.5f, 1f);
+            bossRect.pivot = new Vector2(0.5f, 1f);
+            bossRect.anchoredPosition = new Vector2(0f, -26f);
+            bossRect.sizeDelta = new Vector2(520f, 22f);
+            var bossText = CreateHudText(bossPanel.transform, "Boss 名稱", "緋櫻獸　初綻形態", font, new Vector2(0f, 28f), 18, TextAnchor.UpperCenter);
+            bossText.rectTransform.anchorMin = new Vector2(0f, 0f);
+            bossText.rectTransform.anchorMax = new Vector2(1f, 0f);
+            bossText.rectTransform.pivot = new Vector2(0.5f, 0f);
+            bossText.rectTransform.sizeDelta = new Vector2(0f, 28f);
+
             var complete = CreateHudText(canvasObject.transform, "Completion", string.Empty, font, new Vector2(0f, -44f), 36, TextAnchor.UpperCenter);
             StretchTop(complete.rectTransform);
             complete.gameObject.SetActive(false);
 
             var hud = canvasObject.AddComponent<GameHud>();
-            hud.ConfigureForPrototype(playerFill, enemyFill, skillFill, objective, complete);
-            hud.Bind(playerHealth, enemyHealth, playerCombat);
+            hud.ConfigureCombatHud(
+                playerFill,
+                selectedFill,
+                bossFill,
+                quickFill,
+                areaFill,
+                dashFill,
+                ultimateFill,
+                objective,
+                targetText,
+                bossText,
+                complete,
+                selectedPanel,
+                bossPanel);
+            hud.Bind(playerHealth, playerCombat, targetSelection, bossHealth);
             return hud;
+        }
+
+        private static Image CreateSkillGauge(
+            Transform parent,
+            string name,
+            string keyLabel,
+            Font font,
+            Vector2 anchoredPosition,
+            Color fillColor)
+        {
+            var background = new GameObject(name);
+            background.transform.SetParent(parent, false);
+            var rect = background.AddComponent<RectTransform>();
+            rect.anchorMin = new Vector2(1f, 0f);
+            rect.anchorMax = new Vector2(1f, 0f);
+            rect.pivot = new Vector2(1f, 0f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = new Vector2(58f, 58f);
+            var image = background.AddComponent<Image>();
+            image.color = new Color(0.04f, 0.06f, 0.12f, 0.9f);
+
+            var fillObject = new GameObject("Cooldown Fill");
+            fillObject.transform.SetParent(background.transform, false);
+            var fillRect = fillObject.AddComponent<RectTransform>();
+            fillRect.anchorMin = new Vector2(0.08f, 0.08f);
+            fillRect.anchorMax = new Vector2(0.92f, 0.92f);
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
+            var fill = fillObject.AddComponent<Image>();
+            fill.color = fillColor;
+            fill.type = Image.Type.Filled;
+            fill.fillMethod = Image.FillMethod.Radial360;
+            fill.fillOrigin = 2;
+            fill.fillClockwise = true;
+            fill.fillAmount = 1f;
+
+            var label = CreateHudText(background.transform, "按鍵", keyLabel, font, Vector2.zero, 24, TextAnchor.MiddleCenter);
+            label.rectTransform.anchorMin = Vector2.zero;
+            label.rectTransform.anchorMax = Vector2.one;
+            label.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            label.rectTransform.anchoredPosition = Vector2.zero;
+            label.rectTransform.sizeDelta = Vector2.zero;
+            label.color = Color.white;
+            return fill;
         }
 
         private static Image CreateHudBar(Transform parent, string name, Vector2 anchoredPosition, Color backgroundColor, Color fillColor)

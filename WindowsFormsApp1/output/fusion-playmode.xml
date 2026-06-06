@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-06-05 23:30:05Z" end-time="2026-06-05 23:30:11Z" duration="5.6784804">
+  <test-suite type="TestSuite" id="1007" name="FusionRPG" fullname="FusionRPG" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-06-05 23:30:05Z" end-time="2026-06-05 23:30:11Z" duration="5.678480" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1004" name="FusionRPG.PlayModeTests.dll" fullname="C:/Users/User/OneDrive/桌面/視窗/視窗期末/WindowsFormsApp1/WindowsFormsApp1/IntegratedApps/FusionRPG/Library/ScriptAssemblies/FusionRPG.PlayModeTests.dll" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-06-05 23:30:05Z" end-time="2026-06-05 23:30:11Z" duration="5.674573" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="39900" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestFixture" id="1001" name="PlayerAbilityPlayModeTests" fullname="PlayerAbilityPlayModeTests" classname="PlayerAbilityPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-06-05 23:30:05Z" end-time="2026-06-05 23:30:11Z" duration="5.673501" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1003" name="EncounterStartsWithOnlyFirstWaveActive" fullname="PlayerAbilityPlayModeTests.EncounterStartsWithOnlyFirstWaveActive" methodname="EncounterStartsWithOnlyFirstWaveActive" classname="PlayerAbilityPlayModeTests" runstate="Runnable" seed="2053959379" result="Passed" start-time="2026-06-05 23:30:05Z" end-time="2026-06-05 23:30:10Z" duration="5.619766" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1002" name="SweptProjectileHitsTargetBetweenFramesOnlyOnce" fullname="PlayerAbilityPlayModeTests.SweptProjectileHitsTargetBetweenFramesOnlyOnce" methodname="SweptProjectileHitsTargetBetweenFramesOnlyOnce" classname="PlayerAbilityPlayModeTests" runstate="Runnable" seed="2033952687" result="Passed" start-time="2026-06-05 23:30:10Z" end-time="2026-06-05 23:30:11Z" duration="0.044234" asserts="0">
+          <properties>
+            <property name="_JOINTYPE" value="UnityCombinatorial" />
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+          <output><![CDATA[Saving results to: C:/Users/User/AppData/LocalLow/DefaultCompany/FusionRPG\TestResults.xml
+]]></output>
+        </test-case>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

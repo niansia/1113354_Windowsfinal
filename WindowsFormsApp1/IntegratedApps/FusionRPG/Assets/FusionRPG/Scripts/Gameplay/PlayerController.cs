@@ -24,9 +24,11 @@ namespace FusionRPG
         private float dashCooldownTimer;
 
         public bool IsDashing => dashTimer > 0f;
+        public bool IsGrounded => controller != null && controller.isGrounded;
         public Vector3 MoveDirection => planarVelocity.sqrMagnitude <= 0.001f ? transform.forward : planarVelocity.normalized;
         public float CurrentPlanarSpeed => planarVelocity.magnitude;
         public float NormalizedMoveAmount => Mathf.Clamp01(CurrentPlanarSpeed / sprintSpeed);
+        public float VerticalSpeed => verticalVelocity;
 
         public void SetCamera(Camera nextCamera)
         {
@@ -44,7 +46,7 @@ namespace FusionRPG
 
         private void Update()
         {
-            var input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+            var input = CombatInputBindings.ReadMovement();
             var jump = Input.GetKeyDown(KeyCode.Space);
             var dash = Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift);
             Move(input, jump, dash, Time.deltaTime);
@@ -92,8 +94,7 @@ namespace FusionRPG
             }
             else
             {
-                var targetSpeed = Input.GetKey(KeyCode.LeftControl) ? sprintSpeed : moveSpeed;
-                horizontal = desired * targetSpeed;
+                horizontal = desired * moveSpeed;
             }
 
             planarVelocity = horizontal;
@@ -106,6 +107,16 @@ namespace FusionRPG
             var motion = horizontal;
             motion.y = verticalVelocity;
             MoveWithCollisionSubsteps(motion * deltaTime);
+        }
+
+        public void MoveExternal(Vector3 worldMotion)
+        {
+            MoveWithCollisionSubsteps(worldMotion);
+        }
+
+        public void BeginPlunge(float downwardSpeed)
+        {
+            verticalVelocity = -Mathf.Max(2f, downwardSpeed);
         }
 
         private void MoveWithCollisionSubsteps(Vector3 motion)

@@ -1,0 +1,1045 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="152" result="Passed" total="152" passed="152" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:34Z" duration="17.5888911">
+  <test-suite type="TestSuite" id="1000" name="FusionRPG" fullname="FusionRPG" runstate="Runnable" testcasecount="152" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:34Z" duration="17.588891" total="152" passed="152" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1032" name="FusionRPG.EditModeTests.dll" fullname="C:/Users/User/OneDrive/桌面/視窗/視窗期末/WindowsFormsApp1/WindowsFormsApp1/IntegratedApps/FusionRPG/Library/ScriptAssemblies/FusionRPG.EditModeTests.dll" runstate="Runnable" testcasecount="22" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:27Z" duration="10.048329" total="22" passed="22" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="42816" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestFixture" id="1003" name="CombatComboTests" fullname="CombatComboTests" classname="CombatComboTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:17Z" duration="0.019427" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1005" name="ComboResetsWhenTimingWindowExpires" fullname="CombatComboTests.ComboResetsWhenTimingWindowExpires" methodname="ComboResetsWhenTimingWindowExpires" classname="CombatComboTests" runstate="Runnable" seed="34501401" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:17Z" duration="0.009660" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1004" name="NextHitCyclesThroughThreeHitDamageSequence" fullname="CombatComboTests.NextHitCyclesThroughThreeHitDamageSequence" methodname="NextHitCyclesThroughThreeHitDamageSequence" classname="CombatComboTests" runstate="Runnable" seed="1999147782" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:17Z" duration="0.000210" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1006" name="CombatExpansionTests" fullname="CombatExpansionTests" classname="CombatExpansionTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:17Z" duration="0.004839" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1008" name="BossPhaseChangesAtThresholdsAndNeverRegresses" fullname="CombatExpansionTests.BossPhaseChangesAtThresholdsAndNeverRegresses" methodname="BossPhaseChangesAtThresholdsAndNeverRegresses" classname="CombatExpansionTests" runstate="Runnable" seed="345549534" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:17Z" duration="0.001052" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1009" name="EncounterUnlocksBossOnlyAfterBothWavesAreDefeated" fullname="CombatExpansionTests.EncounterUnlocksBossOnlyAfterBothWavesAreDefeated" methodname="EncounterUnlocksBossOnlyAfterBothWavesAreDefeated" classname="CombatExpansionTests" runstate="Runnable" seed="674572094" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:17Z" duration="0.000630" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1010" name="SelectedTargetClearsAfterTargetDies" fullname="CombatExpansionTests.SelectedTargetClearsAfterTargetDies" methodname="SelectedTargetClearsAfterTargetDies" classname="CombatExpansionTests" runstate="Runnable" seed="32553640" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:17Z" duration="0.001523" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1007" name="UltimateGaugeFillsClampsAndConsumesOnlyWhenReady" fullname="CombatExpansionTests.UltimateGaugeFillsClampsAndConsumesOnlyWhenReady" methodname="UltimateGaugeFillsClampsAndConsumesOnlyWhenReady" classname="CombatExpansionTests" runstate="Runnable" seed="163583782" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:17Z" duration="0.000247" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1011" name="EnemyEncounterSceneTests" fullname="EnemyEncounterSceneTests" classname="EnemyEncounterSceneTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:25Z" duration="8.738364" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1014" name="BossHasThreePhaseControllerAndDurableHealthPool" fullname="EnemyEncounterSceneTests.BossHasThreePhaseControllerAndDurableHealthPool" methodname="BossHasThreePhaseControllerAndDurableHealthPool" classname="EnemyEncounterSceneTests" runstate="Runnable" seed="1692214450" result="Passed" start-time="2026-06-05 23:22:17Z" end-time="2026-06-05 23:22:21Z" duration="4.516595" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1013" name="EncounterSceneUsesCompoundPrimitiveHurtboxesForMovingEnemies" fullname="EnemyEncounterSceneTests.EncounterSceneUsesCompoundPrimitiveHurtboxesForMovingEnemies" methodname="EncounterSceneUsesCompoundPrimitiveHurtboxesForMovingEnemies" classname="EnemyEncounterSceneTests" runstate="Runnable" seed="505714033" result="Passed" start-time="2026-06-05 23:22:21Z" end-time="2026-06-05 23:22:25Z" duration="3.995423" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1015" name="EveryCombatActorStartsOnImportedCourtyardGeometry" fullname="EnemyEncounterSceneTests.EveryCombatActorStartsOnImportedCourtyardGeometry" methodname="EveryCombatActorStartsOnImportedCourtyardGeometry" classname="EnemyEncounterSceneTests" runstate="Runnable" seed="155139388" result="Passed" start-time="2026-06-05 23:22:25Z" end-time="2026-06-05 23:22:25Z" duration="0.225111" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1012" name="SuppliedEnemyGlbsImportAsGameObjects" fullname="EnemyEncounterSceneTests.SuppliedEnemyGlbsImportAsGameObjects" methodname="SuppliedEnemyGlbsImportAsGameObjects" classname="EnemyEncounterSceneTests" runstate="Runnable" seed="1997451575" result="Passed" start-time="2026-06-05 23:22:25Z" end-time="2026-06-05 23:22:25Z" duration="0.000244" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1016" name="HealthTests" fullname="HealthTests" classname="HealthTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-06-05 23:22:25Z" end-time="2026-06-05 23:22:26Z" duration="0.346895" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1017" name="DamageClampsAtZeroAndFiresDeathOnce" fullname="HealthTests.DamageClampsAtZeroAndFiresDeathOnce" methodname="DamageClampsAtZeroAndFiresDeathOnce" classname="HealthTests" runstate="Runnable" seed="1319489895" result="Passed" start-time="2026-06-05 23:22:26Z" end-time="2026-06-05 23:22:26Z" duration="0.000419" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1018" name="HealDoesNotExceedMaxHealth" fullname="HealthTests.HealDoesNotExceedMaxHealth" methodname="HealDoesNotExceedMaxHealth" classname="HealthTests" runstate="Runnable" seed="764501175" result="Passed" start-time="2026-06-05 23:22:26Z" end-time="2026-06-05 23:22:26Z" duration="0.000243" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1019" name="IncomingDamageMultiplierReducesDamageDuringUltimate" fullname="HealthTests.IncomingDamageMultiplierReducesDamageDuringUltimate" methodname="IncomingDamageMultiplierReducesDamageDuringUltimate" classname="HealthTests" runstate="Runnable" seed="30647721" result="Passed" start-time="2026-06-05 23:22:26Z" end-time="2026-06-05 23:22:26Z" duration="0.000188" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1020" name="ImportedCourtyardCollisionTests" fullname="ImportedCourtyardCollisionTests" classname="ImportedCourtyardCollisionTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-06-05 23:22:26Z" end-time="2026-06-05 23:22:27Z" duration="0.932542" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1021" name="ImportedCourtyardUsesExactChunkedMeshColliders" fullname="ImportedCourtyardCollisionTests.ImportedCourtyardUsesExactChunkedMeshColliders" methodname="ImportedCourtyardUsesExactChunkedMeshColliders" classname="ImportedCourtyardCollisionTests" runstate="Runnable" seed="854700649" result="Passed" start-time="2026-06-05 23:22:26Z" end-time="2026-06-05 23:22:26Z" duration="0.238850" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1022" name="PlayerStartsOnImportedMeshCollisionInsteadOfFallbackPlane" fullname="ImportedCourtyardCollisionTests.PlayerStartsOnImportedMeshCollisionInsteadOfFallbackPlane" methodname="PlayerStartsOnImportedMeshCollisionInsteadOfFallbackPlane" classname="ImportedCourtyardCollisionTests" runstate="Runnable" seed="697392194" result="Passed" start-time="2026-06-05 23:22:26Z" end-time="2026-06-05 23:22:26Z" duration="0.219674" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1023" name="PlayerVisualsHaveRuntimeWalkAnimationDriver" fullname="ImportedCourtyardCollisionTests.PlayerVisualsHaveRuntimeWalkAnimationDriver" methodname="PlayerVisualsHaveRuntimeWalkAnimationDriver" classname="ImportedCourtyardCollisionTests" runstate="Runnable" seed="1075027110" result="Passed" start-time="2026-06-05 23:22:26Z" end-time="2026-06-05 23:22:26Z" duration="0.231277" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1024" name="ThirdPersonCameraPullsInFrontOfBlockingGeometry" fullname="ImportedCourtyardCollisionTests.ThirdPersonCameraPullsInFrontOfBlockingGeometry" methodname="ThirdPersonCameraPullsInFrontOfBlockingGeometry" classname="ImportedCourtyardCollisionTests" runstate="Runnable" seed="48034528" result="Passed" start-time="2026-06-05 23:22:26Z" end-time="2026-06-05 23:22:27Z" duration="0.241298" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1025" name="PlayerAbilityTests" fullname="PlayerAbilityTests" classname="PlayerAbilityTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.003769" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1027" name="AbilityCooldownsAdvanceIndependently" fullname="PlayerAbilityTests.AbilityCooldownsAdvanceIndependently" methodname="AbilityCooldownsAdvanceIndependently" classname="PlayerAbilityTests" runstate="Runnable" seed="1019112365" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.000422" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1028" name="AerialAttackTriggersOnceOnAirborneToGroundedTransition" fullname="PlayerAbilityTests.AerialAttackTriggersOnceOnAirborneToGroundedTransition" methodname="AerialAttackTriggersOnceOnAirborneToGroundedTransition" classname="PlayerAbilityTests" runstate="Runnable" seed="1496748696" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.000166" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1026" name="MovementUsesArrowKeysAndLeavesWasdForCombat" fullname="PlayerAbilityTests.MovementUsesArrowKeysAndLeavesWasdForCombat" methodname="MovementUsesArrowKeysAndLeavesWasdForCombat" classname="PlayerAbilityTests" runstate="Runnable" seed="1424199420" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.000216" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+      <test-suite type="TestFixture" id="1029" name="SkillCooldownTests" fullname="SkillCooldownTests" classname="SkillCooldownTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.001065" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-case id="1031" name="SkillBecomesReadyAfterCooldownTicksDown" fullname="SkillCooldownTests.SkillBecomesReadyAfterCooldownTicksDown" methodname="SkillBecomesReadyAfterCooldownTicksDown" classname="SkillCooldownTests" runstate="Runnable" seed="472667797" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.000610" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+        <test-case id="1030" name="SkillStartsReadyAndConsumesCooldownWhenUsed" fullname="SkillCooldownTests.SkillStartsReadyAndConsumesCooldownWhenUsed" methodname="SkillStartsReadyAndConsumesCooldownWhenUsed" classname="SkillCooldownTests" runstate="Runnable" seed="69183387" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.000097" asserts="0">
+          <properties>
+            <property name="retryIteration" value="0" />
+            <property name="repeatIteration" value="0" />
+          </properties>
+        </test-case>
+      </test-suite>
+    </test-suite>
+    <test-suite type="Assembly" id="1183" name="UnitySkills.Tests.Editor.dll" fullname="C:/Users/User/OneDrive/桌面/視窗/視窗期末/WindowsFormsApp1/WindowsFormsApp1/IntegratedApps/FusionRPG/Library/ScriptAssemblies/UnitySkills.Tests.Editor.dll" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:34Z" duration="7.536193" total="130" passed="130" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="42816" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1184" name="UnitySkills" fullname="UnitySkills" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:34Z" duration="7.535083" total="130" passed="130" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1185" name="Tests" fullname="UnitySkills.Tests" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:34Z" duration="7.533989" total="130" passed="130" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestSuite" id="1186" name="Core" fullname="UnitySkills.Tests.Core" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:34Z" duration="7.532800" total="130" passed="130" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="TestFixture" id="1038" name="BatchGovernanceTests" fullname="UnitySkills.Tests.Core.BatchGovernanceTests" classname="UnitySkills.Tests.Core.BatchGovernanceTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:28Z" duration="1.431150" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1042" name="BatchCleanupTempObjects_AsyncJobCompletes" fullname="UnitySkills.Tests.Core.BatchGovernanceTests.BatchCleanupTempObjects_AsyncJobCompletes" methodname="BatchCleanupTempObjects_AsyncJobCompletes" classname="UnitySkills.Tests.Core.BatchGovernanceTests" runstate="Runnable" seed="438977187" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.180541" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[<color=#E091FF>[UnitySkills]</color> Session started: <b>d8ff43b2-2e21-494f-98c6-48bfb261b63c</b>
+<color=#E091FF>[UnitySkills]</color> Session ended: <b>d8ff43b2-2e21-494f-98c6-48bfb261b63c</b>
+]]></output>
+              </test-case>
+              <test-case id="1040" name="BatchPreviewRename_ThenExecuteSync_RenamesObjectsAndCreatesReport" fullname="UnitySkills.Tests.Core.BatchGovernanceTests.BatchPreviewRename_ThenExecuteSync_RenamesObjectsAndCreatesReport" methodname="BatchPreviewRename_ThenExecuteSync_RenamesObjectsAndCreatesReport" classname="UnitySkills.Tests.Core.BatchGovernanceTests" runstate="Runnable" seed="882319500" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.108604" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[<color=#E091FF>[UnitySkills]</color> Session started: <b>cd183817-a352-4942-a4a5-d0b453f961ac</b>
+<color=#E091FF>[UnitySkills]</color> Session ended: <b>cd183817-a352-4942-a4a5-d0b453f961ac</b>
+]]></output>
+              </test-case>
+              <test-case id="1041" name="BatchPreviewSetProperty_WhenAlreadyAtTargetValue_ReturnsSkip" fullname="UnitySkills.Tests.Core.BatchGovernanceTests.BatchPreviewSetProperty_WhenAlreadyAtTargetValue_ReturnsSkip" methodname="BatchPreviewSetProperty_WhenAlreadyAtTargetValue_ReturnsSkip" classname="UnitySkills.Tests.Core.BatchGovernanceTests" runstate="Runnable" seed="70435484" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.069605" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1045" name="BatchQueryAssets_FiltersByTypeAndFolder" fullname="UnitySkills.Tests.Core.BatchGovernanceTests.BatchQueryAssets_FiltersByTypeAndFolder" methodname="BatchQueryAssets_FiltersByTypeAndFolder" classname="UnitySkills.Tests.Core.BatchGovernanceTests" runstate="Runnable" seed="203002784" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.067373" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1044" name="BatchQueryGameObjects_FiltersByIsStatic" fullname="UnitySkills.Tests.Core.BatchGovernanceTests.BatchQueryGameObjects_FiltersByIsStatic" methodname="BatchQueryGameObjects_FiltersByIsStatic" classname="UnitySkills.Tests.Core.BatchGovernanceTests" runstate="Runnable" seed="1591833485" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.064433" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1039" name="BatchQueryGameObjects_FiltersByName" fullname="UnitySkills.Tests.Core.BatchGovernanceTests.BatchQueryGameObjects_FiltersByName" methodname="BatchQueryGameObjects_FiltersByName" classname="UnitySkills.Tests.Core.BatchGovernanceTests" runstate="Runnable" seed="1443680033" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.057012" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1043" name="BatchQueryGameObjects_FiltersByNamePattern_Regex" fullname="UnitySkills.Tests.Core.BatchGovernanceTests.BatchQueryGameObjects_FiltersByNamePattern_Regex" methodname="BatchQueryGameObjects_FiltersByNamePattern_Regex" classname="UnitySkills.Tests.Core.BatchGovernanceTests" runstate="Runnable" seed="565859685" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.060592" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1047" name="BatchRetryFailed_ReplaysStoredOperationContext" fullname="UnitySkills.Tests.Core.BatchGovernanceTests.BatchRetryFailed_ReplaysStoredOperationContext" methodname="BatchRetryFailed_ReplaysStoredOperationContext" classname="UnitySkills.Tests.Core.BatchGovernanceTests" runstate="Runnable" seed="2075639681" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:27Z" duration="0.115433" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[<color=#E091FF>[UnitySkills]</color> Session started: <b>3f8c4150-3b47-491e-af45-d0a3e2de3414</b>
+<color=#E091FF>[UnitySkills]</color> Session ended: <b>3f8c4150-3b47-491e-af45-d0a3e2de3414</b>
+]]></output>
+              </test-case>
+              <test-case id="1046" name="BatchRetryFailed_WithNoFailedItems_ReturnsZeroCount" fullname="UnitySkills.Tests.Core.BatchGovernanceTests.BatchRetryFailed_WithNoFailedItems_ReturnsZeroCount" methodname="BatchRetryFailed_WithNoFailedItems_ReturnsZeroCount" classname="UnitySkills.Tests.Core.BatchGovernanceTests" runstate="Runnable" seed="415049861" result="Passed" start-time="2026-06-05 23:22:27Z" end-time="2026-06-05 23:22:28Z" duration="0.107713" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[<color=#E091FF>[UnitySkills]</color> Session started: <b>d8a5b414-7fbe-4452-85ba-3c4042d3ed45</b>
+<color=#E091FF>[UnitySkills]</color> Session ended: <b>d8a5b414-7fbe-4452-85ba-3c4042d3ed45</b>
+]]></output>
+              </test-case>
+              <test-case id="1048" name="TestSmokeSkills_ForTestCategory_ReturnsAggregateSummary" fullname="UnitySkills.Tests.Core.BatchGovernanceTests.TestSmokeSkills_ForTestCategory_ReturnsAggregateSummary" methodname="TestSmokeSkills_ForTestCategory_ReturnsAggregateSummary" classname="UnitySkills.Tests.Core.BatchGovernanceTests" runstate="Runnable" seed="1895503597" result="Passed" start-time="2026-06-05 23:22:28Z" end-time="2026-06-05 23:22:28Z" duration="0.598001" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[[UnitySkills] Discovered 725 skills
+]]></output>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1049" name="CinemachineSkillsTests" fullname="UnitySkills.Tests.Core.CinemachineSkillsTests" classname="UnitySkills.Tests.Core.CinemachineSkillsTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-06-05 23:22:28Z" end-time="2026-06-05 23:22:28Z" duration="0.011486" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1050" name="CinemachineNotInstalled_Skip" fullname="UnitySkills.Tests.Core.CinemachineSkillsTests.CinemachineNotInstalled_Skip" methodname="CinemachineNotInstalled_Skip" classname="UnitySkills.Tests.Core.CinemachineSkillsTests" runstate="Runnable" seed="1790980849" result="Passed" start-time="2026-06-05 23:22:28Z" end-time="2026-06-05 23:22:28Z" duration="0.001802" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <reason>
+                  <message><![CDATA[Cinemachine 未安装，跳过相关测试。]]></message>
+                </reason>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1051" name="DeepInspectorSkillTests" fullname="UnitySkills.Tests.Core.DeepInspectorSkillTests" classname="UnitySkills.Tests.Core.DeepInspectorSkillTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-06-05 23:22:28Z" end-time="2026-06-05 23:22:31Z" duration="2.471447" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1054" name="ComponentCopyExact_CopiesAndVerifiesSerializedFields" fullname="UnitySkills.Tests.Core.DeepInspectorSkillTests.ComponentCopyExact_CopiesAndVerifiesSerializedFields" methodname="ComponentCopyExact_CopiesAndVerifiesSerializedFields" classname="UnitySkills.Tests.Core.DeepInspectorSkillTests" runstate="Runnable" seed="105970520" result="Passed" start-time="2026-06-05 23:22:28Z" end-time="2026-06-05 23:22:29Z" duration="0.623145" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1053" name="ComponentSetSerializedProperty_SetsInspectorVisibleFieldsAndReferences" fullname="UnitySkills.Tests.Core.DeepInspectorSkillTests.ComponentSetSerializedProperty_SetsInspectorVisibleFieldsAndReferences" methodname="ComponentSetSerializedProperty_SetsInspectorVisibleFieldsAndReferences" classname="UnitySkills.Tests.Core.DeepInspectorSkillTests" runstate="Runnable" seed="1466403658" result="Passed" start-time="2026-06-05 23:22:29Z" end-time="2026-06-05 23:22:30Z" duration="1.553106" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1055" name="EventSetListener_ReplacesButtonOnClickPersistentListener" fullname="UnitySkills.Tests.Core.DeepInspectorSkillTests.EventSetListener_ReplacesButtonOnClickPersistentListener" methodname="EventSetListener_ReplacesButtonOnClickPersistentListener" classname="UnitySkills.Tests.Core.DeepInspectorSkillTests" runstate="Runnable" seed="1030065780" result="Passed" start-time="2026-06-05 23:22:30Z" end-time="2026-06-05 23:22:31Z" duration="0.154285" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1052" name="UISetRectTransform_CoversAnchorsOffsetsAndLocalTransform" fullname="UnitySkills.Tests.Core.DeepInspectorSkillTests.UISetRectTransform_CoversAnchorsOffsetsAndLocalTransform" methodname="UISetRectTransform_CoversAnchorsOffsetsAndLocalTransform" classname="UnitySkills.Tests.Core.DeepInspectorSkillTests" runstate="Runnable" seed="1189801746" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:31Z" duration="0.139963" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1056" name="EditorUndoRedoTests" fullname="UnitySkills.Tests.Core.EditorUndoRedoTests" classname="UnitySkills.Tests.Core.EditorUndoRedoTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:31Z" duration="0.092661" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1057" name="EditorUndoRedo_RestoresLatestSkillMutation" fullname="UnitySkills.Tests.Core.EditorUndoRedoTests.EditorUndoRedo_RestoresLatestSkillMutation" methodname="EditorUndoRedo_RestoresLatestSkillMutation" classname="UnitySkills.Tests.Core.EditorUndoRedoTests" runstate="Runnable" seed="1162389609" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:31Z" duration="0.089623" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1058" name="PerceptionSkillsTests" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:32Z" duration="1.335055" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1069" name="BuildSuggestedNextSkills_FiltersInvalidSkillReferences" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.BuildSuggestedNextSkills_FiltersInvalidSkillReferences" methodname="BuildSuggestedNextSkills_FiltersInvalidSkillReferences" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="2057590231" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:31Z" duration="0.123753" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1064" name="HierarchyDescribe_ReturnsNonEmptyTree" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.HierarchyDescribe_ReturnsNonEmptyTree" methodname="HierarchyDescribe_ReturnsNonEmptyTree" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="1685020812" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:31Z" duration="0.064554" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1059" name="SceneAnalyze_ReturnsSuccessWithExpectedStructure" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneAnalyze_ReturnsSuccessWithExpectedStructure" methodname="SceneAnalyze_ReturnsSuccessWithExpectedStructure" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="370901467" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:31Z" duration="0.065067" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1062" name="SceneComponentStats_CountsComponentTypes" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneComponentStats_CountsComponentTypes" methodname="SceneComponentStats_CountsComponentTypes" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="812873784" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:31Z" duration="0.059191" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1068" name="SceneContractValidate_CustomRoots_OverridesDefault" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneContractValidate_CustomRoots_OverridesDefault" methodname="SceneContractValidate_CustomRoots_OverridesDefault" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="1659648871" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:31Z" duration="0.061628" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1067" name="SceneContractValidate_DefaultContract_ReportsMissingRoots" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneContractValidate_DefaultContract_ReportsMissingRoots" methodname="SceneContractValidate_DefaultContract_ReportsMissingRoots" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="1194588097" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:31Z" duration="0.122465" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1071" name="SceneDiff_DetectsAddedAndRemovedObjects" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneDiff_DetectsAddedAndRemovedObjects" methodname="SceneDiff_DetectsAddedAndRemovedObjects" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="347504209" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:31Z" duration="0.072121" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1072" name="SceneDiff_DetectsModifiedTransform" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneDiff_DetectsModifiedTransform" methodname="SceneDiff_DetectsModifiedTransform" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="229340276" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:31Z" duration="0.064991" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1073" name="SceneDiff_SnapshotOnlyIncludesActiveSceneObjects" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneDiff_SnapshotOnlyIncludesActiveSceneObjects" methodname="SceneDiff_SnapshotOnlyIncludesActiveSceneObjects" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="441586969" result="Passed" start-time="2026-06-05 23:22:31Z" end-time="2026-06-05 23:22:32Z" duration="0.238893" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1070" name="SceneDiff_WithoutSnapshot_CapturesCurrentState" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneDiff_WithoutSnapshot_CapturesCurrentState" methodname="SceneDiff_WithoutSnapshot_CapturesCurrentState" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="1597151851" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.063049" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1063" name="SceneFindHotspots_DetectsDeepHierarchy" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneFindHotspots_DetectsDeepHierarchy" methodname="SceneFindHotspots_DetectsDeepHierarchy" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="560833309" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.064962" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1061" name="SceneHealthCheck_DetectsMissingInfrastructure" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneHealthCheck_DetectsMissingInfrastructure" methodname="SceneHealthCheck_DetectsMissingInfrastructure" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="71602912" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.125097" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1066" name="ScenePerformanceHints_ReturnsActionableHints" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.ScenePerformanceHints_ReturnsActionableHints" methodname="ScenePerformanceHints_ReturnsActionableHints" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="100614131" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.069075" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1060" name="SceneSummarize_CountsObjectsCorrectly" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneSummarize_CountsObjectsCorrectly" methodname="SceneSummarize_CountsObjectsCorrectly" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="979327233" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.067282" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1065" name="SceneTagLayerStats_ReportsUsedTags" fullname="UnitySkills.Tests.Core.PerceptionSkillsTests.SceneTagLayerStats_ReportsUsedTags" methodname="SceneTagLayerStats_ReportsUsedTags" classname="UnitySkills.Tests.Core.PerceptionSkillsTests" runstate="Runnable" seed="396330619" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.069825" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1074" name="RenderPipelineSkillsTests" fullname="UnitySkills.Tests.Core.RenderPipelineSkillsTests" classname="UnitySkills.Tests.Core.RenderPipelineSkillsTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.008327" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1075" name="GraphicsGetOverview_ReturnsSuccess" fullname="UnitySkills.Tests.Core.RenderPipelineSkillsTests.GraphicsGetOverview_ReturnsSuccess" methodname="GraphicsGetOverview_ReturnsSuccess" classname="UnitySkills.Tests.Core.RenderPipelineSkillsTests" runstate="Runnable" seed="1106707652" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.007191" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1077" name="LegacyProjectQualitySkills_AreRemoved" fullname="UnitySkills.Tests.Core.RenderPipelineSkillsTests.LegacyProjectQualitySkills_AreRemoved" methodname="LegacyProjectQualitySkills_AreRemoved" classname="UnitySkills.Tests.Core.RenderPipelineSkillsTests" runstate="Runnable" seed="1661012421" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.000100" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1076" name="NewRenderingSkills_AreRegistered" fullname="UnitySkills.Tests.Core.RenderPipelineSkillsTests.NewRenderingSkills_AreRegistered" methodname="NewRenderingSkills_AreRegistered" classname="UnitySkills.Tests.Core.RenderPipelineSkillsTests" runstate="Runnable" seed="1417064009" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.000079" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1078" name="SelectionDrivenSkillTests" fullname="UnitySkills.Tests.Core.SelectionDrivenSkillTests" classname="UnitySkills.Tests.Core.SelectionDrivenSkillTests" runstate="Runnable" testcasecount="9" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:34Z" duration="1.561709" total="9" passed="9" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1080" name="SmartAlignToGround_AlignsSelectedObjects" fullname="UnitySkills.Tests.Core.SelectionDrivenSkillTests.SmartAlignToGround_AlignsSelectedObjects" methodname="SmartAlignToGround_AlignsSelectedObjects" classname="UnitySkills.Tests.Core.SelectionDrivenSkillTests" runstate="Runnable" seed="384029296" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.203094" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1081" name="SmartDistribute_SpreadsMiddleObjectsBetweenEndpoints" fullname="UnitySkills.Tests.Core.SelectionDrivenSkillTests.SmartDistribute_SpreadsMiddleObjectsBetweenEndpoints" methodname="SmartDistribute_SpreadsMiddleObjectsBetweenEndpoints" classname="UnitySkills.Tests.Core.SelectionDrivenSkillTests" runstate="Runnable" seed="127905634" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:32Z" duration="0.170065" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1083" name="SmartRandomizeTransform_ModifiesSelection" fullname="UnitySkills.Tests.Core.SelectionDrivenSkillTests.SmartRandomizeTransform_ModifiesSelection" methodname="SmartRandomizeTransform_ModifiesSelection" classname="UnitySkills.Tests.Core.SelectionDrivenSkillTests" runstate="Runnable" seed="1630034125" result="Passed" start-time="2026-06-05 23:22:32Z" end-time="2026-06-05 23:22:33Z" duration="0.156230" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1084" name="SmartReplaceObjects_ReplacesSelectedObjectsWithPrefab" fullname="UnitySkills.Tests.Core.SelectionDrivenSkillTests.SmartReplaceObjects_ReplacesSelectedObjectsWithPrefab" methodname="SmartReplaceObjects_ReplacesSelectedObjectsWithPrefab" classname="UnitySkills.Tests.Core.SelectionDrivenSkillTests" runstate="Runnable" seed="1245598241" result="Passed" start-time="2026-06-05 23:22:33Z" end-time="2026-06-05 23:22:33Z" duration="0.219237" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1079" name="SmartSceneLayout_ExecutesAgainstCurrentSelection" fullname="UnitySkills.Tests.Core.SelectionDrivenSkillTests.SmartSceneLayout_ExecutesAgainstCurrentSelection" methodname="SmartSceneLayout_ExecutesAgainstCurrentSelection" classname="UnitySkills.Tests.Core.SelectionDrivenSkillTests" runstate="Runnable" seed="2028835807" result="Passed" start-time="2026-06-05 23:22:33Z" end-time="2026-06-05 23:22:33Z" duration="0.159882" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1085" name="SmartSelectByComponent_SelectsMatchingObjects" fullname="UnitySkills.Tests.Core.SelectionDrivenSkillTests.SmartSelectByComponent_SelectsMatchingObjects" methodname="SmartSelectByComponent_SelectsMatchingObjects" classname="UnitySkills.Tests.Core.SelectionDrivenSkillTests" runstate="Runnable" seed="399358632" result="Passed" start-time="2026-06-05 23:22:33Z" end-time="2026-06-05 23:22:33Z" duration="0.168355" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1082" name="SmartSnapToGrid_SnapsSelection" fullname="UnitySkills.Tests.Core.SelectionDrivenSkillTests.SmartSnapToGrid_SnapsSelection" methodname="SmartSnapToGrid_SnapsSelection" classname="UnitySkills.Tests.Core.SelectionDrivenSkillTests" runstate="Runnable" seed="173776750" result="Passed" start-time="2026-06-05 23:22:33Z" end-time="2026-06-05 23:22:33Z" duration="0.171500" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1086" name="UIAlignSelected_AlignsRectTransforms" fullname="UnitySkills.Tests.Core.SelectionDrivenSkillTests.UIAlignSelected_AlignsRectTransforms" methodname="UIAlignSelected_AlignsRectTransforms" classname="UnitySkills.Tests.Core.SelectionDrivenSkillTests" runstate="Runnable" seed="1831979753" result="Passed" start-time="2026-06-05 23:22:33Z" end-time="2026-06-05 23:22:33Z" duration="0.154598" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1087" name="UIDistributeSelected_RepositionsRectTransformsEvenly" fullname="UnitySkills.Tests.Core.SelectionDrivenSkillTests.UIDistributeSelected_RepositionsRectTransformsEvenly" methodname="UIDistributeSelected_RepositionsRectTransformsEvenly" classname="UnitySkills.Tests.Core.SelectionDrivenSkillTests" runstate="Runnable" seed="373033741" result="Passed" start-time="2026-06-05 23:22:33Z" end-time="2026-06-05 23:22:34Z" duration="0.156957" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1088" name="ShaderGraphNodeEditingTests" fullname="UnitySkills.Tests.Core.ShaderGraphNodeEditingTests" classname="UnitySkills.Tests.Core.ShaderGraphNodeEditingTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.009077" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1089" name="ShaderGraphListSupportedNodes_ReturnsWhitelistedSubset" fullname="UnitySkills.Tests.Core.ShaderGraphNodeEditingTests.ShaderGraphListSupportedNodes_ReturnsWhitelistedSubset" methodname="ShaderGraphListSupportedNodes_ReturnsWhitelistedSubset" classname="UnitySkills.Tests.Core.ShaderGraphNodeEditingTests" runstate="Runnable" seed="985914869" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.003649" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <reason>
+                  <message><![CDATA[Current test host does not have Shader Graph installed.]]></message>
+                </reason>
+              </test-case>
+              <test-case id="1090" name="ShaderGraphNodeEditing_WorksOnGraph" fullname="UnitySkills.Tests.Core.ShaderGraphNodeEditingTests.ShaderGraphNodeEditing_WorksOnGraph" methodname="ShaderGraphNodeEditing_WorksOnGraph" classname="UnitySkills.Tests.Core.ShaderGraphNodeEditingTests" runstate="Runnable" seed="2088707179" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001516" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <reason>
+                  <message><![CDATA[Current test host does not have Shader Graph installed.]]></message>
+                </reason>
+              </test-case>
+              <test-case id="1091" name="ShaderGraphNodeEditing_WorksOnSubGraph_AndRejectsInvalidOperations" fullname="UnitySkills.Tests.Core.ShaderGraphNodeEditingTests.ShaderGraphNodeEditing_WorksOnSubGraph_AndRejectsInvalidOperations" methodname="ShaderGraphNodeEditing_WorksOnSubGraph_AndRejectsInvalidOperations" classname="UnitySkills.Tests.Core.ShaderGraphNodeEditingTests" runstate="Runnable" seed="1806999573" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001999" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <reason>
+                  <message><![CDATA[Current test host does not have Shader Graph installed.]]></message>
+                </reason>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1092" name="ShaderGraphSkillsTests" fullname="UnitySkills.Tests.Core.ShaderGraphSkillsTests" classname="UnitySkills.Tests.Core.ShaderGraphSkillsTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.002097" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1095" name="ShaderGraphConstrainedEditing_WorksWhenPackageInstalled" fullname="UnitySkills.Tests.Core.ShaderGraphSkillsTests.ShaderGraphConstrainedEditing_WorksWhenPackageInstalled" methodname="ShaderGraphConstrainedEditing_WorksWhenPackageInstalled" classname="UnitySkills.Tests.Core.ShaderGraphSkillsTests" runstate="Runnable" seed="28020913" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000485" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <reason>
+                  <message><![CDATA[Current test host does not have Shader Graph installed.]]></message>
+                </reason>
+              </test-case>
+              <test-case id="1096" name="ShaderGraphCreateGraph_WorksWithTemplateOrBlankFallback" fullname="UnitySkills.Tests.Core.ShaderGraphSkillsTests.ShaderGraphCreateGraph_WorksWithTemplateOrBlankFallback" methodname="ShaderGraphCreateGraph_WorksWithTemplateOrBlankFallback" classname="UnitySkills.Tests.Core.ShaderGraphSkillsTests" runstate="Runnable" seed="1877076720" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000277" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <reason>
+                  <message><![CDATA[Current test host does not have Shader Graph installed.]]></message>
+                </reason>
+              </test-case>
+              <test-case id="1094" name="ShaderGraphListTemplates_ReturnsTemplatesOrFallback" fullname="UnitySkills.Tests.Core.ShaderGraphSkillsTests.ShaderGraphListTemplates_ReturnsTemplatesOrFallback" methodname="ShaderGraphListTemplates_ReturnsTemplatesOrFallback" classname="UnitySkills.Tests.Core.ShaderGraphSkillsTests" runstate="Runnable" seed="1107747602" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000538" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1093" name="ShaderGraphSkills_AreRegistered" fullname="UnitySkills.Tests.Core.ShaderGraphSkillsTests.ShaderGraphSkills_AreRegistered" methodname="ShaderGraphSkills_AreRegistered" classname="UnitySkills.Tests.Core.ShaderGraphSkillsTests" runstate="Runnable" seed="1590573842" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000147" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1097" name="SkillDocumentationConsistencyTests" fullname="UnitySkills.Tests.Core.SkillDocumentationConsistencyTests" classname="UnitySkills.Tests.Core.SkillDocumentationConsistencyTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.081987" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1098" name="SkillDocumentation_ShouldMatchCodeDefinitions" fullname="UnitySkills.Tests.Core.SkillDocumentationConsistencyTests.SkillDocumentation_ShouldMatchCodeDefinitions" methodname="SkillDocumentation_ShouldMatchCodeDefinitions" classname="UnitySkills.Tests.Core.SkillDocumentationConsistencyTests" runstate="Runnable" seed="738186771" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.054818" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1099" name="UnitySkillMetadata_ShouldBeComplete" fullname="UnitySkills.Tests.Core.SkillDocumentationConsistencyTests.UnitySkillMetadata_ShouldBeComplete" methodname="UnitySkillMetadata_ShouldBeComplete" classname="UnitySkills.Tests.Core.SkillDocumentationConsistencyTests" runstate="Runnable" seed="56231155" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.007260" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1100" name="YooAssetSkills_ShouldHaveEnglishAndChineseLocalization" fullname="UnitySkills.Tests.Core.SkillDocumentationConsistencyTests.YooAssetSkills_ShouldHaveEnglishAndChineseLocalization" methodname="YooAssetSkills_ShouldHaveEnglishAndChineseLocalization" classname="UnitySkills.Tests.Core.SkillDocumentationConsistencyTests" runstate="Runnable" seed="716486608" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.018907" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1101" name="SkillsModeManagerTests" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" testcasecount="28" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.087405" total="28" passed="28" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1119" name="Allowlist_AddRemoveClear_RoundTripsAndAudits" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.Allowlist_AddRemoveClear_RoundTripsAndAudits" methodname="Allowlist_AddRemoveClear_RoundTripsAndAudits" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="155570731" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.006151" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1120" name="Allowlist_OverridesForbiddenInSemi_HighRiskSkillAllowed" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.Allowlist_OverridesForbiddenInSemi_HighRiskSkillAllowed" methodname="Allowlist_OverridesForbiddenInSemi_HighRiskSkillAllowed" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1430274456" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001483" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1128" name="AllowlistPresets_CodingAssist_IsNonEmptyDistinct_AndMergesBothGroups" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.AllowlistPresets_CodingAssist_IsNonEmptyDistinct_AndMergesBothGroups" methodname="AllowlistPresets_CodingAssist_IsNonEmptyDistinct_AndMergesBothGroups" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1294762327" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001498" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1129" name="AllowlistPresets_ImportingPack_AllowsForbiddenAndGrantSkills_UnderApproval" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.AllowlistPresets_ImportingPack_AllowsForbiddenAndGrantSkills_UnderApproval" methodname="AllowlistPresets_ImportingPack_AllowsForbiddenAndGrantSkills_UnderApproval" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1312131539" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.002844" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1107" name="Approval_DialogChannel_GrantIsOneShot_NotWrittenToAllowlist" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.Approval_DialogChannel_GrantIsOneShot_NotWrittenToAllowlist" methodname="Approval_DialogChannel_GrantIsOneShot_NotWrittenToAllowlist" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="627363106" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.014715" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1109" name="Approval_PanelChannel_ApproveKeepsEntry_GrantThenOneShot" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.Approval_PanelChannel_ApproveKeepsEntry_GrantThenOneShot" methodname="Approval_PanelChannel_ApproveKeepsEntry_GrantThenOneShot" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="9660221" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.003269" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1110" name="Approval_PanelChannel_DenyThenGrant_ReturnsFalse" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.Approval_PanelChannel_DenyThenGrant_ReturnsFalse" methodname="Approval_PanelChannel_DenyThenGrant_ReturnsFalse" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1168968726" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001373" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1108" name="Approval_PanelChannel_GrantBeforeApprove_ReturnsPendingApproval" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.Approval_PanelChannel_GrantBeforeApprove_ReturnsPendingApproval" methodname="Approval_PanelChannel_GrantBeforeApprove_ReturnsPendingApproval" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="103901706" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001547" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1116" name="AuditLog_GrantEvent_AppendThenFlushSync_ReadRecentContainsIt" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.AuditLog_GrantEvent_AppendThenFlushSync_ReadRecentContainsIt" methodname="AuditLog_GrantEvent_AppendThenFlushSync_ReadRecentContainsIt" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="702091442" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.007309" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1106" name="CheckAccess_ApprovalMode_FullAutoUngranted_NeedsGrant" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.CheckAccess_ApprovalMode_FullAutoUngranted_NeedsGrant" methodname="CheckAccess_ApprovalMode_FullAutoUngranted_NeedsGrant" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1771226005" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001466" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1111" name="CheckAccess_ApprovalMode_NeverInSemiSkill_Forbidden" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.CheckAccess_ApprovalMode_NeverInSemiSkill_Forbidden" methodname="CheckAccess_ApprovalMode_NeverInSemiSkill_Forbidden" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="2145724008" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001618" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1105" name="CheckAccess_ApprovalMode_SemiAutoSkill_Allowed" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.CheckAccess_ApprovalMode_SemiAutoSkill_Allowed" methodname="CheckAccess_ApprovalMode_SemiAutoSkill_Allowed" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="370005855" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001253" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1104" name="CheckAccess_AutoMode_NeverInSemiSkill_Forbidden" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.CheckAccess_AutoMode_NeverInSemiSkill_Forbidden" methodname="CheckAccess_AutoMode_NeverInSemiSkill_Forbidden" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1447033469" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001256" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1103" name="CheckAccess_AutoMode_SemiAutoAndFullAuto_Allowed" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.CheckAccess_AutoMode_SemiAutoAndFullAuto_Allowed" methodname="CheckAccess_AutoMode_SemiAutoAndFullAuto_Allowed" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="215109038" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001199" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1102" name="CheckAccess_BypassMode_AnySkill_AlwaysAllowed" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.CheckAccess_BypassMode_AnySkill_AlwaysAllowed" methodname="CheckAccess_BypassMode_AnySkill_AlwaysAllowed" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="496396129" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001288" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1124" name="ConsumeOneShotBypass_NameMismatchOrEmpty_ReturnsFalse" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.ConsumeOneShotBypass_NameMismatchOrEmpty_ReturnsFalse" methodname="ConsumeOneShotBypass_NameMismatchOrEmpty_ReturnsFalse" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1911070355" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.004048" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1118" name="CurrentMode_FreshInstall_NoKeys_DefaultsToAuto" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.CurrentMode_FreshInstall_NoKeys_DefaultsToAuto" methodname="CurrentMode_FreshInstall_NoKeys_DefaultsToAuto" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="730046252" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001105" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1117" name="CurrentMode_OldInstall_NoExplicitMode_DefaultsToBypass" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.CurrentMode_OldInstall_NoExplicitMode_DefaultsToBypass" methodname="CurrentMode_OldInstall_NoExplicitMode_DefaultsToBypass" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="953588577" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001009" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1114" name="CurrentMode_Setter_PersistsToEditorPrefs_AndGetterReadsIt" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.CurrentMode_Setter_PersistsToEditorPrefs_AndGetterReadsIt" methodname="CurrentMode_Setter_PersistsToEditorPrefs_AndGetterReadsIt" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1595393371" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001412" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1115" name="IsForbiddenInSemi_CoversAllAutoJudgementBranches" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.IsForbiddenInSemi_CoversAllAutoJudgementBranches" methodname="IsForbiddenInSemi_CoversAllAutoJudgementBranches" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1597737830" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001021" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1125" name="Migration_LegacyGrantedToAllowlist_MigratesEntriesAndSetsDoneFlag" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.Migration_LegacyGrantedToAllowlist_MigratesEntriesAndSetsDoneFlag" methodname="Migration_LegacyGrantedToAllowlist_MigratesEntriesAndSetsDoneFlag" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="834152602" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.015178" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1127" name="Migration_NoLegacyData_StillSetsDoneFlag_FreshInstall" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.Migration_NoLegacyData_StillSetsDoneFlag_FreshInstall" methodname="Migration_NoLegacyData_StillSetsDoneFlag_FreshInstall" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1201208071" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001762" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1126" name="Migration_RepeatLoad_IsIdempotent_NoDuplicateAuditEvent" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.Migration_RepeatLoad_IsIdempotent_NoDuplicateAuditEvent" methodname="Migration_RepeatLoad_IsIdempotent_NoDuplicateAuditEvent" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="2092932544" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.002224" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1123" name="OneShotBypass_AfterTryGrantAndReturnArgs_CheckAccessAllowedOnce" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.OneShotBypass_AfterTryGrantAndReturnArgs_CheckAccessAllowedOnce" methodname="OneShotBypass_AfterTryGrantAndReturnArgs_CheckAccessAllowedOnce" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="858112290" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001349" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1113" name="RemoveFromAllowlist_AfterAdd_CheckAccessReturnsNeedsGrant" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.RemoveFromAllowlist_AfterAdd_CheckAccessReturnsNeedsGrant" methodname="RemoveFromAllowlist_AfterAdd_CheckAccessReturnsNeedsGrant" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="947321496" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001285" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1112" name="TryGrant_InvalidToken_ReturnsFalseAndInvalid" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.TryGrant_InvalidToken_ReturnsFalseAndInvalid" methodname="TryGrant_InvalidToken_ReturnsFalseAndInvalid" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1466002076" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001305" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1121" name="TryGrantAndReturnArgs_OnGranted_ReturnsCachedArgsAndConsumesEntry" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.TryGrantAndReturnArgs_OnGranted_ReturnsCachedArgsAndConsumesEntry" methodname="TryGrantAndReturnArgs_OnGranted_ReturnsCachedArgsAndConsumesEntry" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="38170984" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001332" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1122" name="TryGrantAndReturnArgs_PanelChannelBeforeApprove_ReturnsPendingApproval" fullname="UnitySkills.Tests.Core.SkillsModeManagerTests.TryGrantAndReturnArgs_PanelChannelBeforeApprove_ReturnsPendingApproval" methodname="TryGrantAndReturnArgs_PanelChannelBeforeApprove_ReturnsPendingApproval" classname="UnitySkills.Tests.Core.SkillsModeManagerTests" runstate="Runnable" seed="1260229286" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001255" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1130" name="SkillValidationTests" fullname="UnitySkills.Tests.Core.SkillValidationTests" classname="UnitySkills.Tests.Core.SkillValidationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.014472" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1132" name="Execute_WithUnknownShaderParameter_SuggestsCanonicalParameter" fullname="UnitySkills.Tests.Core.SkillValidationTests.Execute_WithUnknownShaderParameter_SuggestsCanonicalParameter" methodname="Execute_WithUnknownShaderParameter_SuggestsCanonicalParameter" classname="UnitySkills.Tests.Core.SkillValidationTests" runstate="Runnable" seed="968537681" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.010110" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1131" name="Execute_WithUnknownTransformParameters_ReturnsStructuredErrorAndSuggestions" fullname="UnitySkills.Tests.Core.SkillValidationTests.Execute_WithUnknownTransformParameters_ReturnsStructuredErrorAndSuggestions" methodname="Execute_WithUnknownTransformParameters_ReturnsStructuredErrorAndSuggestions" classname="UnitySkills.Tests.Core.SkillValidationTests" runstate="Runnable" seed="2026724021" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000387" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1133" name="Plan_WithTimelineAssetPath_ReturnsSemanticValidationError" fullname="UnitySkills.Tests.Core.SkillValidationTests.Plan_WithTimelineAssetPath_ReturnsSemanticValidationError" methodname="Plan_WithTimelineAssetPath_ReturnsSemanticValidationError" classname="UnitySkills.Tests.Core.SkillValidationTests" runstate="Runnable" seed="1411946237" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.003259" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1134" name="TestInfrastructureTests" fullname="UnitySkills.Tests.Core.TestInfrastructureTests" classname="UnitySkills.Tests.Core.TestInfrastructureTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.403843" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1138" name="BatchPersistence_TransientScope_DoesNotPersistPreviewArtifacts" fullname="UnitySkills.Tests.Core.TestInfrastructureTests.BatchPersistence_TransientScope_DoesNotPersistPreviewArtifacts" methodname="BatchPersistence_TransientScope_DoesNotPersistPreviewArtifacts" classname="UnitySkills.Tests.Core.TestInfrastructureTests" runstate="Runnable" seed="1366120380" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000299" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1139" name="GetSchema_ReturnsSchemaEnvelope" fullname="UnitySkills.Tests.Core.TestInfrastructureTests.GetSchema_ReturnsSchemaEnvelope" methodname="GetSchema_ReturnsSchemaEnvelope" classname="UnitySkills.Tests.Core.TestInfrastructureTests" runstate="Runnable" seed="75221993" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.094202" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1140" name="TestGetLastResult_IgnoresSyntheticRuns" fullname="UnitySkills.Tests.Core.TestInfrastructureTests.TestGetLastResult_IgnoresSyntheticRuns" methodname="TestGetLastResult_IgnoresSyntheticRuns" classname="UnitySkills.Tests.Core.TestInfrastructureTests" runstate="Runnable" seed="583659884" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.001521" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1135" name="TestGetResult_ExposesExtendedOutcomeCounters" fullname="UnitySkills.Tests.Core.TestInfrastructureTests.TestGetResult_ExposesExtendedOutcomeCounters" methodname="TestGetResult_ExposesExtendedOutcomeCounters" classname="UnitySkills.Tests.Core.TestInfrastructureTests" runstate="Runnable" seed="1972802914" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.004975" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1136" name="TestGetSummary_AggregatesExtendedOutcomeCounters" fullname="UnitySkills.Tests.Core.TestInfrastructureTests.TestGetSummary_AggregatesExtendedOutcomeCounters" methodname="TestGetSummary_AggregatesExtendedOutcomeCounters" classname="UnitySkills.Tests.Core.TestInfrastructureTests" runstate="Runnable" seed="610055360" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.005322" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1141" name="TestList_UsesCachedUnityDiscoveryAndReturnsTests" fullname="UnitySkills.Tests.Core.TestInfrastructureTests.TestList_UsesCachedUnityDiscoveryAndReturnsTests" methodname="TestList_UsesCachedUnityDiscoveryAndReturnsTests" classname="UnitySkills.Tests.Core.TestInfrastructureTests" runstate="Runnable" seed="1578434300" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.006053" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1142" name="TestList_WhenNoCachedDiscoveryExists_StartsAsyncDiscovery" fullname="UnitySkills.Tests.Core.TestInfrastructureTests.TestList_WhenNoCachedDiscoveryExists_StartsAsyncDiscovery" methodname="TestList_WhenNoCachedDiscoveryExists_StartsAsyncDiscovery" classname="UnitySkills.Tests.Core.TestInfrastructureTests" runstate="Runnable" seed="1318124335" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.019031" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1137" name="TestRun_WhenAnotherRunIsActive_ReturnsErrorInsteadOfStartingConcurrentRunner" fullname="UnitySkills.Tests.Core.TestInfrastructureTests.TestRun_WhenAnotherRunIsActive_ReturnsErrorInsteadOfStartingConcurrentRunner" methodname="TestRun_WhenAnotherRunIsActive_ReturnsErrorInsteadOfStartingConcurrentRunner" classname="UnitySkills.Tests.Core.TestInfrastructureTests" runstate="Runnable" seed="552679878" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.198801" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1143" name="TestRun_WhenUnsavedSceneChangesExist_FailsFastWithActionableError" fullname="UnitySkills.Tests.Core.TestInfrastructureTests.TestRun_WhenUnsavedSceneChangesExist_FailsFastWithActionableError" methodname="TestRun_WhenUnsavedSceneChangesExist_FailsFastWithActionableError" classname="UnitySkills.Tests.Core.TestInfrastructureTests" runstate="Runnable" seed="1836979623" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.063715" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1144" name="TestSmokeSkills_RunAsync_ReturnsJob" fullname="UnitySkills.Tests.Core.TestInfrastructureTests.TestSmokeSkills_RunAsync_ReturnsJob" methodname="TestSmokeSkills_RunAsync_ReturnsJob" classname="UnitySkills.Tests.Core.TestInfrastructureTests" runstate="Runnable" seed="1346165096" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.008212" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1145" name="ValidateTests" fullname="UnitySkills.Tests.Core.ValidateTests" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" testcasecount="35" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.008506" total="35" passed="35" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1156" name="InRange_Float_AboveMax_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.InRange_Float_AboveMax_ReturnsError" methodname="InRange_Float_AboveMax_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1000272114" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000402" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1158" name="InRange_Float_AtMax_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.InRange_Float_AtMax_ReturnsNull" methodname="InRange_Float_AtMax_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="945589217" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000094" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1157" name="InRange_Float_AtMin_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.InRange_Float_AtMin_ReturnsNull" methodname="InRange_Float_AtMin_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1261451289" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000070" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1155" name="InRange_Float_BelowMin_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.InRange_Float_BelowMin_ReturnsError" methodname="InRange_Float_BelowMin_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1182473272" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000092" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1159" name="InRange_Float_InMiddle_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.InRange_Float_InMiddle_ReturnsNull" methodname="InRange_Float_InMiddle_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="228898174" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000063" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1161" name="InRange_Int_AboveMax_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.InRange_Int_AboveMax_ReturnsError" methodname="InRange_Int_AboveMax_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1490423231" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000151" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1163" name="InRange_Int_AtMax_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.InRange_Int_AtMax_ReturnsNull" methodname="InRange_Int_AtMax_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1587748716" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000080" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1162" name="InRange_Int_AtMin_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.InRange_Int_AtMin_ReturnsNull" methodname="InRange_Int_AtMin_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1615380419" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000064" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1160" name="InRange_Int_BelowMin_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.InRange_Int_BelowMin_ReturnsError" methodname="InRange_Int_BelowMin_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1682333544" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000081" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1164" name="InRange_Int_InMiddle_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.InRange_Int_InMiddle_ReturnsNull" methodname="InRange_Int_InMiddle_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1656855601" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000054" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1147" name="Required_EmptyString_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.Required_EmptyString_ReturnsError" methodname="Required_EmptyString_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1324167839" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000090" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1146" name="Required_NullValue_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.Required_NullValue_ReturnsError" methodname="Required_NullValue_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="35645829" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000084" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1148" name="Required_ValidString_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.Required_ValidString_ReturnsNull" methodname="Required_ValidString_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1391397554" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000072" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1151" name="RequiredJsonArray_EmptyArray_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.RequiredJsonArray_EmptyArray_ReturnsError" methodname="RequiredJsonArray_EmptyArray_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1866173241" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000178" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1153" name="RequiredJsonArray_EmptyArrayWithWhitespace_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.RequiredJsonArray_EmptyArrayWithWhitespace_ReturnsError" methodname="RequiredJsonArray_EmptyArrayWithWhitespace_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="2134968512" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000093" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1150" name="RequiredJsonArray_EmptyString_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.RequiredJsonArray_EmptyString_ReturnsError" methodname="RequiredJsonArray_EmptyString_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="875275616" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000084" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1152" name="RequiredJsonArray_NullLiteral_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.RequiredJsonArray_NullLiteral_ReturnsError" methodname="RequiredJsonArray_NullLiteral_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="398588477" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000075" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1149" name="RequiredJsonArray_NullValue_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.RequiredJsonArray_NullValue_ReturnsError" methodname="RequiredJsonArray_NullValue_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="470916535" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000077" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1154" name="RequiredJsonArray_ValidArray_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.RequiredJsonArray_ValidArray_ReturnsNull" methodname="RequiredJsonArray_ValidArray_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1996609871" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000056" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1172" name="SafePath_AbsoluteSystemPath_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_AbsoluteSystemPath_ReturnsError" methodname="SafePath_AbsoluteSystemPath_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="489646596" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000248" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1177" name="SafePath_BackslashNormalized_ValidPath_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_BackslashNormalized_ValidPath_ReturnsNull" methodname="SafePath_BackslashNormalized_ValidPath_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="31408867" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000089" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1173" name="SafePath_DeleteRootAssets_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_DeleteRootAssets_ReturnsError" methodname="SafePath_DeleteRootAssets_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="390152759" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000086" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1174" name="SafePath_DeleteRootAssetsTrailingSlash_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_DeleteRootAssetsTrailingSlash_ReturnsError" methodname="SafePath_DeleteRootAssetsTrailingSlash_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1878787951" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000077" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1175" name="SafePath_DeleteRootPackages_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_DeleteRootPackages_ReturnsError" methodname="SafePath_DeleteRootPackages_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="856248976" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000074" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1176" name="SafePath_DeleteSubfolder_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_DeleteSubfolder_ReturnsNull" methodname="SafePath_DeleteSubfolder_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1507880393" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000058" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1179" name="SafePath_DotSlashPrefix_ValidPath_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_DotSlashPrefix_ValidPath_ReturnsNull" methodname="SafePath_DotSlashPrefix_ValidPath_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1766644090" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000058" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1178" name="SafePath_DoubleSlashNormalized_ValidPath_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_DoubleSlashNormalized_ValidPath_ReturnsNull" methodname="SafePath_DoubleSlashNormalized_ValidPath_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="667500352" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000054" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1166" name="SafePath_EmptyPath_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_EmptyPath_ReturnsError" methodname="SafePath_EmptyPath_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1351046811" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000073" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1171" name="SafePath_InvalidRootPath_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_InvalidRootPath_ReturnsError" methodname="SafePath_InvalidRootPath_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1866966313" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000070" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1165" name="SafePath_NullPath_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_NullPath_ReturnsError" methodname="SafePath_NullPath_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1799716424" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000072" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1167" name="SafePath_PathTraversal_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_PathTraversal_ReturnsError" methodname="SafePath_PathTraversal_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="103188992" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000075" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1168" name="SafePath_PathTraversalDoubleDot_ReturnsError" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_PathTraversalDoubleDot_ReturnsError" methodname="SafePath_PathTraversalDoubleDot_ReturnsError" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="18627786" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000071" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1169" name="SafePath_ValidAssetsPath_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_ValidAssetsPath_ReturnsNull" methodname="SafePath_ValidAssetsPath_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1810073925" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000054" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1170" name="SafePath_ValidPackagesPath_ReturnsNull" fullname="UnitySkills.Tests.Core.ValidateTests.SafePath_ValidPackagesPath_ReturnsNull" methodname="SafePath_ValidPackagesPath_ReturnsNull" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="1894182775" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000052" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1180" name="WorkflowHistoryData_EnsureDefaults_MigratesLegacySchemaAndCollections" fullname="UnitySkills.Tests.Core.ValidateTests.WorkflowHistoryData_EnsureDefaults_MigratesLegacySchemaAndCollections" methodname="WorkflowHistoryData_EnsureDefaults_MigratesLegacySchemaAndCollections" classname="UnitySkills.Tests.Core.ValidateTests" runstate="Runnable" seed="2141802346" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.000112" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-suite type="TestFixture" id="1181" name="WorkflowBookmarkTests" fullname="UnitySkills.Tests.Core.WorkflowBookmarkTests" classname="UnitySkills.Tests.Core.WorkflowBookmarkTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.010751" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1182" name="BookmarkSet_ThenBookmarkList_ReturnsCreatedBookmark" fullname="UnitySkills.Tests.Core.WorkflowBookmarkTests.BookmarkSet_ThenBookmarkList_ReturnsCreatedBookmark" methodname="BookmarkSet_ThenBookmarkList_ReturnsCreatedBookmark" classname="UnitySkills.Tests.Core.WorkflowBookmarkTests" runstate="Runnable" seed="145422928" result="Passed" start-time="2026-06-05 23:22:34Z" end-time="2026-06-05 23:22:34Z" duration="0.009308" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[Saving results to: C:/Users/User/AppData/LocalLow/DefaultCompany/FusionRPG\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

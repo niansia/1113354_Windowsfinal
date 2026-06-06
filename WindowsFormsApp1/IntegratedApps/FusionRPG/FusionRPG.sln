@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FusionRPG", "FusionRPG.cspr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-Editor", "Assembly-CSharp-Editor.csproj", "{D1250A5D-69AA-2055-45AA-229BEAFD7B32}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FusionRPG.PlayModeTests", "FusionRPG.PlayModeTests.csproj", "{170E1953-FD54-F20E-33FF-DA2040C1BE23}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "Assembly-CSharp.csproj", "{7C9EC6C8-359B-F5AC-D403-560611E2F33C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +41,14 @@ Global
 		{D1250A5D-69AA-2055-45AA-229BEAFD7B32}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1250A5D-69AA-2055-45AA-229BEAFD7B32}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1250A5D-69AA-2055-45AA-229BEAFD7B32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{170E1953-FD54-F20E-33FF-DA2040C1BE23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{170E1953-FD54-F20E-33FF-DA2040C1BE23}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{170E1953-FD54-F20E-33FF-DA2040C1BE23}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{170E1953-FD54-F20E-33FF-DA2040C1BE23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7C9EC6C8-359B-F5AC-D403-560611E2F33C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7C9EC6C8-359B-F5AC-D403-560611E2F33C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7C9EC6C8-359B-F5AC-D403-560611E2F33C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7C9EC6C8-359B-F5AC-D403-560611E2F33C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

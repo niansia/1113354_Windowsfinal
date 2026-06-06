@@ -14,9 +14,14 @@ namespace FusionRPG
         [SerializeField] private float mouseSensitivity = 160f;
         [SerializeField] private float zoomSensitivity = 3.8f;
         [SerializeField] private float followSharpness = 11f;
+        [SerializeField] private float collisionRadius = 0.28f;
+        [SerializeField] private float collisionPadding = 0.12f;
+        [SerializeField] private LayerMask obstructionLayers = ~0;
 
         private float yaw;
         private float pitch = 25f;
+        private float currentDistance;
+        private static readonly RaycastHit[] ObstructionHits = new RaycastHit[64];
 
         public void SetTarget(Transform nextTarget)
         {
@@ -33,6 +38,7 @@ namespace FusionRPG
         private void Start()
         {
             yaw = transform.eulerAngles.y;
+            currentDistance = distance;
         }
 
         private void LateUpdate()
@@ -57,10 +63,70 @@ namespace FusionRPG
 
             var rotation = Quaternion.Euler(pitch, yaw, 0f);
             var focus = target.position + targetOffset;
-            var desiredPosition = focus - rotation * Vector3.forward * distance;
-            var t = 1f - Mathf.Exp(-followSharpness * Time.deltaTime);
-            transform.position = Vector3.Lerp(transform.position, desiredPosition, t);
+            var backward = -(rotation * Vector3.forward);
+            var unobstructedDistance = ResolveObstructedDistance(
+                focus,
+                backward,
+                distance,
+                collisionRadius,
+                collisionPadding,
+                target,
+                obstructionLayers);
+            if (currentDistance <= 0f || unobstructedDistance < currentDistance)
+            {
+                currentDistance = unobstructedDistance;
+            }
+            else
+            {
+                var t = 1f - Mathf.Exp(-followSharpness * Time.deltaTime);
+                currentDistance = Mathf.Lerp(currentDistance, unobstructedDistance, t);
+            }
+
+            transform.position = focus + backward * currentDistance;
             transform.rotation = rotation;
+        }
+
+        public static float ResolveObstructedDistance(
+            Vector3 focus,
+            Vector3 backwardDirection,
+            float desiredDistance,
+            float radius,
+            float padding,
+            Transform ignoredRoot,
+            LayerMask obstructionMask)
+        {
+            if (desiredDistance <= 0f || backwardDirection.sqrMagnitude <= 0.0001f)
+            {
+                return Mathf.Max(0.35f, desiredDistance);
+            }
+
+            var direction = backwardDirection.normalized;
+            var hitCount = Physics.SphereCastNonAlloc(
+                focus,
+                Mathf.Max(0.05f, radius),
+                direction,
+                ObstructionHits,
+                desiredDistance,
+                obstructionMask,
+                QueryTriggerInteraction.Ignore);
+            var nearest = desiredDistance;
+            for (var i = 0; i < hitCount; i++)
+            {
+                var hit = ObstructionHits[i];
+                if (hit.collider == null)
+                {
+                    continue;
+                }
+                if (ignoredRoot != null &&
+                    (hit.collider.transform == ignoredRoot || hit.collider.transform.IsChildOf(ignoredRoot)))
+                {
+                    continue;
+                }
+
+                nearest = Mathf.Min(nearest, hit.distance - Mathf.Max(0f, padding));
+            }
+
+            return Mathf.Clamp(nearest, 0.35f, desiredDistance);
         }
     }
 }
