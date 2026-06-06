@@ -57,6 +57,7 @@ namespace FusionRPG.EditorTools
             EnsureFolders();
             AssetDatabase.Refresh();
             var materials = CreateMaterials();
+            EnsureFxResources();
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "SakuraAcademyPrototype";
@@ -120,6 +121,7 @@ namespace FusionRPG.EditorTools
             targetSelection.Configure(camera);
             var hud = BuildHud(player.GetComponent<Health>(), playerCombat, targetSelection, boss.GetComponent<Health>());
             var managerObject = new GameObject("Prototype Game Manager");
+            managerObject.AddComponent<DisplayBootstrap>();
             managerObject.AddComponent<RuntimeSmokeCapture>();
             var manager = managerObject.AddComponent<PrototypeGameManager>();
             manager.ConfigureEncounter(player.GetComponent<Health>(), playerCombat, targetSelection, hud, waveOne, waveTwo, boss);
@@ -340,6 +342,8 @@ namespace FusionRPG.EditorTools
                 "Assets/FusionRPG/Materials",
                 "Assets/FusionRPG/Collision",
                 "Assets/FusionRPG/Prefabs",
+                "Assets/FusionRPG/Resources",
+                "Assets/FusionRPG/Resources/Fx",
                 "Assets/FusionRPG/Scenes",
                 "Assets/FusionRPG/UI"
             };
@@ -348,6 +352,30 @@ namespace FusionRPG.EditorTools
             {
                 Directory.CreateDirectory(folder);
             }
+        }
+
+        private static void EnsureFxResources()
+        {
+            Directory.CreateDirectory("Assets/FusionRPG/Resources/Fx");
+            const string path = "Assets/FusionRPG/Resources/Fx/MAT_FxAdditive.mat";
+            var shader =
+                Shader.Find("Legacy Shaders/Particles/Additive") ??
+                Shader.Find("Particles/Standard Unlit") ??
+                Shader.Find("Sprites/Default") ??
+                Shader.Find("Unlit/Color");
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.shader = shader;
+            if (material.HasProperty("_TintColor")) material.SetColor("_TintColor", Color.white);
+            if (material.HasProperty("_Color")) material.SetColor("_Color", Color.white);
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", Color.white);
+            EditorUtility.SetDirty(material);
+            AssetDatabase.SaveAssets();
         }
 
         private static Dictionary<string, Material> CreateMaterials()
@@ -1490,6 +1518,7 @@ namespace FusionRPG.EditorTools
             AddCompoundHurtboxes(enemy.transform, 1.35f, 0.38f);
             var marker = BuildSelectionMarker(enemy.transform, materials["target"], 1.55f, 0.52f);
             enemy.AddComponent<CombatTarget>().Configure(displayName, marker);
+            enemy.AddComponent<EnemyHealthBar>().Configure(health, ImportedLesserEnemyTargetHeight + 0.55f, 1.15f, displayName, new Color(1f, 0.32f, 0.4f, 1f));
             return enemy;
         }
 
@@ -1529,6 +1558,7 @@ namespace FusionRPG.EditorTools
             AddCompoundHurtboxes(boss.transform, 2.55f, 0.92f);
             var marker = BuildSelectionMarker(boss.transform, materials["target"], 3.25f, 1.15f);
             boss.AddComponent<CombatTarget>().Configure("緋櫻獸", marker);
+            boss.AddComponent<EnemyHealthBar>().Configure(health, ImportedBossTargetHeight + 0.7f, 2.4f, "緋櫻獸", new Color(1f, 0.18f, 0.3f, 1f));
             return boss;
         }
 
@@ -1722,13 +1752,14 @@ namespace FusionRPG.EditorTools
                 20);
             CreateHudText(canvasObject.transform, "玩家生命標籤", "櫻庭 さくら", font, new Vector2(24f, -18f), 17, TextAnchor.UpperLeft);
             var playerFill = CreateHudBar(canvasObject.transform, "玩家生命", new Vector2(24f, -44f), new Color(0.05f, 0.07f, 0.14f, 0.9f), SakuraPink);
+            var manaFill = CreateHudBar(canvasObject.transform, "玩家法力", new Vector2(24f, -66f), new Color(0.05f, 0.07f, 0.14f, 0.9f), new Color(0.32f, 0.62f, 1f, 1f));
 
-            var selectedFill = CreateHudBar(canvasObject.transform, "鎖定目標", new Vector2(24f, -82f), new Color(0.05f, 0.07f, 0.14f, 0.86f), IceBlue);
+            var selectedFill = CreateHudBar(canvasObject.transform, "鎖定目標", new Vector2(24f, -96f), new Color(0.05f, 0.07f, 0.14f, 0.86f), IceBlue);
             var selectedPanel = selectedFill.transform.parent.gameObject;
             var targetText = CreateHudText(selectedPanel.transform, "目標名稱", string.Empty, font, new Vector2(4f, 24f), 14, TextAnchor.LowerLeft);
             targetText.rectTransform.sizeDelta = new Vector2(260f, 22f);
 
-            var objective = CreateHudText(canvasObject.transform, "戰鬥目標", "第一波：擊敗緋櫻幼獸", font, new Vector2(24f, -122f), 18, TextAnchor.UpperLeft);
+            var objective = CreateHudText(canvasObject.transform, "戰鬥目標", "第一波：擊敗緋櫻幼獸", font, new Vector2(24f, -136f), 18, TextAnchor.UpperLeft);
             var controls = CreateHudText(canvasObject.transform, "操作提示", "方向鍵 移動　A 攻擊　Space 跳躍　Shift 衝刺　滑鼠拖曳視角", font, Vector2.zero, 14, TextAnchor.LowerLeft);
             controls.rectTransform.anchorMin = Vector2.zero;
             controls.rectTransform.anchorMax = Vector2.zero;
@@ -1762,6 +1793,7 @@ namespace FusionRPG.EditorTools
             var hud = canvasObject.AddComponent<GameHud>();
             hud.ConfigureCombatHud(
                 playerFill,
+                manaFill,
                 selectedFill,
                 bossFill,
                 quickFill,

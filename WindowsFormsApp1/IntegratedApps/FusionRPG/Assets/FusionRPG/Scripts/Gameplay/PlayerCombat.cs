@@ -28,6 +28,13 @@ namespace FusionRPG
         [SerializeField] private int ultimatePulseDamage = 26;
         [SerializeField] private LayerMask targetLayers = ~0;
 
+        [Header("Mana / 法力")]
+        [SerializeField] private float maxMana = 100f;
+        [SerializeField] private float manaRegenPerSecond = 14f;
+        [SerializeField] private float quickSkillManaCost = 18f;
+        [SerializeField] private float areaSkillManaCost = 30f;
+        [SerializeField] private float dashSkillManaCost = 24f;
+
         [Header("VFX")]
         [SerializeField] private GameObject basicHitVfx;
         [SerializeField] private GameObject quickSkillVfx;
@@ -44,7 +51,14 @@ namespace FusionRPG
         private UltimateGauge ultimate;
         private AerialAttackState aerial;
         private float nextAttackTime;
+        private float mana;
         private bool wasGrounded;
+
+        private static readonly Color BasicHitColor = new Color(1f, 0.55f, 0.78f, 1f);
+        private static readonly Color QuickSkillColor = new Color(0.55f, 0.92f, 1f, 1f);
+        private static readonly Color AreaSkillColor = new Color(1f, 0.42f, 0.72f, 1f);
+        private static readonly Color DashSkillColor = new Color(0.7f, 0.78f, 1f, 1f);
+        private static readonly Color UltimateColor = new Color(0.88f, 0.45f, 1f, 1f);
         private Coroutine dashRoutine;
         private Coroutine ultimateRoutine;
         private float aerialQueueTimer;
@@ -56,6 +70,7 @@ namespace FusionRPG
         public float UltimateNormalized => ultimate == null ? 0f : ultimate.Normalized;
         public bool IsUltimateReady => ultimate != null && ultimate.IsReady;
         public bool IsAerialAttackArmed => aerial != null && aerial.IsArmed;
+        public float ManaNormalized => maxMana <= 0f ? 0f : Mathf.Clamp01(mana / maxMana);
 
         private void Awake()
         {
@@ -66,6 +81,7 @@ namespace FusionRPG
             cooldowns = new AbilityCooldownSet(quickSkillCooldown, areaSkillCooldown, dashSkillCooldown);
             ultimate = new UltimateGauge(100);
             aerial = new AerialAttackState();
+            mana = maxMana;
             hitOrigin = hitOrigin == null ? transform : hitOrigin;
             wasGrounded = movement.IsGrounded;
             health.Damaged += HandlePlayerDamaged;
@@ -74,6 +90,7 @@ namespace FusionRPG
         private void Update()
         {
             cooldowns.Tick(Time.deltaTime);
+            mana = Mathf.Min(maxMana, mana + manaRegenPerSecond * Time.deltaTime);
             aerialQueueTimer = Mathf.Max(0f, aerialQueueTimer - Time.deltaTime);
 
             var grounded = movement.IsGrounded;
@@ -127,7 +144,7 @@ namespace FusionRPG
                 }
 
                 movement.BeginPlunge(16f);
-                CombatVfx.Spawn(basicHitVfx, transform.position + Vector3.up * 0.35f, transform.rotation, 0.7f, 0.6f, fallbackVfxMaterial);
+                CombatVfx.Spawn(basicHitVfx, transform.position + Vector3.up * 0.35f, transform.rotation, 0.7f, 0.6f, fallbackVfxMaterial, BasicHitColor);
                 return true;
             }
 
@@ -141,17 +158,22 @@ namespace FusionRPG
             var center = hitOrigin.position + transform.forward * (attackForwardOffset + hit.Index * 0.08f) + Vector3.up * 0.72f;
             var damaged = hitbox.Apply(center, transform);
             GainUltimateFromDamage(hit.Damage, damaged);
-            CombatVfx.Spawn(basicHitVfx, center, transform.rotation, 0.45f + hit.Index * 0.12f, 0.45f, fallbackVfxMaterial);
+            CombatVfx.Spawn(basicHitVfx, center, transform.rotation, 0.45f + hit.Index * 0.12f, 0.45f, fallbackVfxMaterial, BasicHitColor);
             nextAttackTime = time + attackCooldown;
             return true;
         }
 
         public bool TryQuickSkill()
         {
+            if (mana < quickSkillManaCost)
+            {
+                return false;
+            }
             if (!cooldowns.TryUse(CombatAction.QuickSkill))
             {
                 return false;
             }
+            mana -= quickSkillManaCost;
 
             var projectile = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             projectile.name = "Sakura Quick Skill Projectile";
@@ -170,22 +192,27 @@ namespace FusionRPG
                 renderer.sharedMaterial = fallbackVfxMaterial;
             }
             projectile.AddComponent<CombatProjectile>().Initialize(transform, quickSkillDamage, 14f, 0.28f, 2.8f, targetLayers);
-            CombatVfx.Spawn(quickSkillVfx, projectile.transform.position, projectile.transform.rotation, 0.5f, 0.8f, fallbackVfxMaterial);
+            CombatVfx.Spawn(quickSkillVfx, projectile.transform.position, projectile.transform.rotation, 0.5f, 0.8f, fallbackVfxMaterial, QuickSkillColor);
             ultimate.Gain(4);
             return true;
         }
 
         public bool TryAreaSkill()
         {
+            if (mana < areaSkillManaCost)
+            {
+                return false;
+            }
             if (!cooldowns.TryUse(CombatAction.AreaSkill))
             {
                 return false;
             }
+            mana -= areaSkillManaCost;
 
             hitbox.Configure(areaSkillDamage, 3.3f, targetLayers);
             var damaged = hitbox.Apply(transform.position + Vector3.up * 0.55f, transform);
             GainUltimateFromDamage(areaSkillDamage, damaged);
-            CombatVfx.Spawn(areaSkillVfx, transform.position + Vector3.up * 0.08f, Quaternion.identity, 1.2f, 2f, fallbackVfxMaterial);
+            CombatVfx.Spawn(areaSkillVfx, transform.position + Vector3.up * 0.08f, Quaternion.identity, 1.2f, 2f, fallbackVfxMaterial, AreaSkillColor);
             return true;
         }
 
@@ -196,10 +223,15 @@ namespace FusionRPG
 
         public bool TryDashSkill()
         {
-            if (dashRoutine != null || !cooldowns.TryUse(CombatAction.DashSkill))
+            if (dashRoutine != null || mana < dashSkillManaCost)
             {
                 return false;
             }
+            if (!cooldowns.TryUse(CombatAction.DashSkill))
+            {
+                return false;
+            }
+            mana -= dashSkillManaCost;
 
             dashRoutine = StartCoroutine(DashStrike());
             return true;
@@ -249,7 +281,7 @@ namespace FusionRPG
             var elapsed = 0f;
             const float duration = 0.32f;
             const float speed = 11f;
-            CombatVfx.Spawn(dashSkillVfx, transform.position + Vector3.up * 0.5f, transform.rotation, 0.9f, 1.2f, fallbackVfxMaterial);
+            CombatVfx.Spawn(dashSkillVfx, transform.position + Vector3.up * 0.5f, transform.rotation, 0.9f, 1.2f, fallbackVfxMaterial, DashSkillColor);
 
             while (elapsed < duration)
             {
@@ -269,7 +301,8 @@ namespace FusionRPG
         private IEnumerator UltimateField()
         {
             health.SetIncomingDamageMultiplier(0.4f);
-            CombatVfx.Spawn(ultimateVfx, transform.position, Quaternion.identity, 1.8f, 3.2f, fallbackVfxMaterial);
+            CombatVfx.Spawn(ultimateVfx, transform.position, Quaternion.identity, 1.8f, 3.2f, fallbackVfxMaterial, UltimateColor);
+            CombatVfx.PlayUltimate(transform.position + Vector3.up * 0.1f, 6f, UltimateColor);
 
             for (var pulse = 0; pulse < 5; pulse++)
             {
@@ -288,7 +321,7 @@ namespace FusionRPG
             var center = transform.position + Vector3.up * 0.35f;
             var damaged = hitbox.Apply(center, transform);
             GainUltimateFromDamage(aerialDamage, damaged);
-            CombatVfx.Spawn(areaSkillVfx, transform.position + Vector3.up * 0.05f, Quaternion.identity, 0.9f, 1.3f, fallbackVfxMaterial);
+            CombatVfx.Spawn(areaSkillVfx, transform.position + Vector3.up * 0.05f, Quaternion.identity, 0.9f, 1.3f, fallbackVfxMaterial, AreaSkillColor);
         }
 
         private void GainUltimateFromDamage(int damage, int targetCount)

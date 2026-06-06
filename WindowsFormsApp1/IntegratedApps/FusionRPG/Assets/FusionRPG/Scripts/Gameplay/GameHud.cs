@@ -11,6 +11,7 @@ namespace FusionRPG
         [SerializeField] private Health bossHealth;
         [SerializeField] private BossController bossController;
         [SerializeField] private Image playerHpFill;
+        [SerializeField] private Image manaFill;
         [SerializeField] private Image selectedHpFill;
         [SerializeField] private Image bossHpFill;
         [SerializeField] private Image quickSkillFill;
@@ -24,9 +25,32 @@ namespace FusionRPG
         [SerializeField] private GameObject selectedPanel;
         [SerializeField] private GameObject bossPanel;
 
+        private void Start()
+        {
+            // Filled Images need a sprite or fillAmount is ignored (bars never drain).
+            var sprite = UiSprites.White();
+            AssignFillSprite(playerHpFill, sprite);
+            AssignFillSprite(manaFill, sprite);
+            AssignFillSprite(selectedHpFill, sprite);
+            AssignFillSprite(bossHpFill, sprite);
+            AssignFillSprite(quickSkillFill, sprite);
+            AssignFillSprite(areaSkillFill, sprite);
+            AssignFillSprite(dashSkillFill, sprite);
+            AssignFillSprite(ultimateFill, sprite);
+        }
+
+        private static void AssignFillSprite(Image image, Sprite sprite)
+        {
+            if (image != null)
+            {
+                image.sprite = sprite;
+            }
+        }
+
         private void Update()
         {
             SetFill(playerHpFill, playerHealth != null ? playerHealth.Ratio : 0f);
+            SetFill(manaFill, playerCombat != null ? playerCombat.ManaNormalized : 0f);
             SetFill(quickSkillFill, playerCombat != null ? 1f - playerCombat.QuickCooldownRemaining01 : 0f);
             SetFill(areaSkillFill, playerCombat != null ? 1f - playerCombat.AreaCooldownRemaining01 : 0f);
             SetFill(dashSkillFill, playerCombat != null ? 1f - playerCombat.DashCooldownRemaining01 : 0f);
@@ -70,6 +94,7 @@ namespace FusionRPG
 
         public void ConfigureCombatHud(
             Image nextPlayerHpFill,
+            Image nextManaFill,
             Image nextSelectedHpFill,
             Image nextBossHpFill,
             Image nextQuickSkillFill,
@@ -84,6 +109,7 @@ namespace FusionRPG
             GameObject nextBossPanel)
         {
             playerHpFill = nextPlayerHpFill;
+            manaFill = nextManaFill;
             selectedHpFill = nextSelectedHpFill;
             bossHpFill = nextBossHpFill;
             quickSkillFill = nextQuickSkillFill;

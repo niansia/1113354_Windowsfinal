@@ -45,7 +45,7 @@ namespace FusionRPG
                 damaged.Add(health);
             }
 
-            CombatVfx.Spawn(attackVfx, center, Quaternion.identity, radius * 0.35f, 1.2f, fallbackVfxMaterial);
+            CombatVfx.Spawn(attackVfx, center, Quaternion.identity, radius * 0.35f, 1.2f, fallbackVfxMaterial, new Color(0.95f, 0.25f, 0.4f, 1f));
             return damaged.Count - initialCount;
         }
     }
