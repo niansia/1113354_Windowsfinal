@@ -28,6 +28,13 @@
       "runtimeArgs": ["server.py", "--port", "8791"],
       "cwd": "IntegratedApps/MetroPulse",
       "port": 8791
+    },
+    {
+      "name": "iot-nexus",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["server.py", "--port", "8793"],
+      "cwd": "IntegratedApps/IoTNexus",
+      "port": 8793
     }
   ]
 }

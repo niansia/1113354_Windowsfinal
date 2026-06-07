@@ -58,12 +58,14 @@ namespace WindowsFormsApp1
         private AccountStore AccountDb { get { return accountStore ?? (accountStore = new AccountStore()); } }
         private Process cosmicServerProcess;
         private Process metroPulseServerProcess;
+        private Process iotNexusServerProcess;
         private Process voiceServerProcess;
         private int cameraAppWindowCount = 0;
         private bool nativeWarmupStarted;
         private Task<CoreWebView2Environment> fusionBrowserEnvironmentTask;
         private CoreWebView2Environment fusionBrowserEnvironment;
         private Task metroPulseWarmupTask;
+        private Task iotNexusWarmupTask;
         private Task voiceServiceWarmupTask;
         private string terminalWorkingDirectoryCache;
         private Font terminalOutputFont;
@@ -374,6 +376,7 @@ namespace WindowsFormsApp1
             ScheduleWarmTerminalControls();
             WarmFusionBrowserEnvironment();
             WarmMetroPulseEngine();
+            WarmIoTNexusEngine();
             WarmFusionVoiceService();
 
             Task.Run(delegate
@@ -436,6 +439,46 @@ namespace WindowsFormsApp1
                 try { EnsureMetroPulseEngineBuilt(); }
                 catch (Exception ex) { Debug.WriteLine("[MetroPulse] warmup failed: " + ex.Message); }
             });
+        }
+
+        private void WarmIoTNexusEngine()
+        {
+            if (iotNexusWarmupTask != null) return;
+            iotNexusWarmupTask = Task.Run(delegate
+            {
+                try { EnsureIoTNexusEngineBuilt(); }
+                catch (Exception ex) { Debug.WriteLine("[IoTNexus] warmup failed: " + ex.Message); }
+            });
+        }
+
+        private void EnsureIoTNexusEngineBuilt()
+        {
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "IoTNexus"));
+            if (appRoot == null) return;
+            string source = Path.Combine(appRoot, "engine", "edge_core.cpp");
+            string buildDir = Path.Combine(appRoot, "build");
+            string exe = Path.Combine(buildDir, "EdgeCore.exe");
+            if (!File.Exists(source)) return;
+            if (File.Exists(exe) && File.GetLastWriteTimeUtc(exe) >= File.GetLastWriteTimeUtc(source)) return;
+
+            string compiler = FindGppCommand();
+            if (compiler == null) return; // server falls back to its pure-Python engine
+            Directory.CreateDirectory(buildDir);
+            using (var process = new Process())
+            {
+                process.StartInfo.FileName = compiler;
+                process.StartInfo.Arguments = "-std=c++17 -O2 \"" + source + "\" -o \"" + exe + "\"";
+                process.StartInfo.WorkingDirectory = appRoot;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.Start();
+                if (!process.WaitForExit(20000) || process.ExitCode != 0)
+                {
+                    Debug.WriteLine("[IoTNexus] g++ compile failed: " + process.StandardError.ReadToEnd());
+                }
+            }
         }
 
         private void WarmFusionVoiceService()
@@ -1049,6 +1092,7 @@ namespace WindowsFormsApp1
             AddDesktopIcon(L("WaveStudio"), "WAV", L("WaveStudioDesc"), Color.FromArgb(120, 235, 218), LaunchWaveStudio);
             AddDesktopIcon(L("CosmicGesture"), "COS", L("CosmicGestureDesc"), Color.FromArgb(103, 125, 255), LaunchCosmicGesture);
             AddDesktopIcon(L("MetroPulse"), "MAP", L("MetroPulseDesc"), Color.FromArgb(94, 224, 184), LaunchMetroPulse);
+            AddDesktopIcon(L("IoTNexus"), "IOT", L("IoTNexusDesc"), Color.FromArgb(70, 224, 255), LaunchIoTNexus);
             AddDesktopIcon(L("UserFiles"), "USR", L("UserFilesDesc"), Color.FromArgb(86, 214, 255));
             AddDesktopIcon(L("AddFile"), "+", L("AddFileDesc"), Color.FromArgb(130, 165, 255), AddUserFile);
             AddDesktopIcon(L("LanguageLab"), "DEV", L("LanguageLabDesc"), accent);
@@ -1202,6 +1246,7 @@ namespace WindowsFormsApp1
             apps.Controls.Add(StartItem(L("WaveStudio"), L("StartWaveDesc"), Color.FromArgb(120, 235, 218)));
             apps.Controls.Add(StartItem(L("CosmicGesture"), L("StartCosmicDesc"), accent3));
             apps.Controls.Add(StartItem(L("MetroPulse"), L("StartMetroPulseDesc"), Color.FromArgb(94, 224, 184)));
+            apps.Controls.Add(StartItem(L("IoTNexus"), L("StartIoTNexusDesc"), Color.FromArgb(70, 224, 255)));
             apps.Controls.Add(StartItem(L("GameRoom"), L("StartGameDesc"), accent2));
             apps.Controls.Add(StartItem(L("LanguageLab"), L("StartLanguageDesc"), accent));
             apps.Controls.Add(StartItem(L("SystemSettings"), L("SystemSettingsDesc"), Color.FromArgb(163, 133, 255)));
@@ -1618,6 +1663,7 @@ namespace WindowsFormsApp1
                     else if (lower.Contains("\"wav\"") || lower.Contains("\"wave\"")) LaunchWaveStudio();
                     else if (lower.Contains("\"cosmic\"") || lower.Contains("\"cos\"")) LaunchCosmicGesture();
                     else if (lower.Contains("\"metro\"") || lower.Contains("\"traffic\"")) LaunchMetroPulse();
+                    else if (lower.Contains("\"iot\"") || lower.Contains("\"nexus\"")) LaunchIoTNexus();
                     else if (lower.Contains("\"game\"") || lower.Contains("\"fusionrpg\"") || lower.Contains("\"rpg\"")) LaunchFusionRPG();
                     else if (lower.Contains("\"cmd\"") || lower.Contains("\"terminal\"")) OpenFusionTerminal();
                     else if (lower.Contains("\"settings\"") || lower.Contains("\"set\"")) OpenSettingsWindow();
@@ -2065,6 +2111,11 @@ namespace WindowsFormsApp1
                 if (name == L("MetroPulse"))
                 {
                     LaunchMetroPulse();
+                    return;
+                }
+                if (name == L("IoTNexus"))
+                {
+                    LaunchIoTNexus();
                     return;
                 }
                 if (name == L("GameRoom"))
@@ -2665,6 +2716,75 @@ namespace WindowsFormsApp1
             OpenWebAppWindow(L("MetroPulse"), url, metroColor, ownsCamera: false, kind: "metro");
         }
 
+        private async void LaunchIoTNexus()
+        {
+            Color iotColor = Color.FromArgb(70, 224, 255);
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "IoTNexus"));
+            string serverPath = appRoot == null ? null : Path.Combine(appRoot, "server.py");
+            if (serverPath == null || !File.Exists(serverPath))
+            {
+                ShowToast(L("IoTNexusServerMissing"), iotColor);
+                PostAppLaunchStatus("iot", "error", L("IoTNexusServerMissing"));
+                return;
+            }
+
+            try
+            {
+                if (iotNexusWarmupTask != null) await iotNexusWarmupTask;
+            }
+            catch
+            {
+            }
+
+            bool serverReady = await IsIoTNexusServerReadyAsync();
+            if (!serverReady)
+            {
+                string python = FindPythonCommand();
+                if (python == null)
+                {
+                    ShowToast(L("IoTNexusPythonMissing"), iotColor);
+                    PostAppLaunchStatus("iot", "error", L("IoTNexusPythonMissing"));
+                    return;
+                }
+
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = python,
+                        Arguments = "\"" + serverPath + "\" --host 127.0.0.1 --port 8793",
+                        WorkingDirectory = appRoot,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    startInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
+                    iotNexusServerProcess = Process.Start(startInfo);
+                    serverReady = await WaitForIoTNexusServerAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[IoTNexus] server launch failed: " + ex.Message);
+                    ShowToast(L("IoTNexusBrokerFailed"), iotColor);
+                    PostAppLaunchStatus("iot", "error", L("IoTNexusBrokerFailed"));
+                    return;
+                }
+            }
+
+            if (!serverReady)
+            {
+                ShowToast(L("IoTNexusBrokerNotReady"), iotColor);
+                PostAppLaunchStatus("iot", "error", L("IoTNexusBrokerNotReady"));
+                return;
+            }
+
+            string url = "http://127.0.0.1:8793/?host=fusionos" +
+                "&lang=" + Uri.EscapeDataString(currentLanguage) +
+                "&timezone=" + Uri.EscapeDataString(currentTimezone) +
+                "&clock24=" + (currentClock24 ? "true" : "false");
+            PostAppLaunchStatus("iot", "open", L("IoTNexusOpening"));
+            OpenWebAppWindow(L("IoTNexus"), url, iotColor, ownsCamera: false, kind: "iot");
+        }
+
         private void LaunchFusionRPG()
         {
             string preferredExe = FindProjectFile(Path.Combine("IntegratedApps", "FusionRPG", "Build", "FusionRPG.exe"));
@@ -2877,6 +2997,40 @@ namespace WindowsFormsApp1
                 try
                 {
                     var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8791/health");
+                    request.Timeout = 700;
+                    using (var response = (HttpWebResponse)request.GetResponse())
+                    {
+                        return response.StatusCode == HttpStatusCode.OK;
+                    }
+                }
+                catch
+                {
+                    return false;
+                }
+            });
+        }
+
+        private async Task<bool> WaitForIoTNexusServerAsync()
+        {
+            for (int i = 0; i < 48; i++)
+            {
+                if (await IsIoTNexusServerReadyAsync())
+                {
+                    return true;
+                }
+                await Task.Delay(200);
+            }
+
+            return false;
+        }
+
+        private Task<bool> IsIoTNexusServerReadyAsync()
+        {
+            return Task.Run(delegate
+            {
+                try
+                {
+                    var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8793/api/health");
                     request.Timeout = 700;
                     using (var response = (HttpWebResponse)request.GetResponse())
                     {
@@ -4820,6 +4974,7 @@ namespace WindowsFormsApp1
         {
             StopOwnedServerProcess(cosmicServerProcess);
             StopOwnedServerProcess(metroPulseServerProcess);
+            StopOwnedServerProcess(iotNexusServerProcess);
             StopOwnedServerProcess(voiceServerProcess);
             base.OnFormClosing(e);
         }
@@ -5028,6 +5183,7 @@ namespace WindowsFormsApp1
                 case "WaveStudio": return zh ? "音訊工作室" : "Wave Studio";
                 case "CosmicGesture": return zh ? "宇宙手勢" : "Cosmic Gesture";
                 case "MetroPulse": return zh ? "MetroPulse 智慧交通" : "MetroPulse";
+                case "IoTNexus": return zh ? "物聯網中樞" : "IoT Nexus";
                 case "UserFiles": return zh ? "使用者檔案" : "User Files";
                 case "AddFile": return zh ? "新增檔案" : "Add File";
                 case "LanguageLab": return zh ? "語言實驗室" : "Language Lab";
@@ -5069,6 +5225,13 @@ namespace WindowsFormsApp1
                 case "MetroPulseBrokerFailed": return zh ? "MetroPulse 即時資料 broker 啟動失敗。" : "MetroPulse realtime data broker could not start.";
                 case "MetroPulseBrokerNotReady": return zh ? "MetroPulse 伺服器尚未就緒。" : "MetroPulse server is not ready yet.";
                 case "MetroPulseOpening": return zh ? "MetroPulse 正在開啟。" : "MetroPulse is opening.";
+                case "IoTNexusDesc": return zh ? "智慧建築物聯網指揮中心：手寫 MQTT broker、C++ 邊緣運算引擎、數位孿生與即時遙測儀表板。" : "Smart-building IoT command center: a hand-rolled MQTT broker, a C++ edge-compute engine, a digital twin, and a realtime telemetry dashboard.";
+                case "StartIoTNexusDesc": return zh ? "開啟智慧建築物聯網指揮中心。" : "Open the smart-building IoT command center.";
+                case "IoTNexusServerMissing": return zh ? "物聯網中樞伺服器檔案不存在。" : "IoT Nexus server file is missing.";
+                case "IoTNexusPythonMissing": return zh ? "物聯網中樞需要 Python 才能啟動。" : "IoT Nexus needs Python to start.";
+                case "IoTNexusBrokerFailed": return zh ? "物聯網中樞伺服器啟動失敗。" : "IoT Nexus server could not start.";
+                case "IoTNexusBrokerNotReady": return zh ? "物聯網中樞伺服器尚未就緒。" : "IoT Nexus server is not ready yet.";
+                case "IoTNexusOpening": return zh ? "物聯網中樞正在開啟。" : "IoT Nexus is opening.";
                 case "WebSurfaceLoading": return zh ? "正在準備系統應用表面..." : "Preparing application surface...";
                 case "WebSurfaceLoadError": return zh ? "應用表面載入失敗：{0}" : "Application surface could not finish loading: {0}";
                 case "WebViewStartError": return zh ? "WebView2 無法啟動。" : "WebView2 could not start.";

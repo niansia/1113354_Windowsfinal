@@ -1,6 +1,6 @@
 export type AppId =
   | 'pc' | 'dir' | 'piano' | 'media' | 'wav' | 'cosmic' | 'user'
-  | 'metro' | 'add' | 'dev' | 'tool' | 'db' | 'web'
+  | 'metro' | 'iot' | 'add' | 'dev' | 'tool' | 'db' | 'web'
   | 'game' | 'cmd' | 'set' | 'circuit' | 'toolbox';
 
 export type GestureType =

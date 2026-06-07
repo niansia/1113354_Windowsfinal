@@ -61,7 +61,7 @@ export const FUSION_APPS: FusionApp[] = [
     color: '#ff6a9e',
     category: 'system',
     tags: ['啟動器', '應用程式', '入口'],
-    status: '12 個應用程式',
+    status: '13 個應用程式',
     launchMode: 'overlay',
     featured: true
   },
@@ -173,6 +173,19 @@ export const FUSION_APPS: FusionApp[] = [
     tags: ['交通', '城市', '定位', '即時'],
     status: '即時',
     launchMode: 'host'
+  },
+  {
+    id: 'iot',
+    title: '物聯網中樞',
+    subtitle: '智慧建築指揮中心',
+    description: '即時監控智慧建築裝置艦隊：手寫 MQTT broker、C++ 邊緣運算引擎、數位孿生與遙測儀表板。',
+    glyph: 'IOT',
+    color: '#46e0ff',
+    category: 'data',
+    tags: ['物聯網', 'MQTT', '數位孿生', '即時'],
+    status: '即時',
+    launchMode: 'host',
+    featured: true
   },
   {
     id: 'dev',

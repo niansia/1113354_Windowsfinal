@@ -58,6 +58,7 @@ const APP_ALIASES: Array<{ id: AppId; words: string[] }> = [
   { id: 'wav', words: ['音訊工作室', '音频工作室', '音訊', '音频', 'wav', 'audio', 'waveform', 'オーディオ', '오디오'] },
   { id: 'cosmic', words: ['宇宙手勢', '宇宙手势', '宇宙', '星空', '星圖', 'cosmic', 'gesture', 'コズミック', '코스믹', '우주'] },
   { id: 'metro', words: ['metropulse', '智慧交通', '交通', '地圖', '地图', '捷運', 'map', 'metro', 'traffic', 'マップ', '交通', '교통', '지도'] },
+  { id: 'iot', words: ['物聯網', '物联网', '物聯網中樞', '智慧建築', '智能建筑', 'iot', 'nexus', 'mqtt', '感測器', '传感器', 'sensor', 'モノのインターネット', 'スマートビル', '사물인터넷', '스마트 빌딩'] },
   { id: 'dev', words: ['開發實驗室', '开发实验室', '開發', '开发', 'dev', 'code', 'ide', '程式碼', '代码', '開発', '개발', '코드'] },
   { id: 'db', words: ['資料庫', '数据库', 'database', 'sql', 'データベース', '데이터베이스'] },
   { id: 'toolbox', words: ['工具箱', '工具', 'toolbox', 'tools', '計算機', '计算器', 'calculator', 'ツール', '도구함', '계산기'] },

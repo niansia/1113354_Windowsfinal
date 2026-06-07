@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Fusion IoT Nexus</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <!-- ===== header ===== -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">IoT</div>
+        <div class="brand-text">
+          <h1 data-i18n="物聯網中樞">物聯網中樞</h1>
+          <p data-i18n="智慧建築物聯網指揮中心">智慧建築物聯網指揮中心</p>
+        </div>
+      </div>
+      <div class="topbar-mid">
+        <div class="env-chip"><span class="env-ico">🏢</span><b id="buildingName">Fusion Tower</b></div>
+        <div class="env-chip"><span class="env-ico">🕒</span><b id="simClock">--:--</b></div>
+        <div class="env-chip"><span class="env-ico" id="wxIco">☀️</span>
+          <span data-i18n="室外">室外</span> <b id="outdoorT">--°</b></div>
+        <div class="env-chip"><span class="env-ico">⚡</span>
+          <span data-i18n="電網碳強度">電網碳強度</span> <b id="gridCarbon">-- g</b></div>
+      </div>
+      <div class="topbar-right">
+        <span id="engineBadge" class="badge badge-engine">…</span>
+        <span id="connBadge" class="badge badge-conn" data-i18n="連線中…">連線中…</span>
+      </div>
+    </header>
+
+    <!-- ===== KPI strip ===== -->
+    <section id="kpiStrip" class="kpi-strip"></section>
+
+    <!-- ===== main grid ===== -->
+    <main class="grid">
+      <!-- digital twin -->
+      <section class="panel panel-twin">
+        <div class="panel-head">
+          <h2 data-i18n="數位孿生樓層平面圖">數位孿生樓層平面圖</h2>
+          <div class="seg" id="twinMetricSeg"></div>
+        </div>
+        <div class="twin-wrap">
+          <div id="floorPlan" class="floor-plan"></div>
+          <div class="twin-legend"><span id="legendLo"></span><div class="legend-bar" id="legendBar"></div><span id="legendHi"></span></div>
+        </div>
+      </section>
+
+      <!-- right column: live chart + energy -->
+      <section class="panel panel-chart">
+        <div class="panel-head"><h2 data-i18n="即時負載與發電">即時負載與發電</h2><div id="chartLegend" class="chart-legend"></div></div>
+        <canvas id="loadChart" class="load-chart"></canvas>
+      </section>
+
+      <section class="panel panel-energy">
+        <div class="panel-head"><h2 data-i18n="能耗拆分">能耗拆分</h2><div id="energyTotals" class="energy-totals"></div></div>
+        <div class="energy-body">
+          <canvas id="energyDonut" width="180" height="180"></canvas>
+          <div id="energyLegend" class="energy-legend"></div>
+        </div>
+      </section>
+
+      <!-- device fleet -->
+      <section class="panel panel-fleet">
+        <div class="panel-head">
+          <h2 data-i18n="裝置艦隊">裝置艦隊</h2>
+          <div class="fleet-tools">
+            <input id="fleetSearch" class="fleet-search" type="text" />
+            <div class="seg" id="fleetFilterSeg"></div>
+          </div>
+        </div>
+        <div id="fleetGrid" class="fleet-grid"></div>
+      </section>
+
+      <!-- bottom tabbed panel -->
+      <section class="panel panel-tabs">
+        <div class="tabbar" id="tabbar"></div>
+        <div class="tab-body">
+          <div class="tab-pane" data-pane="events"><div id="eventFeed" class="event-feed"></div></div>
+          <div class="tab-pane" data-pane="health"><div id="healthList" class="health-list"></div></div>
+          <div class="tab-pane" data-pane="rules"><div id="rulesList" class="rules-list"></div></div>
+          <div class="tab-pane" data-pane="mqtt"><div id="mqttPanel" class="mqtt-panel"></div></div>
+          <div class="tab-pane" data-pane="console"><div id="consolePanel" class="console-panel"></div></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- device detail drawer -->
+    <aside id="drawer" class="drawer">
+      <div class="drawer-head">
+        <div><h3 id="drawerTitle">—</h3><p id="drawerSub" class="drawer-sub">—</p></div>
+        <button id="drawerClose" class="drawer-close" data-i18n="關閉">關閉</button>
+      </div>
+      <div id="drawerBody" class="drawer-body"></div>
+    </aside>
+    <div id="scrim" class="scrim"></div>
+  </div>
+
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
