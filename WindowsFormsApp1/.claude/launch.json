@@ -35,6 +35,13 @@
       "runtimeArgs": ["server.py", "--port", "8793"],
       "cwd": "IntegratedApps/IoTNexus",
       "port": 8793
+    },
+    {
+      "name": "verilens",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["server.py", "--port", "8794"],
+      "cwd": "IntegratedApps/VeriLens",
+      "port": 8794
     }
   ]
 }

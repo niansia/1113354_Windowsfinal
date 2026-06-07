@@ -260,12 +260,18 @@
         const col = scaleColor(twinMetric, v);
         zone.style.background = `linear-gradient(160deg, ${col}33, ${col}14)`;
         zone.style.borderColor = col + '66';
-        zone.appendChild(el('div', 'zone-name', t(zm.label)));
+        // header row: zone name (left) + metric value (right) -- a flex row so the
+        // value never collides with the device dots, even in short rooms.
+        const head = el('div', 'zone-head');
+        head.appendChild(el('div', 'zone-name', t(zm.label)));
         const valTxt = v == null ? '—' : twinMetric === 'temp' ? fmt(v, 1) + '°'
           : twinMetric === 'co2' ? fmt(v) : twinMetric === 'occupancy' ? fmt(v)
           : twinMetric === 'power' ? fmt(v, 1) + 'kW' : fmt(v) + '%';
-        const vEl = el('div', 'zone-val', valTxt); vEl.style.color = v == null ? '#7f93b5' : '#fff'; zone.appendChild(vEl);
-        if (z.occupancy > 0) { const o = el('div', 'zone-occ', '🚶 ' + fmt(z.occupancy)); zone.appendChild(o); }
+        const vEl = el('div', 'zone-val', valTxt); vEl.style.color = v == null ? '#7f93b5' : '#fff';
+        head.appendChild(vEl);
+        zone.appendChild(head);
+        // footer row pinned to the bottom: device dots (left) + occupancy (right).
+        const foot = el('div', 'zone-foot');
         const dots = el('div', 'zone-dots');
         (devByZone[zm.id] || []).slice(0, 8).forEach(d => {
           const dot = el('div', 'zone-dot'); const hh = healthOf(d.id);
@@ -275,7 +281,9 @@
           dot.onclick = (e) => { e.stopPropagation(); openDrawer(d.id); };
           dots.appendChild(dot);
         });
-        zone.appendChild(dots);
+        foot.appendChild(dots);
+        if (z.occupancy > 0) foot.appendChild(el('div', 'zone-occ', '🚶 ' + fmt(z.occupancy)));
+        zone.appendChild(foot);
         zone.onclick = () => { fleetFilter = 'zone:' + zm.id; fleetSearch = ''; $('#fleetSearch').value = ''; renderFleet(); $('#fleetGrid').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); };
         fz.appendChild(zone);
       });

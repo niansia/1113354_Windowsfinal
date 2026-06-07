@@ -59,6 +59,7 @@ namespace WindowsFormsApp1
         private Process cosmicServerProcess;
         private Process metroPulseServerProcess;
         private Process iotNexusServerProcess;
+        private Process veriLensServerProcess;
         private Process voiceServerProcess;
         private int cameraAppWindowCount = 0;
         private bool nativeWarmupStarted;
@@ -66,6 +67,7 @@ namespace WindowsFormsApp1
         private CoreWebView2Environment fusionBrowserEnvironment;
         private Task metroPulseWarmupTask;
         private Task iotNexusWarmupTask;
+        private Task veriLensWarmupTask;
         private Task voiceServiceWarmupTask;
         private string terminalWorkingDirectoryCache;
         private Font terminalOutputFont;
@@ -377,6 +379,7 @@ namespace WindowsFormsApp1
             WarmFusionBrowserEnvironment();
             WarmMetroPulseEngine();
             WarmIoTNexusEngine();
+            WarmVeriLensEngine();
             WarmFusionVoiceService();
 
             Task.Run(delegate
@@ -477,6 +480,46 @@ namespace WindowsFormsApp1
                 if (!process.WaitForExit(20000) || process.ExitCode != 0)
                 {
                     Debug.WriteLine("[IoTNexus] g++ compile failed: " + process.StandardError.ReadToEnd());
+                }
+            }
+        }
+
+        private void WarmVeriLensEngine()
+        {
+            if (veriLensWarmupTask != null) return;
+            veriLensWarmupTask = Task.Run(delegate
+            {
+                try { EnsureVeriLensEngineBuilt(); }
+                catch (Exception ex) { Debug.WriteLine("[VeriLens] warmup failed: " + ex.Message); }
+            });
+        }
+
+        private void EnsureVeriLensEngineBuilt()
+        {
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "VeriLens"));
+            if (appRoot == null) return;
+            string source = Path.Combine(appRoot, "engine", "forensics_core.cpp");
+            string buildDir = Path.Combine(appRoot, "build");
+            string exe = Path.Combine(buildDir, "ForensicsCore.exe");
+            if (!File.Exists(source)) return;
+            if (File.Exists(exe) && File.GetLastWriteTimeUtc(exe) >= File.GetLastWriteTimeUtc(source)) return;
+
+            string compiler = FindGppCommand();
+            if (compiler == null) return; // server falls back to its pure-Python fusion
+            Directory.CreateDirectory(buildDir);
+            using (var process = new Process())
+            {
+                process.StartInfo.FileName = compiler;
+                process.StartInfo.Arguments = "-std=c++17 -O2 \"" + source + "\" -o \"" + exe + "\"";
+                process.StartInfo.WorkingDirectory = appRoot;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.Start();
+                if (!process.WaitForExit(20000) || process.ExitCode != 0)
+                {
+                    Debug.WriteLine("[VeriLens] g++ compile failed: " + process.StandardError.ReadToEnd());
                 }
             }
         }
@@ -1093,6 +1136,7 @@ namespace WindowsFormsApp1
             AddDesktopIcon(L("CosmicGesture"), "COS", L("CosmicGestureDesc"), Color.FromArgb(103, 125, 255), LaunchCosmicGesture);
             AddDesktopIcon(L("MetroPulse"), "MAP", L("MetroPulseDesc"), Color.FromArgb(94, 224, 184), LaunchMetroPulse);
             AddDesktopIcon(L("IoTNexus"), "IOT", L("IoTNexusDesc"), Color.FromArgb(70, 224, 255), LaunchIoTNexus);
+            AddDesktopIcon(L("VeriLens"), "FND", L("VeriLensDesc"), Color.FromArgb(255, 93, 158), LaunchVeriLens);
             AddDesktopIcon(L("UserFiles"), "USR", L("UserFilesDesc"), Color.FromArgb(86, 214, 255));
             AddDesktopIcon(L("AddFile"), "+", L("AddFileDesc"), Color.FromArgb(130, 165, 255), AddUserFile);
             AddDesktopIcon(L("LanguageLab"), "DEV", L("LanguageLabDesc"), accent);
@@ -1247,6 +1291,7 @@ namespace WindowsFormsApp1
             apps.Controls.Add(StartItem(L("CosmicGesture"), L("StartCosmicDesc"), accent3));
             apps.Controls.Add(StartItem(L("MetroPulse"), L("StartMetroPulseDesc"), Color.FromArgb(94, 224, 184)));
             apps.Controls.Add(StartItem(L("IoTNexus"), L("StartIoTNexusDesc"), Color.FromArgb(70, 224, 255)));
+            apps.Controls.Add(StartItem(L("VeriLens"), L("StartVeriLensDesc"), Color.FromArgb(255, 93, 158)));
             apps.Controls.Add(StartItem(L("GameRoom"), L("StartGameDesc"), accent2));
             apps.Controls.Add(StartItem(L("LanguageLab"), L("StartLanguageDesc"), accent));
             apps.Controls.Add(StartItem(L("SystemSettings"), L("SystemSettingsDesc"), Color.FromArgb(163, 133, 255)));
@@ -1664,6 +1709,7 @@ namespace WindowsFormsApp1
                     else if (lower.Contains("\"cosmic\"") || lower.Contains("\"cos\"")) LaunchCosmicGesture();
                     else if (lower.Contains("\"metro\"") || lower.Contains("\"traffic\"")) LaunchMetroPulse();
                     else if (lower.Contains("\"iot\"") || lower.Contains("\"nexus\"")) LaunchIoTNexus();
+                    else if (lower.Contains("\"verify\"") || lower.Contains("\"verilens\"") || lower.Contains("\"news\"")) LaunchVeriLens();
                     else if (lower.Contains("\"game\"") || lower.Contains("\"fusionrpg\"") || lower.Contains("\"rpg\"")) LaunchFusionRPG();
                     else if (lower.Contains("\"cmd\"") || lower.Contains("\"terminal\"")) OpenFusionTerminal();
                     else if (lower.Contains("\"settings\"") || lower.Contains("\"set\"")) OpenSettingsWindow();
@@ -2116,6 +2162,11 @@ namespace WindowsFormsApp1
                 if (name == L("IoTNexus"))
                 {
                     LaunchIoTNexus();
+                    return;
+                }
+                if (name == L("VeriLens"))
+                {
+                    LaunchVeriLens();
                     return;
                 }
                 if (name == L("GameRoom"))
@@ -2785,6 +2836,75 @@ namespace WindowsFormsApp1
             OpenWebAppWindow(L("IoTNexus"), url, iotColor, ownsCamera: false, kind: "iot");
         }
 
+        private async void LaunchVeriLens()
+        {
+            Color veriColor = Color.FromArgb(255, 93, 158);
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "VeriLens"));
+            string serverPath = appRoot == null ? null : Path.Combine(appRoot, "server.py");
+            if (serverPath == null || !File.Exists(serverPath))
+            {
+                ShowToast(L("VeriLensServerMissing"), veriColor);
+                PostAppLaunchStatus("verify", "error", L("VeriLensServerMissing"));
+                return;
+            }
+
+            try
+            {
+                if (veriLensWarmupTask != null) await veriLensWarmupTask;
+            }
+            catch
+            {
+            }
+
+            bool serverReady = await IsVeriLensServerReadyAsync();
+            if (!serverReady)
+            {
+                string python = FindPythonCommand();
+                if (python == null)
+                {
+                    ShowToast(L("VeriLensPythonMissing"), veriColor);
+                    PostAppLaunchStatus("verify", "error", L("VeriLensPythonMissing"));
+                    return;
+                }
+
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = python,
+                        Arguments = "\"" + serverPath + "\" --host 127.0.0.1 --port 8794",
+                        WorkingDirectory = appRoot,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    startInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
+                    veriLensServerProcess = Process.Start(startInfo);
+                    serverReady = await WaitForVeriLensServerAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[VeriLens] server launch failed: " + ex.Message);
+                    ShowToast(L("VeriLensBrokerFailed"), veriColor);
+                    PostAppLaunchStatus("verify", "error", L("VeriLensBrokerFailed"));
+                    return;
+                }
+            }
+
+            if (!serverReady)
+            {
+                ShowToast(L("VeriLensBrokerNotReady"), veriColor);
+                PostAppLaunchStatus("verify", "error", L("VeriLensBrokerNotReady"));
+                return;
+            }
+
+            string url = "http://127.0.0.1:8794/?host=fusionos" +
+                "&lang=" + Uri.EscapeDataString(currentLanguage) +
+                "&timezone=" + Uri.EscapeDataString(currentTimezone) +
+                "&clock24=" + (currentClock24 ? "true" : "false");
+            PostAppLaunchStatus("verify", "open", L("VeriLensOpening"));
+            OpenWebAppWindow(L("VeriLens"), url, veriColor, ownsCamera: false, kind: "verify");
+        }
+
         private void LaunchFusionRPG()
         {
             string preferredExe = FindProjectFile(Path.Combine("IntegratedApps", "FusionRPG", "Build", "FusionRPG.exe"));
@@ -3031,6 +3151,40 @@ namespace WindowsFormsApp1
                 try
                 {
                     var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8793/api/health");
+                    request.Timeout = 700;
+                    using (var response = (HttpWebResponse)request.GetResponse())
+                    {
+                        return response.StatusCode == HttpStatusCode.OK;
+                    }
+                }
+                catch
+                {
+                    return false;
+                }
+            });
+        }
+
+        private async Task<bool> WaitForVeriLensServerAsync()
+        {
+            for (int i = 0; i < 60; i++)
+            {
+                if (await IsVeriLensServerReadyAsync())
+                {
+                    return true;
+                }
+                await Task.Delay(250);
+            }
+
+            return false;
+        }
+
+        private Task<bool> IsVeriLensServerReadyAsync()
+        {
+            return Task.Run(delegate
+            {
+                try
+                {
+                    var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8794/api/health");
                     request.Timeout = 700;
                     using (var response = (HttpWebResponse)request.GetResponse())
                     {
@@ -4975,6 +5129,7 @@ namespace WindowsFormsApp1
             StopOwnedServerProcess(cosmicServerProcess);
             StopOwnedServerProcess(metroPulseServerProcess);
             StopOwnedServerProcess(iotNexusServerProcess);
+            StopOwnedServerProcess(veriLensServerProcess);
             StopOwnedServerProcess(voiceServerProcess);
             base.OnFormClosing(e);
         }
@@ -5184,6 +5339,7 @@ namespace WindowsFormsApp1
                 case "CosmicGesture": return zh ? "宇宙手勢" : "Cosmic Gesture";
                 case "MetroPulse": return zh ? "MetroPulse 智慧交通" : "MetroPulse";
                 case "IoTNexus": return zh ? "物聯網中樞" : "IoT Nexus";
+                case "VeriLens": return zh ? "真偽鑑識中心" : "VeriLens";
                 case "UserFiles": return zh ? "使用者檔案" : "User Files";
                 case "AddFile": return zh ? "新增檔案" : "Add File";
                 case "LanguageLab": return zh ? "語言實驗室" : "Language Lab";
@@ -5232,6 +5388,13 @@ namespace WindowsFormsApp1
                 case "IoTNexusBrokerFailed": return zh ? "物聯網中樞伺服器啟動失敗。" : "IoT Nexus server could not start.";
                 case "IoTNexusBrokerNotReady": return zh ? "物聯網中樞伺服器尚未就緒。" : "IoT Nexus server is not ready yet.";
                 case "IoTNexusOpening": return zh ? "物聯網中樞正在開啟。" : "IoT Nexus is opening.";
+                case "VeriLensDesc": return zh ? "多模態假新聞鑑識中心：YOLO 影像物件偵測、ELA 影像竄改鑑識、NLP 文字分析與 C++ 多模態可信度融合。" : "Multimodal fake-news forensics: YOLO object detection, ELA image-tamper forensics, NLP text analysis, and C++ multimodal credibility fusion.";
+                case "StartVeriLensDesc": return zh ? "開啟多模態假新聞鑑識中心。" : "Open the multimodal misinformation forensics lab.";
+                case "VeriLensServerMissing": return zh ? "真偽鑑識中心伺服器檔案不存在。" : "VeriLens server file is missing.";
+                case "VeriLensPythonMissing": return zh ? "真偽鑑識中心需要 Python 才能啟動。" : "VeriLens needs Python to start.";
+                case "VeriLensBrokerFailed": return zh ? "真偽鑑識中心伺服器啟動失敗。" : "VeriLens server could not start.";
+                case "VeriLensBrokerNotReady": return zh ? "真偽鑑識中心伺服器尚未就緒（AI 模型載入中）。" : "VeriLens server is not ready yet (AI models loading).";
+                case "VeriLensOpening": return zh ? "真偽鑑識中心正在開啟。" : "VeriLens is opening.";
                 case "WebSurfaceLoading": return zh ? "正在準備系統應用表面..." : "Preparing application surface...";
                 case "WebSurfaceLoadError": return zh ? "應用表面載入失敗：{0}" : "Application surface could not finish loading: {0}";
                 case "WebViewStartError": return zh ? "WebView2 無法啟動。" : "WebView2 could not start.";

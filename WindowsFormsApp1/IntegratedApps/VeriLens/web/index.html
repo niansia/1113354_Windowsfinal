@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VeriLens — 真偽鑑識中心</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">✓?</div>
+        <div class="brand-text">
+          <h1 data-i18n="真偽鑑識中心">真偽鑑識中心</h1>
+          <p data-i18n="多模態假新聞鑑識（YOLO 影像 + NLP 文字）">多模態假新聞鑑識（YOLO 影像 + NLP 文字）</p>
+        </div>
+      </div>
+      <div class="status-chips" id="statusChips"></div>
+    </header>
+
+    <main class="layout">
+      <!-- input -->
+      <section class="panel panel-input">
+        <h2 data-i18n="輸入待驗新聞">輸入待驗新聞</h2>
+        <div class="url-row">
+          <input id="inUrl" class="field" type="url" data-i18n-ph="貼上新聞 / 文章連結，自動擷取" />
+          <button id="fetchBtn" class="btn" data-i18n="擷取連結">擷取連結</button>
+        </div>
+        <div class="field-divider"><span data-i18n="或手動輸入">或手動輸入</span></div>
+        <label class="field-label" data-i18n="新聞標題">新聞標題</label>
+        <input id="inHeadline" class="field" type="text" data-i18n-ph="例如：震驚！某產品驚人真相曝光" />
+        <label class="field-label" data-i18n="新聞內文">新聞內文</label>
+        <textarea id="inBody" class="field area" rows="6" data-i18n-ph="貼上新聞或文章的完整內文…"></textarea>
+        <label class="field-label" data-i18n="來源（網域或媒體名稱，選填）">來源（網域或媒體名稱，選填）</label>
+        <input id="inSource" class="field" type="text" data-i18n-ph="例如：reuters.com、中央社、line 群組" />
+        <div id="dropZone" class="dropzone">
+          <span id="dropHint" data-i18n="貼上或拖放新聞圖片（選填）">貼上或拖放新聞圖片（選填）</span>
+          <img id="imgPreview" class="img-preview" alt="" />
+          <input id="fileInput" type="file" accept="image/*" hidden />
+        </div>
+        <div class="btn-row">
+          <button id="analyzeBtn" class="btn primary" data-i18n="開始鑑識">開始鑑識</button>
+          <button id="clearBtn" class="btn" data-i18n="清除">清除</button>
+        </div>
+        <div class="btn-row examples">
+          <span class="ex-label" data-i18n="載入範例">載入範例</span>
+          <button id="exFake" class="chip" data-i18n="假新聞範例">假新聞範例</button>
+          <button id="exReal" class="chip" data-i18n="真新聞範例">真新聞範例</button>
+        </div>
+      </section>
+
+      <!-- verdict -->
+      <section class="panel panel-result">
+        <div id="resultEmpty" class="result-empty">
+          <div class="re-icon">🔎</div>
+          <h3 data-i18n="尚未分析">尚未分析</h3>
+          <p data-i18n="在左側輸入新聞並按「開始鑑識」">在左側輸入新聞並按「開始鑑識」</p>
+        </div>
+        <div id="resultBody" class="result-body" hidden>
+          <div id="thinWarn" class="thin-warn" hidden></div>
+          <div class="verdict-row">
+            <div class="gauge-wrap"><canvas id="gauge" width="180" height="180"></canvas>
+              <div class="gauge-center"><span id="gaugeScore">–</span><small id="gaugeUnit">%</small></div>
+            </div>
+            <div class="verdict-meta">
+              <div id="verdictLabel" class="verdict-label">–</div>
+              <div class="meta-row"><span data-i18n="判定信心">判定信心</span><b id="confVal">–</b></div>
+              <div class="meta-row"><span data-i18n="假訊息機率">假訊息機率</span><b id="pfakeVal">–</b></div>
+              <div class="meta-row"><span data-i18n="鑑識引擎">鑑識引擎</span><b id="engineVal">–</b></div>
+            </div>
+          </div>
+          <div class="sub">
+            <h4 data-i18n="判定依據">判定依據</h4>
+            <div id="factors" class="factors"></div>
+          </div>
+          <div class="sub" id="webSub" hidden>
+            <h4 data-i18n="網路查證">網路查證</h4>
+            <div id="webEvidence" class="web-evidence"></div>
+          </div>
+          <div class="sub">
+            <h4 data-i18n="可查證主張">可查證主張</h4>
+            <div id="claims" class="claims"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- image forensics -->
+      <section class="panel panel-image">
+        <div class="panel-head">
+          <h2 data-i18n="影像鑑識">影像鑑識</h2>
+          <div class="seg" id="imgSeg"></div>
+        </div>
+        <div id="imageBody" class="image-body">
+          <div class="empty" id="imageEmpty" data-i18n="未上傳圖片">未上傳圖片</div>
+          <div id="imageView" class="image-view" hidden>
+            <div class="image-canvas"><img id="forensicImg" alt="" /></div>
+            <div class="image-side">
+              <div class="tamper-block">
+                <div class="tamper-title"><span data-i18n="竄改可能性">竄改可能性</span><b id="tamperScore">–</b></div>
+                <div id="tamperBars"></div>
+              </div>
+              <div class="det-block">
+                <h4 data-i18n="偵測物件">偵測物件</h4>
+                <div id="detList" class="det-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- bottom tabs -->
+      <section class="panel panel-tabs">
+        <div class="tabbar" id="tabbar"></div>
+        <div class="tab-body">
+          <div class="tab-pane" data-pane="signals"><div id="signalsPanel" class="signals-panel"></div></div>
+          <div class="tab-pane" data-pane="cases"><div id="casesPanel" class="cases-panel"></div></div>
+          <div class="tab-pane" data-pane="method"><div id="methodPanel" class="method-panel"></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

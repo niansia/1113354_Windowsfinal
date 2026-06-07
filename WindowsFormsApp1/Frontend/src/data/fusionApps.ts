@@ -61,7 +61,7 @@ export const FUSION_APPS: FusionApp[] = [
     color: '#ff6a9e',
     category: 'system',
     tags: ['啟動器', '應用程式', '入口'],
-    status: '13 個應用程式',
+    status: '14 個應用程式',
     launchMode: 'overlay',
     featured: true
   },
@@ -173,6 +173,19 @@ export const FUSION_APPS: FusionApp[] = [
     tags: ['交通', '城市', '定位', '即時'],
     status: '即時',
     launchMode: 'host'
+  },
+  {
+    id: 'verify',
+    title: '真偽鑑識中心',
+    subtitle: '假新聞多模態鑑識',
+    description: '結合 YOLO 影像物件偵測、ELA 影像竄改鑑識、NLP 文字分析與 C++ 多模態融合的假新聞偵測平台。',
+    glyph: 'FND',
+    color: '#ff5d9e',
+    category: 'data',
+    tags: ['假新聞', 'YOLO', '電腦視覺', 'NLP', '鑑識'],
+    status: 'AI',
+    launchMode: 'host',
+    featured: true
   },
   {
     id: 'iot',
