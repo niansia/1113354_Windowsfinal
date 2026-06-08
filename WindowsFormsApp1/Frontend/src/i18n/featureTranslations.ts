@@ -59,7 +59,7 @@ export const FEATURE_TRANSLATIONS: Record<string, Entry> = {
   '已上線': entry('已上线', 'Online', 'オンライン', '온라인'),
   '本機資料': entry('本机数据', 'Local', 'ローカル', '로컬'),
   '可匯入': entry('可导入', 'Import', 'インポート可能', '가져오기 가능'),
-  '14 個應用程式': entry('14 个应用程序', '14 apps', '14 個のアプリ', '앱 14개'),
+  '15 個應用程式': entry('15 个应用程序', '15 apps', '15 個のアプリ', '앱 15개'),
   '10 個工具': entry('10 个工具', '10 tools', '10 個のツール', '도구 10개'),
   'Fusion 應用程式與工作室': entry('Fusion 应用程序与工作室', 'Fusion applications and studios', 'Fusion アプリとスタジオ', 'Fusion 앱 및 스튜디오'),
   '搜尋應用程式、工具與工作室': entry('搜索应用程序、工具与工作室', 'Search apps, tools, and studios', 'アプリ、ツール、スタジオを検索', '앱, 도구 및 스튜디오 검색'),

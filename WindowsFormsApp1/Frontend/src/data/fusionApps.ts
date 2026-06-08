@@ -61,7 +61,7 @@ export const FUSION_APPS: FusionApp[] = [
     color: '#ff6a9e',
     category: 'system',
     tags: ['啟動器', '應用程式', '入口'],
-    status: '14 個應用程式',
+    status: '15 個應用程式',
     launchMode: 'overlay',
     featured: true
   },
@@ -173,6 +173,19 @@ export const FUSION_APPS: FusionApp[] = [
     tags: ['交通', '城市', '定位', '即時'],
     status: '即時',
     launchMode: 'host'
+  },
+  {
+    id: 'cultura',
+    title: '世界文化星球',
+    subtitle: '擬真地球文化探索',
+    description: '在擬真 3D 地球上探索世界各國文化，點擊文化標記聆聽程序化合成的在地音樂與語言問候。',
+    glyph: 'WCG',
+    color: '#5ac8a0',
+    category: 'creative',
+    tags: ['文化', '3D', '地球', '音樂', '世界'],
+    status: '3D',
+    launchMode: 'host',
+    featured: true
   },
   {
     id: 'verify',

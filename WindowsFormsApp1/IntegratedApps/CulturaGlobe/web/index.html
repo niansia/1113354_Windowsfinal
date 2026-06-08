@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Cultura — 世界文化星球</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="globe"></canvas>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">🌏</div>
+      <div class="brand-text">
+        <h1 data-i18n="世界文化星球">世界文化星球</h1>
+        <p data-i18n="探索世界各國的文化、音樂與語言">探索世界各國的文化、音樂與語言</p>
+      </div>
+    </div>
+    <div class="counts" id="counts"></div>
+    <input id="search" class="search" type="text" />
+  </header>
+
+  <aside class="legend" id="legend">
+    <div class="legend-title" data-i18n="類別">類別</div>
+    <div class="legend-cats" id="legendCats"></div>
+    <div class="legend-title" data-i18n="地區">地區</div>
+    <div class="legend-regions" id="legendRegions"></div>
+  </aside>
+
+  <div class="hint">
+    <span data-i18n="拖曳旋轉地球 · 滾輪縮放">拖曳旋轉地球 · 滾輪縮放</span>
+  </div>
+
+  <div class="tip" id="tip" hidden></div>
+
+  <section class="card" id="card" hidden>
+    <button class="card-close" id="cardClose" data-i18n="關閉">關閉</button>
+    <div class="card-flag" id="cardFlag">🌐</div>
+    <div class="card-country" id="cardCountry">—</div>
+    <div class="card-region" id="cardRegion">—</div>
+    <div class="card-cat" id="cardCat"></div>
+    <h3 class="card-title" id="cardTitle">—</h3>
+    <p class="card-desc" id="cardDesc">—</p>
+    <div class="card-greet" id="cardGreet"></div>
+    <div class="card-actions">
+      <button class="btn primary" id="btnAudio" data-i18n="重新播放">重新播放</button>
+      <button class="btn" id="btnGreet" data-i18n="聆聽問候">聆聽問候</button>
+    </div>
+    <div class="card-note" data-i18n="音訊由程式即時合成（Web Audio）">音訊由程式即時合成（Web Audio）</div>
+  </section>
+
+  <div class="splash" id="splash"><span data-i18n="載入中…">載入中…</span></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

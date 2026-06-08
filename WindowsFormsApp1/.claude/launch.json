@@ -42,6 +42,13 @@
       "runtimeArgs": ["server.py", "--port", "8794"],
       "cwd": "IntegratedApps/VeriLens",
       "port": 8794
+    },
+    {
+      "name": "cultura",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["server.py", "--port", "8795"],
+      "cwd": "IntegratedApps/CulturaGlobe",
+      "port": 8795
     }
   ]
 }

@@ -60,6 +60,7 @@ namespace WindowsFormsApp1
         private Process metroPulseServerProcess;
         private Process iotNexusServerProcess;
         private Process veriLensServerProcess;
+        private Process culturaServerProcess;
         private Process voiceServerProcess;
         private int cameraAppWindowCount = 0;
         private bool nativeWarmupStarted;
@@ -1137,6 +1138,7 @@ namespace WindowsFormsApp1
             AddDesktopIcon(L("MetroPulse"), "MAP", L("MetroPulseDesc"), Color.FromArgb(94, 224, 184), LaunchMetroPulse);
             AddDesktopIcon(L("IoTNexus"), "IOT", L("IoTNexusDesc"), Color.FromArgb(70, 224, 255), LaunchIoTNexus);
             AddDesktopIcon(L("VeriLens"), "FND", L("VeriLensDesc"), Color.FromArgb(255, 93, 158), LaunchVeriLens);
+            AddDesktopIcon(L("Cultura"), "WCG", L("CulturaDesc"), Color.FromArgb(90, 200, 160), LaunchCulturaGlobe);
             AddDesktopIcon(L("UserFiles"), "USR", L("UserFilesDesc"), Color.FromArgb(86, 214, 255));
             AddDesktopIcon(L("AddFile"), "+", L("AddFileDesc"), Color.FromArgb(130, 165, 255), AddUserFile);
             AddDesktopIcon(L("LanguageLab"), "DEV", L("LanguageLabDesc"), accent);
@@ -1292,6 +1294,7 @@ namespace WindowsFormsApp1
             apps.Controls.Add(StartItem(L("MetroPulse"), L("StartMetroPulseDesc"), Color.FromArgb(94, 224, 184)));
             apps.Controls.Add(StartItem(L("IoTNexus"), L("StartIoTNexusDesc"), Color.FromArgb(70, 224, 255)));
             apps.Controls.Add(StartItem(L("VeriLens"), L("StartVeriLensDesc"), Color.FromArgb(255, 93, 158)));
+            apps.Controls.Add(StartItem(L("Cultura"), L("StartCulturaDesc"), Color.FromArgb(90, 200, 160)));
             apps.Controls.Add(StartItem(L("GameRoom"), L("StartGameDesc"), accent2));
             apps.Controls.Add(StartItem(L("LanguageLab"), L("StartLanguageDesc"), accent));
             apps.Controls.Add(StartItem(L("SystemSettings"), L("SystemSettingsDesc"), Color.FromArgb(163, 133, 255)));
@@ -1710,6 +1713,7 @@ namespace WindowsFormsApp1
                     else if (lower.Contains("\"metro\"") || lower.Contains("\"traffic\"")) LaunchMetroPulse();
                     else if (lower.Contains("\"iot\"") || lower.Contains("\"nexus\"")) LaunchIoTNexus();
                     else if (lower.Contains("\"verify\"") || lower.Contains("\"verilens\"") || lower.Contains("\"news\"")) LaunchVeriLens();
+                    else if (lower.Contains("\"cultura\"") || lower.Contains("\"culture\"") || lower.Contains("\"globe\"")) LaunchCulturaGlobe();
                     else if (lower.Contains("\"game\"") || lower.Contains("\"fusionrpg\"") || lower.Contains("\"rpg\"")) LaunchFusionRPG();
                     else if (lower.Contains("\"cmd\"") || lower.Contains("\"terminal\"")) OpenFusionTerminal();
                     else if (lower.Contains("\"settings\"") || lower.Contains("\"set\"")) OpenSettingsWindow();
@@ -2167,6 +2171,11 @@ namespace WindowsFormsApp1
                 if (name == L("VeriLens"))
                 {
                     LaunchVeriLens();
+                    return;
+                }
+                if (name == L("Cultura"))
+                {
+                    LaunchCulturaGlobe();
                     return;
                 }
                 if (name == L("GameRoom"))
@@ -2903,6 +2912,97 @@ namespace WindowsFormsApp1
                 "&clock24=" + (currentClock24 ? "true" : "false");
             PostAppLaunchStatus("verify", "open", L("VeriLensOpening"));
             OpenWebAppWindow(L("VeriLens"), url, veriColor, ownsCamera: false, kind: "verify");
+        }
+
+        private async void LaunchCulturaGlobe()
+        {
+            Color culColor = Color.FromArgb(90, 200, 160);
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "CulturaGlobe"));
+            string serverPath = appRoot == null ? null : Path.Combine(appRoot, "server.py");
+            if (serverPath == null || !File.Exists(serverPath))
+            {
+                ShowToast(L("CulturaServerMissing"), culColor);
+                PostAppLaunchStatus("cultura", "error", L("CulturaServerMissing"));
+                return;
+            }
+
+            bool serverReady = await IsCulturaServerReadyAsync();
+            if (!serverReady)
+            {
+                string python = FindPythonCommand();
+                if (python == null)
+                {
+                    ShowToast(L("CulturaPythonMissing"), culColor);
+                    PostAppLaunchStatus("cultura", "error", L("CulturaPythonMissing"));
+                    return;
+                }
+
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = python,
+                        Arguments = "\"" + serverPath + "\" --host 127.0.0.1 --port 8795",
+                        WorkingDirectory = appRoot,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    startInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
+                    culturaServerProcess = Process.Start(startInfo);
+                    serverReady = await WaitForCulturaServerAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[Cultura] server launch failed: " + ex.Message);
+                    ShowToast(L("CulturaBrokerFailed"), culColor);
+                    PostAppLaunchStatus("cultura", "error", L("CulturaBrokerFailed"));
+                    return;
+                }
+            }
+
+            if (!serverReady)
+            {
+                ShowToast(L("CulturaBrokerNotReady"), culColor);
+                PostAppLaunchStatus("cultura", "error", L("CulturaBrokerNotReady"));
+                return;
+            }
+
+            string url = "http://127.0.0.1:8795/?host=fusionos" +
+                "&lang=" + Uri.EscapeDataString(currentLanguage) +
+                "&timezone=" + Uri.EscapeDataString(currentTimezone) +
+                "&clock24=" + (currentClock24 ? "true" : "false");
+            PostAppLaunchStatus("cultura", "open", L("CulturaOpening"));
+            OpenWebAppWindow(L("Cultura"), url, culColor, ownsCamera: false, kind: "cultura");
+        }
+
+        private async Task<bool> WaitForCulturaServerAsync()
+        {
+            for (int i = 0; i < 40; i++)
+            {
+                if (await IsCulturaServerReadyAsync()) return true;
+                await Task.Delay(200);
+            }
+            return false;
+        }
+
+        private Task<bool> IsCulturaServerReadyAsync()
+        {
+            return Task.Run(delegate
+            {
+                try
+                {
+                    var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8795/api/health");
+                    request.Timeout = 700;
+                    using (var response = (HttpWebResponse)request.GetResponse())
+                    {
+                        return response.StatusCode == HttpStatusCode.OK;
+                    }
+                }
+                catch
+                {
+                    return false;
+                }
+            });
         }
 
         private void LaunchFusionRPG()
@@ -5130,6 +5230,7 @@ namespace WindowsFormsApp1
             StopOwnedServerProcess(metroPulseServerProcess);
             StopOwnedServerProcess(iotNexusServerProcess);
             StopOwnedServerProcess(veriLensServerProcess);
+            StopOwnedServerProcess(culturaServerProcess);
             StopOwnedServerProcess(voiceServerProcess);
             base.OnFormClosing(e);
         }
@@ -5340,6 +5441,7 @@ namespace WindowsFormsApp1
                 case "MetroPulse": return zh ? "MetroPulse 智慧交通" : "MetroPulse";
                 case "IoTNexus": return zh ? "物聯網中樞" : "IoT Nexus";
                 case "VeriLens": return zh ? "真偽鑑識中心" : "VeriLens";
+                case "Cultura": return zh ? "世界文化星球" : "Cultura";
                 case "UserFiles": return zh ? "使用者檔案" : "User Files";
                 case "AddFile": return zh ? "新增檔案" : "Add File";
                 case "LanguageLab": return zh ? "語言實驗室" : "Language Lab";
@@ -5395,6 +5497,13 @@ namespace WindowsFormsApp1
                 case "VeriLensBrokerFailed": return zh ? "真偽鑑識中心伺服器啟動失敗。" : "VeriLens server could not start.";
                 case "VeriLensBrokerNotReady": return zh ? "真偽鑑識中心伺服器尚未就緒（AI 模型載入中）。" : "VeriLens server is not ready yet (AI models loading).";
                 case "VeriLensOpening": return zh ? "真偽鑑識中心正在開啟。" : "VeriLens is opening.";
+                case "CulturaDesc": return zh ? "擬真 3D 地球上探索世界各國文化：點擊文化標記聆聽程序化合成的在地音樂與語言問候。" : "Explore world cultures on a realistic 3D globe — click markers to hear procedurally synthesised local music and spoken greetings.";
+                case "StartCulturaDesc": return zh ? "開啟世界文化擬真地球。" : "Open the world-cultures 3D globe.";
+                case "CulturaServerMissing": return zh ? "世界文化星球伺服器檔案不存在。" : "Cultura server file is missing.";
+                case "CulturaPythonMissing": return zh ? "世界文化星球需要 Python 才能啟動。" : "Cultura needs Python to start.";
+                case "CulturaBrokerFailed": return zh ? "世界文化星球伺服器啟動失敗。" : "Cultura server could not start.";
+                case "CulturaBrokerNotReady": return zh ? "世界文化星球伺服器尚未就緒。" : "Cultura server is not ready yet.";
+                case "CulturaOpening": return zh ? "世界文化星球正在開啟。" : "Cultura is opening.";
                 case "WebSurfaceLoading": return zh ? "正在準備系統應用表面..." : "Preparing application surface...";
                 case "WebSurfaceLoadError": return zh ? "應用表面載入失敗：{0}" : "Application surface could not finish loading: {0}";
                 case "WebViewStartError": return zh ? "WebView2 無法啟動。" : "WebView2 could not start.";

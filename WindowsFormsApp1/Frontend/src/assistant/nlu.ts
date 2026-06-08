@@ -60,6 +60,7 @@ const APP_ALIASES: Array<{ id: AppId; words: string[] }> = [
   { id: 'metro', words: ['metropulse', '智慧交通', '交通', '地圖', '地图', '捷運', 'map', 'metro', 'traffic', 'マップ', '交通', '교통', '지도'] },
   { id: 'iot', words: ['物聯網', '物联网', '物聯網中樞', '智慧建築', '智能建筑', 'iot', 'nexus', 'mqtt', '感測器', '传感器', 'sensor', 'モノのインターネット', 'スマートビル', '사물인터넷', '스마트 빌딩'] },
   { id: 'verify', words: ['真偽', '真伪', '假新聞', '假新闻', '鑑識', '鉴识', '查證', '查证', 'verilens', 'verify', 'fake news', 'fakenews', 'misinformation', 'yolo', '偽ニュース', 'フェイク', '가짜뉴스', '팩트체크'] },
+  { id: 'cultura', words: ['文化', '世界文化', '世界文化星球', '地球', '地球儀', '地球仪', 'cultura', 'culture', 'cultures', 'globe', 'world', '世界', '문화', '지구본', '文化星球', '各國文化'] },
   { id: 'dev', words: ['開發實驗室', '开发实验室', '開發', '开发', 'dev', 'code', 'ide', '程式碼', '代码', '開発', '개발', '코드'] },
   { id: 'db', words: ['資料庫', '数据库', 'database', 'sql', 'データベース', '데이터베이스'] },
   { id: 'toolbox', words: ['工具箱', '工具', 'toolbox', 'tools', '計算機', '计算器', 'calculator', 'ツール', '도구함', '계산기'] },
