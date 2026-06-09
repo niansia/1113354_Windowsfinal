@@ -63,12 +63,14 @@ body {
 .card-close { position: absolute; top: 14px; right: 14px; background: transparent; border: 1px solid var(--stroke-2);
   color: var(--txt-dim); border-radius: 8px; padding: 4px 10px; font-size: 11.5px; cursor: pointer; }
 .card-flag { font-size: 40px; line-height: 1; }
+.card-img { width: 100%; max-height: 170px; object-fit: cover; border-radius: 12px; border: 1px solid var(--stroke); display: block; }
 .card-country { font-size: 22px; font-weight: 700; margin-top: 8px; }
 .card-region { font-size: 12px; color: var(--txt-faint); margin-top: 2px; letter-spacing: 0.1em; }
 .card-cat { display: inline-block; margin-top: 12px; padding: 3px 11px; border-radius: 999px; font-size: 11px; font-weight: 600; }
 .card-title { font-size: 16px; margin: 12px 0 6px; }
 .card-desc { font-size: 13px; line-height: 1.6; color: var(--txt-dim); margin: 0; }
 .card-greet { margin-top: 14px; padding: 11px 14px; border-radius: 12px; background: rgba(70,224,255,0.08); border: 1px solid var(--stroke); }
+.card-greet .g-label { font-size: 11px; color: var(--txt-dim); letter-spacing: 0.04em; margin-bottom: 4px; }
 .card-greet .g-text { font-size: 22px; font-weight: 600; }
 .card-greet .g-rom { font-size: 12px; color: var(--txt-dim); margin-top: 2px; }
 .card-actions { display: flex; gap: 9px; margin-top: 16px; }

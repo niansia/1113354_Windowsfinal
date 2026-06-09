@@ -12,30 +12,29 @@ function hexRGB(hex) {
   const n = parseInt(hex.slice(1), 16);
   return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
 }
-// ---- build markers from the dataset ----
+// ---- build markers: one "hero" per country + one per curated culture item ----
 const ALL = [];
 for (const co of COUNTRIES) {
-  const entries = [{ cat: 'language', greeting: true }, { cat: 'music', music: true }];
-  for (const it of co.items) entries.push({ cat: it.cat, item: it });
-  entries.forEach((e, idx) => {
-    const ring = 2.0 + (idx % 3) * 1.2;
+  // hero marker = the country itself (image `{id}.jpg`); always present
+  ALL.push({
+    id: co.id + '-0', lat: co.lat, lon: co.lon, category: 'landmark',
+    img: co.id + '.jpg', color: hexRGB(CAT.landmark.color), size: 9, tier: 0,
+    country: co, item: null, isHero: true
+  });
+  co.items.forEach((it, i) => {
+    const idx = i + 1;
+    const ring = 2.0 + (idx % 3) * 1.3;
     const ang = idx * 2.39996;
     const lat = co.lat + Math.sin(ang) * ring;
     const lon = co.lon + (Math.cos(ang) * ring) / Math.max(0.4, Math.cos(co.lat * Math.PI / 180));
     ALL.push({
-      id: co.id + '-' + idx,
-      lat, lon,
-      category: e.cat,
-      color: hexRGB((CAT[e.cat] || CATEGORIES[0]).color),
-      size: e.greeting || e.music ? 9 : 7,
-      tier: idx,
-      country: co,
-      item: e.item || null,
-      isGreeting: !!e.greeting,
-      isMusic: !!e.music
+      id: co.id + '-' + idx, lat, lon, category: it.cat,
+      img: co.id + '-' + idx + '.jpg', color: hexRGB((CAT[it.cat] || CATEGORIES[0]).color),
+      size: 7, tier: idx, country: co, item: it, isHero: false
     });
   });
 }
+let presentImages = new Set();   // filenames the server reports as actually on disk
 
 // ---- filter state ----
 const activeCats = new Set(CATEGORIES.map((c) => c.id));
@@ -72,8 +71,25 @@ const globe = createGlobe($('#globe'), {
 });
 
 function applyFilter() {
-  globe.setMarkers(visibleMarkers());
+  const vis = visibleMarkers();
+  globe.setMarkers(vis);
+  globe.setImageCallouts(
+    vis.filter((m) => presentImages.has(m.img))
+      .map((m) => ({
+        lat: m.lat, lon: m.lon, url: 'images/' + m.img,
+        color: (CAT[m.category] || CATEGORIES[0]).color,
+        marker: m   // hover tooltip + click card read the name/details from here
+      }))
+  );
   renderCounts();
+}
+
+async function loadImageList() {
+  try {
+    const d = await (await fetch('/api/images', { cache: 'no-store' })).json();
+    presentImages = new Set(d.images || []);
+  } catch (e) { /* no images yet -> dots */ }
+  applyFilter();
 }
 
 function renderCounts() {
@@ -86,10 +102,15 @@ function renderCounts() {
 function openCard(m) {
   const co = m.country;
   const cat = CAT[m.category];
-  // category glyph as the card icon (Windows/WebView2 can't render flag emoji).
+  // card icon: the marker image if the user supplied one, else the category glyph
   const flagEl = $('#cardFlag');
-  flagEl.textContent = cat.glyph;
-  flagEl.style.color = cat.color;
+  const imgEl = $('#cardImg');
+  if (presentImages.has(m.img)) {
+    imgEl.src = 'images/' + m.img; imgEl.hidden = false; flagEl.hidden = true;
+  } else {
+    flagEl.textContent = cat.glyph; flagEl.style.color = cat.color;
+    flagEl.hidden = false; imgEl.hidden = true;
+  }
   $('#cardCountry').textContent = loc(co.zh, co.en);
   $('#cardRegion').textContent = loc(REGIONS[co.region].zh, REGIONS[co.region].en);
   const chip = $('#cardCat');
@@ -97,13 +118,10 @@ function openCard(m) {
   chip.style.color = cat.color; chip.style.background = cat.color + '22';
 
   let title, desc;
-  if (m.isGreeting) {
-    title = loc('語言問候', 'Language & Greeting');
-    desc = loc(`在${co.zh}，人們這樣打招呼。`, `How people greet one another in ${co.en}.`);
-  } else if (m.isMusic) {
-    title = loc('傳統音樂', 'Traditional Music');
-    desc = loc(`${co.zh}的音樂以特有的音階與樂器著稱（以下為程式即時合成的風格樂句）。`,
-      `${co.en}'s music, evoked here by a live-synthesised motif in its characteristic scale and timbre.`);
+  if (m.isHero) {
+    title = loc('文化總覽', 'Cultural overview');
+    desc = loc(`探索${co.zh}的文化——點擊周圍的文化標記，或聆聽當地音樂與語言問候。`,
+      `Explore ${co.en} — click the surrounding cultural markers, or hear its music and greeting.`);
   } else {
     title = loc(m.item.zh, m.item.en);
     desc = loc(m.item.dZh, m.item.dEn);
@@ -113,21 +131,21 @@ function openCard(m) {
 
   const g = co.greeting;
   $('#cardGreet').innerHTML = g
-    ? `<div class="g-text">${g.text}</div><div class="g-rom">${g.roman} · ${g.lang}</div>`
+    ? `<div class="g-label">${t('當地語言問候')}</div><div class="g-text">${g.text}</div><div class="g-rom">${g.roman} · ${g.lang}</div>`
     : '';
 
   $('#card').hidden = false;
-  // play audio (user gesture from the click satisfies autoplay policy)
-  playCountryMotif(co);
-  if (m.isGreeting) setTimeout(() => speakGreeting(co), 120);
+  // user gesture -> play this marker's own short melody and SPEAK the country's greeting in
+  // its OWN language. The written guide above describes the item's feature; we do not read it
+  // aloud. The globe holds the view on this region while the card is open.
+  playCountryMotif(co, m.id);
+  speakGreeting(co);
   currentCountry = co; currentMarker = m;
 }
-function closeCard() { $('#card').hidden = true; globe.clearSelection(); stopAudio(); currentCountry = null; }
+function closeCard() { $('#card').hidden = true; globe.clearSelection(); stopAudio(); currentCountry = null; currentMarker = null; }
 let currentCountry = null; let currentMarker = null;
 
 $('#cardClose').onclick = closeCard;
-$('#btnAudio').onclick = () => { if (currentCountry) playCountryMotif(currentCountry); };
-$('#btnGreet').onclick = () => { if (currentCountry) speakGreeting(currentCountry); };
 
 // ---- legend ----
 function buildLegend() {
@@ -173,7 +191,13 @@ function openCardSilent(m) { // refresh card text without replaying audio
   $('#cardCountry').textContent = loc(co.zh, co.en);
   $('#cardRegion').textContent = loc(REGIONS[co.region].zh, REGIONS[co.region].en);
   $('#cardCat').textContent = loc(cat.zh, cat.en);
-  if (m.item) { $('#cardTitle').textContent = loc(m.item.zh, m.item.en); $('#cardDesc').textContent = loc(m.item.dZh, m.item.dEn); }
+  const title = m.isHero ? loc('文化總覽', 'Cultural overview') : loc(m.item.zh, m.item.en);
+  const desc = m.isHero
+    ? loc(`探索${co.zh}的文化——點擊周圍的文化標記，或聆聽當地音樂與語言問候。`,
+      `Explore ${co.en} — click the surrounding cultural markers, or hear its music and greeting.`)
+    : loc(m.item.dZh, m.item.dEn);
+  $('#cardTitle').textContent = title;
+  $('#cardDesc').textContent = desc;
 }
 function applyLocale(d) {
   const lang = d.language || (d.payload && d.payload.language);
@@ -195,5 +219,5 @@ window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCard();
 initAudioVoices();
 applyStatic();
 buildLegend();
-applyFilter();
+loadImageList();   // fetches /api/images then applyFilter (markers + sprites)
 setTimeout(() => $('#splash').classList.add('hide'), 600);

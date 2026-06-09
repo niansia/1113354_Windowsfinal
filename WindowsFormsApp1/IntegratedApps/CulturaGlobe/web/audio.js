@@ -1,20 +1,17 @@
 // Procedural cultural-audio engine (Web Audio API, fully offline, no samples).
 //
-// Each country has a music profile {scale, root, timbre, tempo}. From a seed we
-// generate a short deterministic melodic phrase in a region-appropriate scale and
-// synthesise it with a region-appropriate timbre:
-//   * pluck  -> Karplus-Strong plucked string (koto / guzheng / sitar / guitar)
-//   * bell   -> FM synthesis (gamelan metallophone / carillon)
-//   * flute  -> filtered triangle + vibrato + breath (dizi / pan / shakuhachi)
-//   * reed   -> filtered sawtooth + vibrato (bagpipe / duduk / accordion)
-//   * bowed  -> slow-attack sawtooth + lowpass (erhu / fiddle)
-//   * perc   -> noise + pitched body (djembe / taiko / steelpan)
-// A synthesised convolution reverb gives it space. Language markers additionally
-// speak the greeting via the Web Speech API when a matching voice exists.
+// REWRITE (v5): every voice is built from pure, band-limited oscillators (sine /
+// triangle) shaped by soft attack/decay envelopes. There is NO noise generator and
+// NO noise-convolution reverb anywhere in the signal path, so the engine physically
+// cannot produce the harsh static the old Karplus-Strong / noise-percussion path did.
+// Spaciousness comes from a gentle lowpassed feedback-delay network. Each country
+// still gets a deterministic melodic phrase in a region-appropriate scale, voiced
+// with a soft region-appropriate timbre. Language markers also speak the greeting via
+// the Web Speech API when a matching voice exists.
 
 let ctx = null;
 let master = null;
-let reverb = null;
+let reverbIn = null;
 let activeNodes = [];
 
 // scale = semitone offsets within an octave
@@ -41,33 +38,30 @@ function ensureCtx() {
   const AC = window.AudioContext || window.webkitAudioContext;
   ctx = new AC();
   master = ctx.createGain();
-  master.gain.value = 0.85;
-  reverb = ctx.createConvolver();
-  reverb.buffer = makeImpulse(2.2, 2.6);
-  const wet = ctx.createGain();
-  wet.gain.value = 0.32;
+  master.gain.value = 0.5;
+  const limiter = ctx.createDynamicsCompressor();   // gentle peak control, no clipping
+  limiter.threshold.value = -12; limiter.ratio.value = 8; limiter.attack.value = 0.005; limiter.release.value = 0.2;
+  master.connect(limiter);
   const dry = ctx.createGain();
-  dry.gain.value = 0.85;
-  master.connect(dry).connect(ctx.destination);
-  master.connect(reverb).connect(wet).connect(ctx.destination);
+  dry.gain.value = 0.92;
+  limiter.connect(dry).connect(ctx.destination);
+  // smooth, NOISE-FREE reverb: parallel lowpassed feedback delays (a small FDN).
+  reverbIn = ctx.createGain();
+  const wet = ctx.createGain();
+  wet.gain.value = 0.15;
+  [0.029, 0.037, 0.047, 0.061].forEach((dt) => {
+    const d = ctx.createDelay(0.5); d.delayTime.value = dt;
+    const fb = ctx.createGain(); fb.gain.value = 0.55;          // <1 -> always decays, never screams
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2000;
+    reverbIn.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d); lp.connect(wet);
+  });
+  limiter.connect(reverbIn);
+  wet.connect(ctx.destination);
   return ctx;
 }
 
-function makeImpulse(seconds, decay) {
-  const rate = (ctx || ensureCtx()).sampleRate;
-  const len = Math.floor(rate * seconds);
-  const buf = ctx.createBuffer(2, len, rate);
-  for (let c = 0; c < 2; c += 1) {
-    const d = buf.getChannelData(c);
-    for (let i = 0; i < len; i += 1) {
-      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
-    }
-  }
-  return buf;
-}
-
-function track(node, stopAt) {
-  activeNodes.push({ node, stopAt });
+function track(node) {
+  activeNodes.push({ node });
 }
 
 export function stopAudio() {
@@ -81,89 +75,65 @@ export function stopAudio() {
   try { window.speechSynthesis?.cancel(); } catch (e) { /* ignore */ }
 }
 
-// ---- timbres ----------------------------------------------------------------
-function pluck(freq, t, dur, gain) {
-  const rate = ctx.sampleRate;
-  const n = Math.max(1, Math.floor(rate * 0.02));
-  const buf = ctx.createBuffer(1, n, rate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < n; i += 1) d[i] = Math.random() * 2 - 1;
-  const src = ctx.createBufferSource(); src.buffer = buf;
-  const delay = ctx.createDelay(0.05); delay.delayTime.value = 1 / freq;
-  const fb = ctx.createGain(); fb.gain.value = 0.962;
-  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = Math.min(8000, freq * 8);
-  const out = ctx.createGain(); out.gain.value = gain;
-  src.connect(delay); delay.connect(lp); lp.connect(fb); fb.connect(delay);
-  delay.connect(out); out.connect(master);
-  out.gain.setValueAtTime(gain, t);
-  out.gain.exponentialRampToValueAtTime(0.0008, t + dur);
-  src.start(t); src.stop(t + 0.02);
-  track(src); track(out);
-}
-
-function fmBell(freq, t, dur, gain) {
-  const carrier = ctx.createOscillator(); carrier.frequency.value = freq;
-  const mod = ctx.createOscillator(); mod.frequency.value = freq * 1.41;
-  const modGain = ctx.createGain();
-  modGain.gain.setValueAtTime(freq * 2.2, t);
-  modGain.gain.exponentialRampToValueAtTime(freq * 0.2, t + dur);
-  const out = ctx.createGain(); out.gain.setValueAtTime(0.0001, t);
-  out.gain.exponentialRampToValueAtTime(gain, t + 0.006);
-  out.gain.exponentialRampToValueAtTime(0.0008, t + dur);
-  mod.connect(modGain).connect(carrier.frequency);
-  carrier.connect(out).connect(master);
-  carrier.start(t); mod.start(t); carrier.stop(t + dur + 0.05); mod.stop(t + dur + 0.05);
-  track(carrier); track(mod); track(out);
-}
-
-function toneVoice(type, freq, t, dur, gain, opts = {}) {
-  const osc = ctx.createOscillator(); osc.type = type; osc.frequency.value = freq;
-  const lp = ctx.createBiquadFilter(); lp.type = opts.bandpass ? 'bandpass' : 'lowpass';
-  lp.frequency.value = opts.cutoff || Math.min(6000, freq * 6);
-  if (opts.bandpass) lp.Q.value = 3;
+// ---- one soft, noise-free voice ------------------------------------------------
+// Built from a small stack of oscillator partials through a lowpass + soft envelope.
+function voice(opts) {
+  const { freq, t, dur, gain } = opts;
+  const type = opts.type || 'sine';
+  const attack = opts.attack ?? 0.02;
   const out = ctx.createGain();
-  const atk = opts.attack ?? 0.02;
+  const lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = opts.cutoff || Math.min(4000, freq * 4); lp.Q.value = 0.6;
+  lp.connect(out).connect(master);
+  (opts.partials || [[1, 1]]).forEach(([mult, amp]) => {
+    const o = ctx.createOscillator(); o.type = type; o.frequency.value = freq * mult;
+    const og = ctx.createGain(); og.gain.value = amp;
+    o.connect(og).connect(lp);
+    if (opts.vibrato) {
+      const lfo = ctx.createOscillator(); lfo.frequency.value = opts.vibrato;
+      const lg = ctx.createGain(); lg.gain.value = freq * mult * (opts.vibDepth || 0.006);
+      lfo.connect(lg).connect(o.frequency); lfo.start(t); lfo.stop(t + dur + 0.1); track(lfo);
+    }
+    o.start(t); o.stop(t + dur + 0.1); track(o);
+  });
   out.gain.setValueAtTime(0.0001, t);
-  out.gain.linearRampToValueAtTime(gain, t + atk);
-  out.gain.setValueAtTime(gain, t + Math.max(atk, dur * 0.6));
-  out.gain.exponentialRampToValueAtTime(0.0008, t + dur);
-  // vibrato
-  if (opts.vibrato) {
-    const lfo = ctx.createOscillator(); lfo.frequency.value = opts.vibrato;
-    const lg = ctx.createGain(); lg.gain.value = freq * 0.012;
-    lfo.connect(lg).connect(osc.frequency); lfo.start(t); lfo.stop(t + dur + 0.05); track(lfo);
+  out.gain.linearRampToValueAtTime(gain, t + attack);           // soft attack -> no click
+  if (opts.plucked) {
+    out.gain.exponentialRampToValueAtTime(0.0008, t + dur);     // plucked: decay away
+  } else {
+    out.gain.setValueAtTime(gain, t + Math.max(attack, dur * 0.55));
+    out.gain.exponentialRampToValueAtTime(0.0008, t + dur);     // sustained: hold then release
   }
-  osc.connect(lp).connect(out).connect(master);
-  osc.start(t); osc.stop(t + dur + 0.05);
-  track(osc); track(out);
+  track(out);
 }
 
-function perc(freq, t, dur, gain) {
-  // body
+// soft pitched mallet for the "percussion" regions -> still no noise
+function marimba(freq, t, dur, gain) {
+  const out = ctx.createGain();
+  const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = Math.min(3000, freq * 4);
+  lp.connect(out).connect(master);
   const o = ctx.createOscillator(); o.type = 'sine';
-  o.frequency.setValueAtTime(freq * 1.6, t);
-  o.frequency.exponentialRampToValueAtTime(freq * 0.8, t + dur * 0.6);
-  const og = ctx.createGain(); og.gain.setValueAtTime(gain, t); og.gain.exponentialRampToValueAtTime(0.0008, t + dur);
-  o.connect(og).connect(master); o.start(t); o.stop(t + dur + 0.02); track(o); track(og);
-  // noise transient
-  const n = Math.floor(ctx.sampleRate * 0.04);
-  const buf = ctx.createBuffer(1, n, ctx.sampleRate); const d = buf.getChannelData(0);
-  for (let i = 0; i < n; i += 1) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
-  const src = ctx.createBufferSource(); src.buffer = buf;
-  const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq * 3; bp.Q.value = 1.2;
-  const ng = ctx.createGain(); ng.gain.value = gain * 0.6;
-  src.connect(bp).connect(ng).connect(master); src.start(t); track(src); track(ng);
+  o.frequency.setValueAtTime(freq * 1.5, t);
+  o.frequency.exponentialRampToValueAtTime(freq, t + 0.045);    // quick pitch settle = mallet attack
+  const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = freq * 4.0;
+  const o2g = ctx.createGain(); o2g.gain.value = 0.1;
+  o.connect(lp); o2.connect(o2g).connect(lp);
+  out.gain.setValueAtTime(0.0001, t);
+  out.gain.linearRampToValueAtTime(gain, t + 0.006);
+  out.gain.exponentialRampToValueAtTime(0.0008, t + Math.min(dur, 0.55));
+  o.start(t); o.stop(t + dur + 0.05); o2.start(t); o2.stop(t + 0.22);
+  track(o); track(o2); track(out);
 }
 
 function playNote(timbre, freq, t, dur, gain) {
   switch (timbre) {
-    case 'pluck': return pluck(freq, t, dur, gain);
-    case 'bell': return fmBell(freq, t, dur, gain);
-    case 'flute': return toneVoice('triangle', freq, t, dur, gain, { vibrato: 5.5, attack: 0.06, cutoff: freq * 4 });
-    case 'reed': return toneVoice('sawtooth', freq, t, dur, gain, { vibrato: 5, bandpass: true, cutoff: freq * 3 });
-    case 'bowed': return toneVoice('sawtooth', freq, t, dur, gain, { attack: 0.12, cutoff: freq * 3.2 });
-    case 'perc': return perc(freq, t, dur, gain);
-    default: return pluck(freq, t, dur, gain);
+    case 'pluck': return voice({ type: 'triangle', freq, t, dur, gain, plucked: true, attack: 0.006, partials: [[1, 1], [2, 0.22]], cutoff: Math.min(3400, freq * 4) });
+    case 'bell':  return voice({ type: 'sine', freq, t, dur, gain: gain * 0.95, plucked: true, attack: 0.004, partials: [[1, 1], [2.0, 0.5], [3.01, 0.22], [4.2, 0.1]], cutoff: Math.min(5200, freq * 6) });
+    case 'flute': return voice({ type: 'sine', freq, t, dur, gain, attack: 0.07, vibrato: 5.0, vibDepth: 0.006, partials: [[1, 1], [2, 0.05]], cutoff: Math.min(3800, freq * 3.2) });
+    case 'reed':  return voice({ type: 'triangle', freq, t, dur, gain: gain * 0.9, attack: 0.045, vibrato: 4.5, vibDepth: 0.007, partials: [[1, 1], [2, 0.1]], cutoff: Math.min(2600, freq * 2.4) });
+    case 'bowed': return voice({ type: 'triangle', freq, t, dur, gain: gain * 0.88, attack: 0.12, partials: [[1, 1], [2, 0.07]], cutoff: Math.min(2400, freq * 2.2) });
+    case 'perc':  return marimba(freq, t, dur, gain);
+    default:      return voice({ type: 'triangle', freq, t, dur, gain, plucked: true, attack: 0.006, partials: [[1, 1], [2, 0.22]], cutoff: Math.min(3400, freq * 4) });
   }
 }
 
@@ -183,7 +153,9 @@ function seeded(seedStr) {
 }
 
 // ---- main ------------------------------------------------------------------
-export function playCountryMotif(country) {
+// `seed` lets each individual marker get its own melody (so two markers of the same
+// country don't sound identical). Defaults to the country id when omitted.
+export function playCountryMotif(country, seed) {
   ensureCtx();
   stopAudio();
   const m = country.music || {};
@@ -191,9 +163,9 @@ export function playCountryMotif(country) {
   const root = m.root || 262;
   const tempo = m.tempo || 100;
   const beat = 60 / tempo;
-  const rand = seeded(country.id + m.scale);
+  const rand = seeded((seed || country.id) + m.scale);
   const noteCount = 7 + Math.floor(rand() * 4);
-  const t0 = ctx.currentTime + 0.04;
+  const t0 = ctx.currentTime + 0.06;
   let t = t0;
   let degree = 0;
 
@@ -204,16 +176,14 @@ export function playCountryMotif(country) {
     const oct = degree >= scale.length ? 1 : degree < 0 ? -1 : 0;
     const idx = ((degree % scale.length) + scale.length) % scale.length;
     const semis = scale[idx] + oct * 12;
-    const freq = root * Math.pow(2, semis / 12);
+    const freq = Math.min(1320, Math.max(120, root * Math.pow(2, semis / 12)));
     // rhythm: mostly eighths/quarters
     const r = rand();
     const dur = r < 0.18 ? beat * 1.0 : r < 0.7 ? beat * 0.5 : beat * 0.25;
-    const gain = 0.16 + rand() * 0.07;
-    playNote(m.timbre, freq, t, Math.max(0.45, dur * 2.6), gain);
+    const gain = 0.1 + rand() * 0.04;
+    playNote(m.timbre, freq, t, Math.max(0.35, dur * 1.5), gain);
     t += dur;
   }
-  // a soft sustained root drone underneath for body
-  playNote(m.timbre === 'perc' ? 'bowed' : m.timbre, root / 2, t0, (t - t0) + 1.2, 0.05);
 }
 
 let voicesCache = null;
@@ -232,22 +202,29 @@ function pickVoice(lang) {
   }
 }
 
-export function speakGreeting(country) {
-  const g = country.greeting;
-  if (!g) return false;
+// Speak arbitrary text in a given language -- the per-marker "voice guide". Picks a
+// matching system voice when available, otherwise lets the engine fall back.
+export function speak(text, lang, rate = 0.96) {
+  if (!text) return false;
   try {
     const synth = window.speechSynthesis;
     if (!synth) return false;
     synth.cancel();
-    const u = new SpeechSynthesisUtterance(g.text);
-    const v = pickVoice(g.lang || 'en');
-    if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = g.lang || 'en'; }
-    u.rate = 0.92; u.pitch = 1.0;
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickVoice(lang || 'en');
+    if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = lang || 'en'; }
+    u.rate = rate; u.pitch = 1.0;
     synth.speak(u);
     return true;
   } catch (e) {
     return false;
   }
+}
+
+export function speakGreeting(country) {
+  const g = country.greeting;
+  if (!g) return false;
+  return speak(g.text, g.lang || 'en', 0.92);
 }
 
 export function initAudioVoices() {

@@ -15,7 +15,10 @@ const DICT = {
   '重新播放': { 'zh-CN': '重新播放', en: 'Replay', ja: '再生', ko: '다시 재생' },
   '關閉': { 'zh-CN': '关闭', en: 'Close', ja: '閉じる', ko: '닫기' },
   '音訊由程式即時合成（Web Audio）': { 'zh-CN': '音频由程序实时合成（Web Audio）', en: 'Audio is synthesised live in-browser (Web Audio)', ja: '音はブラウザでリアルタイム合成（Web Audio）', ko: '오디오는 브라우저에서 실시간 합성 (Web Audio)' },
+  '點擊標記即以當地語言問候並演奏在地旋律': { 'zh-CN': '点击标记即以当地语言问候并演奏在地旋律', en: 'Tap a marker to hear a greeting in the local language and a local melody', ja: 'マーカーをタップすると現地語の挨拶と現地の旋律が流れます', ko: '마커를 누르면 현지어 인사와 현지 선율이 재생됩니다' },
+  '當地語言問候': { 'zh-CN': '当地语言问候', en: 'Greeting in the local language', ja: '現地語の挨拶', ko: '현지어 인사' },
   '此地文化': { 'zh-CN': '此地文化', en: 'Cultural highlight', ja: '文化ハイライト', ko: '문화 하이라이트' },
+  '文化總覽': { 'zh-CN': '文化总览', en: 'Cultural overview', ja: '文化の概要', ko: '문화 개요' },
   '探索中': { 'zh-CN': '探索中', en: 'Exploring', ja: '探索中', ko: '탐색 중' },
   '載入中…': { 'zh-CN': '加载中…', en: 'Loading…', ja: '読込中…', ko: '로딩 중…' }
 };

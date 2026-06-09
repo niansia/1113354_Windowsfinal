@@ -32,16 +32,25 @@ def make_handler():
         def log_message(self, *a):
             pass
 
+        def _json(self, obj):
+            data = json.dumps(obj, ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(data)
+
         def do_GET(self):
             path = self.path.split("?", 1)[0]
             if path == "/api/health":
-                data = json.dumps({"ok": True, "app": "cultura"}).encode()
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json; charset=utf-8")
-                self.send_header("Content-Length", str(len(data)))
-                self.end_headers()
-                self.wfile.write(data)
-                return
+                return self._json({"ok": True, "app": "cultura"})
+            if path == "/api/images":
+                # list user-supplied marker images so the client loads only what exists
+                d = WEB_ROOT / "images"
+                exts = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+                files = sorted(f.name for f in d.glob("*") if f.is_file() and f.suffix.lower() in exts) if d.is_dir() else []
+                return self._json({"images": files})
             if path in ("/", ""):
                 path = "/index.html"
             target = (WEB_ROOT / path.lstrip("/")).resolve()
