@@ -61,7 +61,17 @@ const LANG_GREET = {
   Maldivian: G('އައްސަލާމް ޢަލައިކުމް', 'Assalaamu alaikum', 'dv'), Dzongkha: G('ཀུ་ཟུ་ཟང་པོ་ལ', 'Kuzuzangpo', 'dz'),
   Bislama: G('Halo', 'Halo', 'bi'), Kyrgyz: G('Салам', 'Salam', 'ky'), Guaraní: G('Mba’éichapa', 'Mbaeichapa', 'gn'),
   Aymara: G('Kamisaraki', 'Kamisaraki', 'ay'), Chibarwe: G('Mhoro', 'Mhoro', 'sn'),
+  Tajik: G('Салом', 'Salom', 'tg'), Turkmen: G('Salam', 'Salam', 'tk'),
   'Seychellois Creole': G('Bonzour', 'Bonzour', 'fr'), 'Belizean Creole': G('Hello', 'Hello', 'en')
+};
+
+// a few restcountries language labels are a co-official / minority tongue; greet in the
+// country's dominant everyday language instead so it reads as the real local language.
+const GREET_OVERRIDE = {
+  ar: 'Spanish', pe: 'Spanish', bo: 'Spanish',   // listed Guaraní/Aymara, but Spanish-dominant
+  il: 'Hebrew',                                  // listed Arabic
+  in: 'Hindi', pk: 'Urdu', ph: 'Filipino',       // listed English
+  uz: 'Uzbek', tj: 'Tajik', tm: 'Turkmen'        // listed Russian
 };
 
 // resolve the greeting for a (sometimes messy) restcountries language label:
@@ -226,7 +236,7 @@ export const COUNTRIES = COUNTRY_TABLE.map((c) => {
   const base = REGION_MUSIC[c.region] || REGION_MUSIC.asia;
   const variation = Math.pow(2, ((hashNum(c.id) % 5) - 2) / 12); // +-2 semitones
   const music = d.music || { scale: base.scale, timbre: base.timbre, root: Math.round(base.root * variation), tempo: base.tempo };
-  const greeting = greetingFor(c.lang);
+  const greeting = greetingFor(GREET_OVERRIDE[c.id] || c.lang);
   return {
     id: c.id,
     zh: d.zh || c.zh,

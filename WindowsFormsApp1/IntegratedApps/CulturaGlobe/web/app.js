@@ -1,6 +1,8 @@
 import { createGlobe } from './globe.js';
-import { playCountryMotif, speakGreeting, stopAudio, initAudioVoices } from './audio.js';
+import { playCountryMotif, speakGreeting, speakQueued, stopAudio, initAudioVoices } from './audio.js';
 import { CATEGORIES, REGIONS, COUNTRIES } from './data.js';
+import { NATIVE_GUIDE } from './countries.detail.js';
+import { translate } from './online.js';
 import { t, tf, loc, setLang, getLang, LANGS } from './i18n.js';
 
 const $ = (s) => document.querySelector(s);
@@ -67,7 +69,9 @@ const globe = createGlobe($('#globe'), {
   onPick(marker) {
     if (!marker) { closeCard(); return; }
     openCard(marker);
-  }
+  },
+  // name shown by the halo's leader-line labels (country for the hero, item otherwise)
+  labelOf(m) { return m.isHero ? loc(m.country.zh, m.country.en) : loc(m.item.zh, m.item.en); }
 });
 
 function applyFilter() {
@@ -134,16 +138,32 @@ function openCard(m) {
     ? `<div class="g-label">${t('當地語言問候')}</div><div class="g-text">${g.text}</div><div class="g-rom">${g.roman} · ${g.lang}</div>`
     : '';
 
+  const nativeEl = $('#cardNative');
+  nativeEl.hidden = true; nativeEl.textContent = '';
+
   $('#card').hidden = false;
-  // user gesture -> play this marker's own short melody and SPEAK the country's greeting in
-  // its OWN language. The written guide above describes the item's feature; we do not read it
-  // aloud. The globe holds the view on this region while the card is open.
+  // user gesture -> play this marker's melody and greet in the local language instantly.
   playCountryMotif(co, m.id);
   speakGreeting(co);
   currentCountry = co; currentMarker = m;
+
+  // then the GUIDE itself in the country's own language: a hand-written one if we have it,
+  // otherwise a free online translation (MyMemory). Shown on the card + spoken after the
+  // greeting. Async + best-effort -> offline just keeps the greeting + Chinese text.
+  const token = ++guideToken;
+  const lang = g && g.lang;
+  (async () => {
+    let native = NATIVE_GUIDE[m.id];
+    if (!native && lang) {
+      const src = m.isHero ? `Welcome to ${co.en}.` : `${m.item.en}. ${m.item.dEn}`;
+      native = await translate(src, lang);
+    }
+    if (token !== guideToken || $('#card').hidden) return;   // user moved on / closed the card
+    if (native) { nativeEl.textContent = native; nativeEl.hidden = false; speakQueued(native, lang); }
+  })();
 }
 function closeCard() { $('#card').hidden = true; globe.clearSelection(); stopAudio(); currentCountry = null; currentMarker = null; }
-let currentCountry = null; let currentMarker = null;
+let currentCountry = null; let currentMarker = null; let guideToken = 0;
 
 $('#cardClose').onclick = closeCard;
 

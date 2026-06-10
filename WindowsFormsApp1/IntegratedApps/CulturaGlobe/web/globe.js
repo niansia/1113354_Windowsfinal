@@ -19,7 +19,7 @@ export function createGlobe(canvas, opts = {}) {
   renderer.setClearColor(0x05070f, 1);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-  let camDist = 6.2;
+  let camDist = 7.6;            // a little farther out so the rim labels have room to breathe
   camera.position.set(0, 0, camDist);
 
   const world = new THREE.Group();        // earth + markers rotate together
@@ -301,6 +301,76 @@ export function createGlobe(canvas, opts = {}) {
     return null;
   }
 
+  // ---- label halo: thin leader lines fan from the front-facing markers out to their
+  // names stacked along the globe's left/right rim -- the British-Museum "data planet"
+  // look. SVG overlay above the globe but under the UI panels (z-index 3). ----
+  const SVGNS = 'http://www.w3.org/2000/svg';
+  const HALO_MAX = 46;
+  const halo = document.createElementNS(SVGNS, 'svg');
+  Object.assign(halo.style, { position: 'fixed', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 3, overflow: 'visible' });
+  document.body.appendChild(halo);
+  const haloPool = [];
+  for (let i = 0; i < HALO_MAX; i += 1) {
+    const ln = document.createElementNS(SVGNS, 'line');
+    ln.setAttribute('stroke', 'rgba(190,214,255,0.34)'); ln.setAttribute('stroke-width', '1');
+    const tx = document.createElementNS(SVGNS, 'text');
+    tx.setAttribute('font-size', '12.5'); tx.setAttribute('fill', 'rgba(228,238,255,0.92)');
+    tx.setAttribute('font-family', '"Microsoft JhengHei","PingFang TC","Noto Sans CJK TC",sans-serif');
+    tx.setAttribute('dominant-baseline', 'middle');
+    tx.setAttribute('stroke', 'rgba(4,8,16,0.7)'); tx.setAttribute('stroke-width', '3'); tx.setAttribute('paint-order', 'stroke');
+    halo.appendChild(ln); halo.appendChild(tx);
+    haloPool.push({ ln, tx });
+  }
+  const _hw = new THREE.Vector3(), _ho = new THREE.Vector3(), _hr = new THREE.Vector3();
+  let haloT = 0;
+  function hideHalo() { for (let i = 0; i < HALO_MAX; i += 1) { haloPool[i].ln.style.display = 'none'; haloPool[i].tx.style.display = 'none'; } }
+  function updateHalo(now) {
+    if (now - haloT < 90) return; haloT = now;          // ~11 fps is plenty
+    if (!opts.labelOf || !markerData.length) { hideHalo(); return; }
+    const W = window.innerWidth, H = window.innerHeight;
+    _ho.set(0, 0, 0).project(camera);
+    const cx = (_ho.x * 0.5 + 0.5) * W, cy = (-_ho.y * 0.5 + 0.5) * H;
+    _hr.set(EARTH_R, 0, 0).project(camera);
+    const rim = Math.hypot((_hr.x * 0.5 + 0.5) * W - cx, (-_hr.y * 0.5 + 0.5) * H - cy);
+    // one marker per angular sector (front hemisphere only) -> a spread, uncluttered set
+    const SECT = 44; const buckets = new Array(SECT).fill(null);
+    for (let i = 0; i < markerData.length; i += 1) {
+      const m = markerData[i];
+      _hw.copy(latLonToVec3(m.lat, m.lon, EARTH_R * 1.02)).applyMatrix4(world.matrixWorld);
+      if (occludedByEarth(_hw)) continue;
+      const p = _hw.clone().project(camera);
+      const sx = (p.x * 0.5 + 0.5) * W, sy = (-p.y * 0.5 + 0.5) * H;
+      const dx = sx - cx, dy = sy - cy; const rad = Math.hypot(dx, dy);
+      const b = Math.floor(((Math.atan2(dy, dx) + Math.PI) / (2 * Math.PI)) * SECT) % SECT;
+      const prom = (m.isHero ? 1e4 : 0) + rad;       // prefer country heroes + outer markers
+      if (!buckets[b] || prom > buckets[b].prom) buckets[b] = { m, sx, sy, prom, right: dx >= 0 };
+    }
+    const chosen = buckets.filter(Boolean);
+    const GAP = 17;
+    const place = (arr, side) => {
+      arr.sort((a, b) => a.sy - b.sy);
+      const lx = side > 0 ? Math.min(cx + rim + 14, W - 8) : Math.max(cx - rim - 14, 8);
+      let prevY = -1e9; const out = [];
+      for (const c of arr) { const ly = Math.max(c.sy, prevY + GAP); prevY = ly; if (ly < H - 6) out.push({ ...c, lx, ly }); }
+      return out;
+    };
+    const items = [...place(chosen.filter((c) => c.right), 1), ...place(chosen.filter((c) => !c.right), -1)];
+    let k = 0;
+    for (const it of items) {
+      if (k >= HALO_MAX) break;
+      const s = haloPool[k++];
+      s.ln.setAttribute('x1', it.sx.toFixed(1)); s.ln.setAttribute('y1', it.sy.toFixed(1));
+      s.ln.setAttribute('x2', it.lx.toFixed(1)); s.ln.setAttribute('y2', it.ly.toFixed(1));
+      s.ln.style.display = '';
+      s.tx.setAttribute('x', (it.lx + (it.right ? 5 : -5)).toFixed(1));
+      s.tx.setAttribute('y', it.ly.toFixed(1));
+      s.tx.setAttribute('text-anchor', it.right ? 'start' : 'end');
+      s.tx.textContent = opts.labelOf(it.m);
+      s.tx.style.display = '';
+    }
+    for (; k < HALO_MAX; k += 1) { haloPool[k].ln.style.display = 'none'; haloPool[k].tx.style.display = 'none'; }
+  }
+
   function setMarkers(list) {
     markerData = list;
     const n = list.length;
@@ -445,6 +515,7 @@ export function createGlobe(canvas, opts = {}) {
     stars.rotation.y += dt * 0.003;
     updateCallouts();
     renderer.render(scene, camera);
+    updateHalo(performance.now());        // after render -> world/camera matrices are current
   }
   resize(); frame();
 

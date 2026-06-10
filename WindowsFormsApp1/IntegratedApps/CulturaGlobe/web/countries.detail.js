@@ -569,3 +569,54 @@ export const EXTRA_DETAIL = {
     I('music', '姆比拉琴', 'Mbira', '拇指琴姆比拉。', 'The mbira thumb piano.'),
     I('craft', '紹納石雕', 'Shona Sculpture', '紹納族的石雕。', 'Shona stone sculpture.') ] }
 };
+
+// Hand-written guides in the country's OWN language, keyed by marker id ({id}-0 hero,
+// {id}-N items). Spoken in that language on click and shown on the card. Curated set of
+// countries whose language has a common TTS voice and accurate text. Extend freely.
+export const NATIVE_GUIDE = {
+  // 日本語
+  'jp-0': '日本へようこそ。伝統と自然が息づく国です。',
+  'jp-1': '和紙と茶道。和紙の工芸と侘び寂びの茶の湯。',
+  'jp-2': '桜の季節。春に桜を愛でる、もののあはれ。',
+  'jp-3': '神道と鳥居。八百万の神と朱色の鳥居。',
+  // 한국어
+  'kr-0': '한국에 오신 것을 환영합니다.',
+  'kr-1': '한복과 한옥. 우아한 한복과 목조 한옥.',
+  'kr-2': '판소리. 판소리 창과 사물놀이.',
+  'kr-3': '김치. 김치와 발효 문화.',
+  // Deutsch
+  'de-0': 'Willkommen in Deutschland.',
+  'de-1': 'Das Oktoberfest. Das größte Volksfest der Welt.',
+  'de-2': 'Klassische Meister. Die Tradition von Bach und Beethoven.',
+  // Français
+  'fr-0': 'Bienvenue en France.',
+  'fr-1': 'La tour Eiffel. Le monument de fer de Paris.',
+  'fr-2': 'La cuisine française. Le pain, le fromage et le vin.',
+  'fr-3': 'La chanson. L’accordéon dans les rues de Paris.',
+  // Español
+  'es-0': 'Bienvenido a España.',
+  'es-1': 'El flamenco. Guitarra, taconeo y palmas.',
+  'es-2': 'La Tomatina. La fiesta de los tomates.',
+  // Italiano
+  'it-0': 'Benvenuti in Italia.',
+  'it-1': 'Il Colosseo. L’anfiteatro dell’antica Roma.',
+  'it-2': 'Pizza e pasta. La patria della pizza e della pasta.',
+  'it-3': 'Opera e Rinascimento. L’opera e l’arte rinascimentale.',
+  // Русский
+  'ru-0': 'Добро пожаловать в Россию.',
+  'ru-1': 'Собор Василия Блаженного. Купола на Красной площади.',
+  'ru-2': 'Матрёшка. Деревянные вложенные куклы.',
+  // Português (Portugal / Brasil)
+  'pt-0': 'Bem-vindo a Portugal.',
+  'pt-1': 'O fado. A canção melancólica portuguesa.',
+  'pt-2': 'Os azulejos. Azulejos azuis e brancos.',
+  'pt-3': 'Pastéis de nata. Pastéis de nata e bacalhau.',
+  'br-0': 'Bem-vindo ao Brasil.',
+  'br-1': 'O Carnaval do Rio. Desfiles de samba.',
+  'br-2': 'Samba e bossa nova. O ritmo do samba e a bossa nova.',
+  // Nederlands
+  'nl-0': 'Welkom in Nederland.',
+  'nl-1': 'Molens en tulpen. Windmolens en tulpenvelden.',
+  'nl-2': 'Delfts blauw. Blauw-wit aardewerk.',
+  'nl-3': 'Koningsdag. Het oranje feest.'
+};

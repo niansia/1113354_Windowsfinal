@@ -69,6 +69,7 @@ body {
 .card-cat { display: inline-block; margin-top: 12px; padding: 3px 11px; border-radius: 999px; font-size: 11px; font-weight: 600; }
 .card-title { font-size: 16px; margin: 12px 0 6px; }
 .card-desc { font-size: 13px; line-height: 1.6; color: var(--txt-dim); margin: 0; }
+.card-native { font-size: 13px; line-height: 1.6; color: var(--cyan); margin: 8px 0 0; font-style: italic; opacity: 0.92; }
 .card-greet { margin-top: 14px; padding: 11px 14px; border-radius: 12px; background: rgba(70,224,255,0.08); border: 1px solid var(--stroke); }
 .card-greet .g-label { font-size: 11px; color: var(--txt-dim); letter-spacing: 0.04em; margin-bottom: 4px; }
 .card-greet .g-text { font-size: 22px; font-weight: 600; }

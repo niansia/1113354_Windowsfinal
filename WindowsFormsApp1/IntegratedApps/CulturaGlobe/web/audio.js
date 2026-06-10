@@ -187,18 +187,42 @@ export function playCountryMotif(country, seed) {
 }
 
 let voicesCache = null;
+function voiceQuality(v) {           // prefer Edge's online "Natural" neural voices
+  const n = (v.name || '').toLowerCase();
+  return (/natural/.test(n) ? 4 : 0) + (/online/.test(n) ? 2 : 0) + (v.localService ? 1 : 0);
+}
 function pickVoice(lang) {
   try {
     if (!voicesCache) voicesCache = window.speechSynthesis.getVoices();
     if (!voicesCache || !voicesCache.length) return null;
     const base = lang.toLowerCase();
-    return (
-      voicesCache.find((v) => v.lang && v.lang.toLowerCase() === base) ||
-      voicesCache.find((v) => v.lang && v.lang.toLowerCase().startsWith(base.split('-')[0])) ||
-      null
-    );
+    const root = base.split('-')[0];
+    const exact = voicesCache.filter((v) => v.lang && v.lang.toLowerCase() === base);
+    const loose = voicesCache.filter((v) => v.lang && v.lang.toLowerCase().startsWith(root));
+    const pool = (exact.length ? exact : loose).slice();
+    if (!pool.length) return null;
+    pool.sort((a, b) => voiceQuality(b) - voiceQuality(a));   // best quality first
+    return pool[0];
   } catch (e) {
     return null;
+  }
+}
+
+// Speak WITHOUT cancelling what's already playing -> queues after it (e.g. greeting,
+// then the translated guide). stopAudio() still clears the whole queue.
+export function speakQueued(text, lang, rate = 0.96) {
+  if (!text) return false;
+  try {
+    const synth = window.speechSynthesis;
+    if (!synth) return false;
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickVoice(lang || 'en');
+    if (v) { u.voice = v; u.lang = v.lang; } else { u.lang = lang || 'en'; }
+    u.rate = rate; u.pitch = 1.0;
+    synth.speak(u);
+    return true;
+  } catch (e) {
+    return false;
   }
 }
 
