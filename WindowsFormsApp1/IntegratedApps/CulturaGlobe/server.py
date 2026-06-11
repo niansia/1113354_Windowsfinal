@@ -10,11 +10,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import urllib.parse
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 APP_ROOT = Path(__file__).resolve().parent
 WEB_ROOT = APP_ROOT / "web"
+
+# /api/tts same-origin proxy for Google translate_tts. The browser cannot load that
+# host cross-origin from a media element (ORB), so the server fetches the MP3 and
+# streams it back same-origin. Tiny in-memory cache: repeat clicks cost nothing.
+TTS_CACHE: dict[str, bytes] = {}
+TTS_CACHE_MAX = 300
 
 MIME = {
     ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8",
@@ -45,6 +54,38 @@ def make_handler():
             path = self.path.split("?", 1)[0]
             if path == "/api/health":
                 return self._json({"ok": True, "app": "cultura"})
+            if path == "/api/tts":
+                qs = urllib.parse.parse_qs(self.path.split("?", 1)[1]) if "?" in self.path else {}
+                tl = qs.get("tl", [""])[0][:10]
+                q = qs.get("q", [""])[0][:200]
+                if not q or not re.fullmatch(r"[A-Za-z]{2,3}(-[A-Za-z]{2,4})?", tl):
+                    self.send_error(400)
+                    return
+                key = tl + "|" + q
+                body = TTS_CACHE.get(key)
+                if body is None:
+                    url = ("https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl="
+                           + urllib.parse.quote(tl) + "&q=" + urllib.parse.quote(q))
+                    try:
+                        req = urllib.request.Request(url, headers={
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+                        with urllib.request.urlopen(req, timeout=8) as r:
+                            if "audio" not in (r.headers.get("Content-Type") or ""):
+                                raise ValueError("not audio")
+                            body = r.read()
+                    except Exception:
+                        self.send_error(502)
+                        return
+                    if len(TTS_CACHE) >= TTS_CACHE_MAX:
+                        TTS_CACHE.clear()
+                    TTS_CACHE[key] = body
+                self.send_response(200)
+                self.send_header("Content-Type", "audio/mpeg")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Cache-Control", "max-age=86400")
+                self.end_headers()
+                self.wfile.write(body)
+                return
             if path == "/api/images":
                 # list user-supplied marker images so the client loads only what exists
                 d = WEB_ROOT / "images"

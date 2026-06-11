@@ -1,0 +1,1209 @@
+Fusion OS 專案完整技術盤點
+============================================================
+
+產生日期：2026-06-11
+掃描根目錄：
+C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1
+
+說明：
+1. 本報告依專案內的原始碼、專案檔、套件清單、模型、素材、測試與說明文件整理。
+2. bin、obj、dist、node_modules、Unity Library 等產生物或第三方套件目錄有納入檔案盤點，
+   但不把其中的第三方實作誤認為本專案自行實作。
+3. 同一套技術若出現在多個子專案，會在各自章節列出其實際用途。
+4. 「套件存在」、「可選整合」與「程式實際執行的核心技術」會盡量分開標示。
+
+
+一、使用到的程式語言與技術語言
+============================================================
+
+主要程式語言
+------------------------------------------------------------
+- C#
+  - Windows Forms 桌面應用程式
+  - .NET Framework 4.7.2
+  - Unity 6 遊戲腳本
+  - 非同步工作、程序管理、資料庫、音訊、MIDI、Win32/COM 互通
+
+- TypeScript
+  - React 前端元件
+  - 手勢辨識、語音助理、3D 場景、電路模擬器、瀏覽器資料庫模擬器
+  - 強型別狀態、事件、Web API 與資料模型
+
+- TSX
+  - React UI 與 React Three Fiber 3D 元件
+
+- JavaScript
+  - 多個整合式 Web App
+  - Three.js、Leaflet、MapLibre、Canvas、Web Speech API
+  - Node.js 資料產生與建置輔助腳本
+
+- Python
+  - 本機語音辨識與大型語言模型服務
+  - HTTP/WebSocket 服務
+  - IoT 與交通系統後端代理
+  - TTS、翻譯、地理資料與外部 API 整合
+
+- C++17
+  - IoT 數位孿生與分析引擎
+  - 交通路網、路徑規劃、號誌與壅塞分析引擎
+
+- HTML5
+  - Web App 結構、內嵌工具頁面與 TechLab 單頁實驗
+
+- CSS / CSS3
+  - 響應式版面、玻璃擬態、動畫、漸層、發光、3D transform
+
+- GLSL
+  - Three.js / WebGL 自訂 vertex shader 與 fragment shader
+  - 行星、地球、粒子、等離子核心與後製視覺效果
+
+- ShaderLab / HLSL
+  - Unity 材質與特效 Shader
+  - Additive、Dissolve、Distortion、Uber Dissolve 等效果
+
+- SQL
+  - SQLite 帳號與案例資料庫
+  - 瀏覽器內 SQL 子集合解析與執行
+
+- PowerShell
+  - 建置、測試、工具調用與媒體/OMR 流程輔助
+
+- Windows Batch
+  - Windows 啟動與工具鏈輔助腳本
+
+資料、標記與設定格式
+------------------------------------------------------------
+- XML、MusicXML、MXL
+- JSON、JSONL
+- YAML
+- Markdown
+- CSV
+- UXML / USS（Unity 套件與相關 UI 技術環境）
+- MIDI SMF 二進位格式
+- WAV RIFF、MP3 frame、M3U playlist、SRT subtitle
+- GLB、glTF、FBX、ONNX、PyTorch PT、Pickle
+
+
+二、整體軟體架構
+============================================================
+
+- 混合式桌面應用架構
+  - C# Windows Forms 作為原生桌面殼層
+  - Microsoft Edge WebView2 內嵌 React/HTML Web UI
+  - JavaScript 與 .NET WebMessage 雙向橋接
+  - 本機 Python、C++、Node.js 與其他子程式由桌面程式管理
+
+- 多執行環境整合
+  - .NET Framework / CLR
+  - Chromium / WebView2
+  - Node.js / npm / Vite
+  - Python / pip
+  - 原生 C++ executable
+  - Unity 6 runtime/editor
+
+- 多程序服務架構
+  - 桌面主程式
+  - Vite 前端
+  - Python 語音服務
+  - WebSocket 音訊串流
+  - 各整合 App 的本機 HTTP 服務或原生運算核心
+
+- 本機優先架構
+  - SQLite
+  - localStorage
+  - 本機模型
+  - 本機 WebSocket/HTTP
+  - 離線或降級 fallback
+
+
+三、Fusion OS Windows Forms 主程式
+============================================================
+
+核心框架與 UI
+------------------------------------------------------------
+- Windows Forms
+- .NET Framework 4.7.2
+- 自訂繪製控制項與 GDI+
+- 深色玻璃擬態桌面殼層
+- 無邊框視窗與自訂視窗控制
+- 非同步啟動、資源預熱與錯誤處理
+
+WebView2 混合式 UI
+------------------------------------------------------------
+- Microsoft.Web.WebView2
+- Chromium 網頁內嵌
+- Virtual Host Mapping
+  - 將本機前端映射到 https://fusion.local
+- WebView2 permission handling
+  - 攝影機權限
+  - 麥克風權限
+- WebMessage bridge
+  - JavaScript 傳送指令給 C#
+  - C# 回傳系統狀態與操作結果
+- Web App 與原生視窗/程序的整合啟動
+
+Windows 系統整合
+------------------------------------------------------------
+- Win32 API / P/Invoke
+- 視窗查找、移動、縮放、嵌入與前景切換
+- 外部程序啟動、監控與結束
+- 本機伺服器生命週期管理
+- PerformanceCounter 系統監測
+  - CPU 使用率
+  - 記憶體狀態
+- 檔案管理與迷你終端功能
+
+帳號與資料安全
+------------------------------------------------------------
+- System.Data.SQLite
+- SQLite 關聯式資料庫
+- 參數化 SQL 查詢
+- 使用者註冊、登入、個人資料與語言設定
+- PBKDF2 密碼雜湊
+  - Rfc2898DeriveBytes
+  - 隨機 salt
+  - 100,000 次迭代
+- 固定時間雜湊比較，降低 timing attack 風險
+
+
+四、Fusion OS React / TypeScript 前端
+============================================================
+
+前端框架與工具鏈
+------------------------------------------------------------
+- React 19
+- React DOM
+- TypeScript 6
+- Vite 8
+- npm
+- Tailwind CSS 4
+- PostCSS
+- Autoprefixer
+- Framer Motion
+- Lucide React
+- clsx
+- tailwind-merge
+
+前端架構
+------------------------------------------------------------
+- React functional components
+- React Hooks
+- Context API
+- 元件化 OS shell
+- 狀態管理與事件驅動 UI
+- 響應式設計
+- localStorage 設定持久化
+- 多語系介面
+  - English
+  - 繁體中文
+  - 簡體中文
+  - 日文
+  - 韓文
+- 時區與日期時間格式化
+
+自適應渲染與效能降級
+------------------------------------------------------------
+- CSS、Canvas 2D、CSS 3D、WebGL 多層渲染策略
+- navigator.hardwareConcurrency 硬體執行緒偵測
+- navigator.deviceMemory 記憶體等級偵測
+- 裝置效能分級
+- Device Pixel Ratio 控制
+- ResizeObserver
+- requestAnimationFrame
+- WebGL capability detection
+- WebGL error boundary 與 fallback UI
+- lazy loading
+- idle-time 模型預熱
+
+3D 與 GPU 視覺
+------------------------------------------------------------
+- Three.js
+- React Three Fiber
+- Drei
+- Postprocessing
+- @react-three/postprocessing
+- 自訂 GLSL vertex/fragment shaders
+- ShaderMaterial
+- BufferGeometry
+- Instancing / particle systems
+- Bloom
+- Vignette
+- 程序化等離子與能量核心
+- 無限帶 / ribbon 幾何
+- 發光 filament 細節
+- Gaussian / Box-Muller 隨機取樣
+- Noise 與程序化動畫
+
+MediaPipe 手勢辨識
+------------------------------------------------------------
+- MediaPipe Hands
+- MediaPipe Camera Utils
+- TFLite 手部模型
+- WebAssembly runtime
+- 攝影機 getUserMedia
+- 21 點手部 landmark
+- 多手辨識
+- 主控制手評分與選擇
+- Landmark 指數移動平均平滑（EMA smoothing）
+- 手指伸展判定
+- 關節角度計算
+- 歐氏距離與相對尺度正規化
+- Pinch 捏合辨識
+- Open palm 張掌辨識
+- Fist 握拳辨識
+- Index double-tap 食指雙擊辨識
+- Swipe 滑動辨識
+- 速度與時間窗分析
+- Gesture finite-state machine
+- Cooldown 防連續誤觸
+- Hysteresis 遲滯判定
+- Resting-hand suppression
+- Mouse-intent suppression
+
+語音輸入與輸出
+------------------------------------------------------------
+- Web Speech API
+- SpeechRecognition / webkitSpeechRecognition
+- Speech-to-Text 瀏覽器 fallback
+- SpeechSynthesis
+- Text-to-Speech
+- Web Audio API
+- 麥克風 PCM 擷取
+- 16 kHz 音訊重採樣
+- WebSocket 即時音訊傳輸
+
+Fusion Assistant
+------------------------------------------------------------
+- Wake word 喚醒詞
+- Rule-based NLU
+- Intent parsing
+- JSON 指令路由
+- 本機 Gemma 模型整合
+- Ollama REST API fallback
+- Open-Meteo 天氣 API
+- 地理編碼與天氣查詢
+- 前端指令與 OS 操作橋接
+
+瀏覽器關聯式資料庫模擬器
+------------------------------------------------------------
+- localStorage 資料持久化
+- SQL tokenizer / parser
+- SQL 子集合執行
+  - SELECT
+  - INSERT
+  - UPDATE
+  - DELETE
+  - CREATE TABLE
+  - DROP TABLE
+- WHERE
+- LIKE
+- ORDER BY
+- LIMIT
+- 型別轉換與欄位驗證
+- 表格資料呈現
+
+DC 電路模擬器
+------------------------------------------------------------
+- 電阻、電源、電流源、LED、保險絲等元件模型
+- Disjoint Set Union（Union-Find）網路節點合併
+- Modified Nodal Analysis 類型的節點方程建立
+- Conductance stamping
+- 電流源與電壓源矩陣 stamping
+- Gaussian elimination 線性方程求解
+- 非線性 LED 反覆迭代
+- 保險絲過載判定
+- 節點電壓、支路電流與功率診斷
+- Undo / Redo
+- 自動儲存
+
+
+五、fusion_voice 本機 AI 語音服務
+============================================================
+
+服務架構
+------------------------------------------------------------
+- Python
+- asyncio
+- WebSockets
+- ThreadingHTTPServer
+- HTTP health endpoint
+- 多執行緒與非同步訊息處理
+- 本機 session 管理
+
+音訊處理
+------------------------------------------------------------
+- 16 kHz mono PCM
+- RMS 音量計算
+- Peak dBFS
+- WebRTC Voice Activity Detection
+- Energy-based VAD fallback
+- Pre-roll ring buffer / deque
+- Trailing-silence endpointing
+- 語音片段自動切割
+
+Speech-to-Text
+------------------------------------------------------------
+- Faster-Whisper
+- Whisper small 模型
+- Beam search
+- CUDA float16 推論
+- CPU int8 量化推論 fallback
+- Vosk / Kaldi fallback
+- 多語言語音辨識
+
+大型語言模型
+------------------------------------------------------------
+- Gemma 4 12B instruction model
+- Hugging Face Transformers
+- PyTorch
+- Accelerate
+- BitsAndBytes
+- 4-bit NF4 quantization
+- Double quantization
+- device_map="auto"
+- CPU/GPU offload
+- SentencePiece
+- Hugging Face model cache/token
+- 結構化 JSON intent router
+
+本機服務安全
+------------------------------------------------------------
+- Origin allowlist
+- Host allowlist
+- DNS rebinding mitigation
+- CORS
+- Private Network Access header 處理
+- Request body 大小限制
+- Session 數量限制
+- 健康資訊去敏化
+- 語音 transcript 隱私處理
+
+
+六、CosmicGesture
+============================================================
+
+主要框架
+------------------------------------------------------------
+- React 19
+- TypeScript
+- Vite
+- Three.js
+- React Three Fiber
+- WebGL
+- MediaPipe Tasks Vision
+
+手勢電腦視覺
+------------------------------------------------------------
+- HandLandmarker
+- MediaPipe WASM runtime
+- TFLite hand landmark model
+- GPU delegate
+- VIDEO running mode
+- 即時攝影機影格推論
+- Hand landmark smoothing
+- 手指幾何與伸展判定
+- 主控制手選擇
+- Gesture finite-state machine
+- 手勢觸發與防抖
+
+程序化太空視覺
+------------------------------------------------------------
+- 自訂 GLSL shaders
+- 粒子行星、行星環、星系與渦流
+- Seeded pseudorandom generation
+- Mulberry32 PRNG
+- 3D value noise
+- Fractional Brownian Motion（fBm）
+- Ridged fBm
+- Trilinear interpolation
+- Quintic smoothstep
+- 程序化行星表面
+- 程序化氣候與大陸生成
+- 經緯度轉 3D 向量
+- Particle morphing
+
+外部內容
+------------------------------------------------------------
+- NASA Astronomy Picture of the Day API
+- Timeout
+- 記憶體快取
+- localStorage 快取
+- API 失敗 fallback
+
+
+七、CulturaGlobe
+============================================================
+
+3D 地球與互動
+------------------------------------------------------------
+- Three.js
+- WebGL
+- 自訂 ShaderMaterial / GLSL
+- Earth day map
+- Specular map
+- 紙張地圖 / atlas 視覺
+- Fresnel / rim lighting
+- 經緯線 graticule
+- 國家與文化地標 point markers
+- Sprite / billboard
+- Raycasting 點選
+- 經緯度轉球面座標
+- 手動 orbit、zoom、inertia 與 auto-spin
+- 平面文化圖片 tile
+
+語音與翻譯
+------------------------------------------------------------
+- Web Speech API TTS
+- 瀏覽器 voice selection
+- Natural / Online voice 優先策略
+- Python 同源 TTS proxy
+- Google Translate TTS fallback
+- TTS 音訊快取與輸入驗證
+- MyMemory Translation API
+- 翻譯 timeout 與 cache
+
+文化資料處理
+------------------------------------------------------------
+- Rest Countries 資料快照
+- OpenCC 簡體轉繁體 fallback
+- Node.js manifest generator
+- 多語言國家與文化資料集
+- Python 靜態 HTTP server
+
+
+八、IoTNexus
+============================================================
+
+IoT 通訊
+------------------------------------------------------------
+- MQTT 3.1.1 broker（自行實作）
+- Raw TCP sockets
+- CONNECT
+- PUBLISH
+- SUBSCRIBE
+- UNSUBSCRIBE
+- PING
+- DISCONNECT
+- QoS 0
+- QoS 1
+- PUBACK
+- Topic wildcard
+  - +
+  - #
+- Retained messages
+- In-process publish/subscribe
+- 多執行緒 socket server
+
+Web 通訊
+------------------------------------------------------------
+- HTTP / REST
+- WebSocket
+- WebSocket Upgrade handshake
+- SHA-1 + Base64 accept key
+- WebSocket frame encode/decode
+- 即時推送
+- Polling fallback
+
+C++17 數位孿生
+------------------------------------------------------------
+- 多區域 lumped RC thermal model
+- 室外溫度、日照、入住率與 HVAC 熱負載
+- 多種智慧設備模型
+- HVAC
+- 太陽能 PV
+- Battery
+- EV charging
+- 熱水
+- 空氣品質
+- 智慧照明
+- 1 Hz 即時模擬
+
+IoT 分析
+------------------------------------------------------------
+- Median
+- Median Absolute Deviation（MAD）
+- Hampel-style robust z-score
+- EWMA baseline
+- 異常偵測
+- NILM-style 能源分解
+- 自發自用率
+- 碳排估算
+- 電價與成本 KPI
+- Predictive maintenance
+- 設備健康評分
+- 故障 ETA
+- Rule engine
+- Python fallback engine
+
+視覺化
+------------------------------------------------------------
+- Canvas 即時圖表
+- Digital twin floorplan
+- 裝置狀態與能源流程視覺化
+
+
+九、MetroPulse
+============================================================
+
+交通路網核心
+------------------------------------------------------------
+- C++17
+- 地理道路圖 graph
+- K-nearest-neighbor 建圖
+- 路網 connectivity repair
+- Haversine 球面距離
+- Priority queue
+- Dijkstra shortest path
+- Travel-time routing
+- Accessibility analysis
+- Isochrone 等時圈
+
+交通工程模型
+------------------------------------------------------------
+- BPR volume-delay function
+  - alpha = 0.15
+  - beta = 4
+- Webster traffic signal cycle optimization
+- 雙峰時段需求模型
+- Time-of-day traffic forecast
+- Bottleneck ranking
+- Incident response ETA
+- 平均速度、延誤、可靠度等路網 KPI
+
+地理與即時資料
+------------------------------------------------------------
+- OpenStreetMap
+- Overpass API
+- Nominatim reverse geocoding
+- Nominatim search
+- GPS geolocation
+- IP geolocation fallback
+  - ip-api
+  - ipapi
+- Open-Meteo weather
+- Open-Meteo air quality
+- ThreadPoolExecutor 並行 API 請求
+- API 失敗時的 synthetic graph fallback
+
+地圖視覺化
+------------------------------------------------------------
+- Leaflet
+- Leaflet Heat
+- MapLibre GL
+- 2D 交通地圖
+- Heatmap
+- GeoJSON
+- 3D OSM building extrusion
+- Canvas 統計圖表
+
+
+十、VeriLens 多模態假新聞檢測
+============================================================
+
+電腦視覺與物件辨識
+------------------------------------------------------------
+- YOLOv8n
+- ONNX Runtime
+- PyTorch YOLO 權重檔
+- COCO object classes
+- Person / object detection
+- Letterbox resize preprocessing
+- Bounding box decoding
+- Intersection over Union（IoU）
+- Non-Maximum Suppression（NMS）
+- 偵測框標註輸出
+
+影像鑑識
+------------------------------------------------------------
+- OpenCV
+- Error Level Analysis（ELA）
+- JPEG 重新壓縮
+- Absolute difference
+- ELA heatmap
+- Gaussian blur
+- Noise residual
+- 區域雜訊一致性分析
+- ORB local features
+- Hamming-distance BFMatcher
+- Copy-move / 重複區域偵測
+- Base64 影像輸出
+
+自然語言處理
+------------------------------------------------------------
+- scikit-learn
+- Character n-gram
+- char_wb 2-4 gram
+- TF-IDF
+- Logistic Regression
+- Pickle 模型持久化
+
+文字與聲明特徵
+------------------------------------------------------------
+- Clickbait 詞彙特徵
+- Sensational language
+- Certainty / 絕對化語氣
+- Hedging / 保留語氣
+- Source attribution
+- Numeric density
+- Readability
+- Claim extraction
+- Claim scoring
+
+多模態融合與可解釋性
+------------------------------------------------------------
+- C++ 特徵計算核心
+- Naive-Bayes-style log-odds fusion
+- 文字模型、影像鑑識、物件偵測與來源可信度融合
+- Explainable factors
+- 風險分數與原因分解
+
+外部查核與資料
+------------------------------------------------------------
+- Cofacts GraphQL API
+- DuckDuckGo 搜尋
+- Fact-check cross-reference
+- Source reputation prior
+- HTML article extraction
+- Open Graph metadata
+- SQLite 案例資料庫
+- Schema / index / aggregate query
+- 參數化 SQL
+
+
+十一、PianoStudio
+============================================================
+
+桌面音樂工作站
+------------------------------------------------------------
+- C# Windows Forms
+- .NET Framework 4.7.2
+- 88 鍵鋼琴鍵盤
+- Piano roll
+- 播放、錄音、節拍器與速度控制
+- 非同步工作與 CancellationToken
+
+Windows MIDI
+------------------------------------------------------------
+- Windows winmm.dll
+- P/Invoke
+- MIDI Mapper
+- Note On / Note Off
+- Program Change
+- Control Change
+- Sustain pedal
+- Velocity curve
+
+MIDI 格式處理
+------------------------------------------------------------
+- Standard MIDI File（SMF）自訂二進位 parser/writer
+- Big-endian 數值
+- Variable Length Quantity
+- Multi-track
+- Tempo events
+- Tick-to-time 轉換
+- MIDI import/export
+
+MusicXML
+------------------------------------------------------------
+- LINQ to XML
+- Pitch
+- Duration
+- Rest
+- Chord
+- Backup / Forward
+- Tie
+- Tempo
+- MusicXML 匯入
+- MXL 壓縮格式處理
+
+Optical Music Recognition（OMR）
+------------------------------------------------------------
+- Audiveris
+- 樂譜影像轉 MusicXML
+- PDF 樂譜輸入
+- Poppler pdftoppm
+- PDF 頁面 rasterization
+- 420 DPI 初次辨識
+- 600 DPI 重試策略
+- 圖片、剪貼簿與 PDF 輸入
+
+樂譜影像前處理
+------------------------------------------------------------
+- 非白色內容邊界偵測
+- Margin trimming
+- 黑白 threshold
+- Horizontal split
+- Vertical split
+- Double-page segmentation
+- Staff-row segmentation
+- Region cropping
+- Fast / Balanced / Accurate pipeline
+- Audiveris 平行工作
+- Stable hash cache
+- 多頁樂譜合併
+
+音訊轉 MIDI
+------------------------------------------------------------
+- yt-dlp
+- YouTube 媒體下載
+- FFmpeg
+- WAV 轉換與音訊濾波
+- Demucs source separation
+- Stem selection
+- Spotify Basic Pitch
+- Audio-to-MIDI transcription
+
+MIDI 後處理與自動編曲
+------------------------------------------------------------
+- 音域過濾
+- 音符長度過濾
+- 音符密度控制
+- Time quantization
+- 重複音符合併
+- 相鄰音符合併
+- Melody candidate scoring
+- Melody extraction
+- Bass extraction
+- Chord root estimation
+- Major / Minor chord estimation
+- Chord accompaniment
+- Arpeggio generation
+
+
+十二、WaveStudio
+============================================================
+
+音訊播放
+------------------------------------------------------------
+- C# Windows Forms
+- WinMM MCI
+- P/Invoke
+- WAV / MP3 / MP4 播放
+- Windows Media Player fallback
+- 播放清單與媒體資料庫
+
+音訊解碼與格式解析
+------------------------------------------------------------
+- Windows Media Foundation
+- COM SourceReader
+- PCM decoding
+- WAV RIFF parser
+- PCM integer samples
+  - 8-bit
+  - 16-bit
+  - 24-bit
+  - 32-bit
+- IEEE float WAV
+- MP3 frame header parser
+- ID3 metadata
+- 壓縮音訊 preview fallback
+
+波形與 DSP
+------------------------------------------------------------
+- Waveform peak extraction
+- Resampling
+- Smoothing
+- Normalization
+- RMS-based movement visualization
+- Reverse audio frames
+- Fade-in gain envelope
+- Fade-out gain envelope
+- Peak normalization
+- Sample clipping
+- WAV sample read/write
+
+媒體管理
+------------------------------------------------------------
+- M3U playlist
+- TXT playlist
+- FileSystemWatcher
+- 播放次數與中繼資料
+
+線上媒體 API
+------------------------------------------------------------
+- Apple iTunes Search API
+- Audius API
+- Internet Archive API
+- Radio Browser API
+- Apple Podcasts / RSS
+- Spotify Client Credentials OAuth（可選設定）
+- Spotify Web API（可選設定）
+- YouTube / Spotify 外部連結
+- HTTP、JSON、XML 與 RSS parsing
+
+套件備註
+------------------------------------------------------------
+- 專案套件清單含 NAudio 2.2.1。
+- 主要原始碼仍以 WinMM、Media Foundation 與自訂格式解析為核心；
+  因此 NAudio 列為相依套件，不把所有播放功能都歸因於 NAudio。
+
+
+十三、MultimediaStudio
+============================================================
+
+混合式媒體播放器
+------------------------------------------------------------
+- C# Windows Forms
+- Windows Media Player ActiveX / COM
+- AxWMPLib
+- WMPLib
+- 本機影片與音訊播放
+- 播放速度、音量、跳轉與全螢幕
+
+播放增強功能
+------------------------------------------------------------
+- SRT subtitle parser
+- 字幕編碼偵測
+- Bookmark
+- A-B repeat
+- Sleep timer
+- Playlist
+- Session persistence
+- Chapter
+- Playback heatmap
+- Notes
+- Recommendation metadata
+
+網頁影片整合
+------------------------------------------------------------
+- WebView2 動態 reflection 載入
+- JavaScript DOM control
+- HTML5 video 控制
+- Edge / Chrome 子視窗嵌入
+- Win32 視窗操作
+- 外部瀏覽器 fallback
+
+360 / VR
+------------------------------------------------------------
+- 360 video portal
+- VR180 portal
+- WebXR 入口
+
+可選引擎偵測
+------------------------------------------------------------
+- FFmpeg / FFprobe 偵測
+- VLC 偵測
+- CefSharp 偵測
+
+注意：
+- 上述引擎在目前程式中主要屬於「可用性偵測或替代引擎入口」。
+- 未發現 MultimediaStudio 內實作電腦視覺分析或 Digital Cinema Package 處理。
+
+
+十四、TechLab
+============================================================
+
+- 單檔 HTML / CSS / JavaScript 技術實驗
+- Canvas 2D
+- Liquid slider
+- Spring-damping 彈簧阻尼物理
+- Refraction-like 視覺模擬
+- Canvas compositing
+- 軟體投影旋轉 3D cube
+- Face depth sorting
+- Clipping
+- Pointer interaction
+
+注意：
+- 頁面含 HTML-in-Canvas / WebGPU 概念展示文字與 fallback 模擬。
+- 目前未發現實際呼叫 navigator.gpu 的 WebGPU 實作，因此不列為真正使用的 WebGPU。
+
+
+十五、FusionRPG
+============================================================
+
+遊戲引擎與套件
+------------------------------------------------------------
+- Unity 6
+- Unity 6000.0.32f1
+- C#
+- Universal Unity runtime modules
+- Unity Test Framework
+- NUnit
+- TextMeshPro
+- UGUI
+- Timeline
+- glTFast 6.19
+
+3D 資產與場景
+------------------------------------------------------------
+- GLB / glTF
+- FBX
+- glTF 模型匯入
+- Editor scene builder
+- Material / texture
+- Collider
+- Particle System
+
+角色控制
+------------------------------------------------------------
+- Third-person CharacterController
+- Camera-relative movement
+- Gravity
+- Jump
+- Dash
+- Collision substeps
+- Camera obstruction raycast
+
+戰鬥系統
+------------------------------------------------------------
+- Combo state machine
+- Attack cooldown
+- Mana
+- Ultimate gauge
+- Hitbox / Hurtbox
+- Physics overlap
+- Raycast targeting
+- Projectile
+- Area of Effect
+- Enemy health
+- Floating damage text
+- Health bar / HUD
+
+敵人 AI 與關卡
+------------------------------------------------------------
+- Enemy finite-state machine
+- Idle / Chase / Telegraph / Attack 等狀態
+- Boss phase
+- Wave progression
+- Target tracking
+- 程序化敵人動畫
+
+動畫與特效
+------------------------------------------------------------
+- Runtime procedural mesh animation
+- Particle VFX
+- Emissive material
+- Energy ring
+- Screen flash
+- Additive shader
+- Distance dissolve shader
+- Distortion shader
+- Uber dissolve shader
+
+測試
+------------------------------------------------------------
+- EditMode tests
+- PlayMode tests
+- NUnit assertions
+- Unity Test Framework
+
+
+十六、外部模型、工具、API 與重要檔案格式
+============================================================
+
+AI / Computer Vision 模型
+------------------------------------------------------------
+- MediaPipe Hands TFLite full model
+- MediaPipe Hands TFLite lite model
+- MediaPipe WASM runtime
+- YOLOv8n ONNX model
+- YOLOv8n PyTorch model
+- scikit-learn TF-IDF + Logistic Regression Pickle model
+- Faster-Whisper model
+- Vosk/Kaldi speech model
+- Gemma instruction model
+
+媒體與辨識工具
+------------------------------------------------------------
+- Audiveris
+- Poppler pdftoppm
+- FFmpeg / FFprobe
+- yt-dlp
+- Demucs
+- Spotify Basic Pitch
+
+主要外部 Web API
+------------------------------------------------------------
+- Open-Meteo Weather API
+- Open-Meteo Air Quality API
+- OpenStreetMap Overpass API
+- Nominatim API
+- NASA APOD API
+- Rest Countries data
+- MyMemory Translation API
+- Google Translate TTS
+- Cofacts GraphQL API
+- DuckDuckGo Search
+- Apple iTunes Search API
+- Apple Podcasts / RSS
+- Audius API
+- Internet Archive API
+- Radio Browser API
+- Spotify Web API
+- ip-api / ipapi
+
+通訊協定
+------------------------------------------------------------
+- HTTP / HTTPS
+- REST
+- WebSocket
+- MQTT 3.1.1
+- TCP socket
+- GraphQL
+- OAuth 2.0 Client Credentials
+- MIDI
+- COM / ActiveX
+- WebView2 WebMessage
+
+
+十七、資料結構、演算法與工程技術總表
+============================================================
+
+- Finite-state machine
+- Disjoint Set Union / Union-Find
+- Gaussian elimination
+- Modified Nodal Analysis
+- Dijkstra shortest path
+- K-nearest-neighbor graph construction
+- Priority queue
+- Haversine distance
+- BPR volume-delay model
+- Webster signal optimization
+- Median / MAD robust statistics
+- Hampel-style anomaly score
+- EWMA
+- NILM-style disaggregation
+- PBKDF2
+- Fixed-time comparison
+- TF-IDF
+- Logistic Regression
+- Character n-gram
+- Naive-Bayes-style log odds
+- IoU
+- Non-Maximum Suppression
+- ORB
+- Hamming BFMatcher
+- Error Level Analysis
+- Gaussian blur noise residual
+- Copy-move detection
+- Voice Activity Detection
+- Beam search
+- 4-bit NF4 quantization
+- Audio resampling
+- RMS / dBFS
+- Ring buffer / deque pre-roll
+- MIDI quantization
+- Melody / bass extraction
+- Chord estimation
+- fBm / Ridged fBm
+- Value noise
+- Mulberry32 seeded PRNG
+- Trilinear interpolation
+- Quintic smoothstep
+- EMA smoothing
+- Gesture hysteresis / cooldown / suppression
+- Raycasting
+- Particle systems
+- Postprocessing bloom / vignette
+- Responsive rendering fallback
+- Caching
+- Timeout / retry
+- Parallel processing
+- Async / await
+- Multithreading
+- Process orchestration
+- Graceful degradation
+- Parameterized SQL
+- Undo / Redo
+- Autosave
+
+
+十八、建置、套件與測試工具
+============================================================
+
+- Visual Studio
+- MSBuild
+- .csproj / .sln
+- NuGet
+- npm
+- Node.js
+- Vite
+- TypeScript compiler
+- PostCSS
+- Python pip
+- g++ / C++17 toolchain
+- Unity Editor
+- Unity Package Manager
+- Unity Test Framework
+- NUnit
+- Node test runner
+- PowerShell 測試與啟動腳本
+
+
+十九、稽核結論與未發現項目
+============================================================
+
+- 專案確實包含 Computer Vision：
+  - MediaPipe 手部 landmark 與手勢辨識
+  - YOLOv8 物件辨識
+  - OpenCV 影像鑑識
+  - ORB copy-move 偵測
+  - OMR 樂譜辨識前處理
+
+- 專案確實包含 TTS：
+  - Browser SpeechSynthesis
+  - Google Translate TTS proxy/fallback
+  - 多語音 voice selection
+
+- 專案確實包含 OMR：
+  - Audiveris
+  - PDF rasterization
+  - 樂譜切割與影像前處理
+  - MusicXML / MXL 匯入
+
+- 未發現「暗通道先驗（Dark Channel Prior）」或影像去霧演算法實作。
+  此技術只是使用者舉例，不能列為本專案已使用技術。
+
+- WaveStudio 的主要視覺化依據是 waveform peak、RMS、平滑與重採樣；
+  未發現真正 FFT 頻譜分析實作，因此不列為已使用 FFT。
+
+- TechLab 有 WebGPU 概念文字，但未發現實際 WebGPU API 呼叫。
+
+- MultimediaStudio 有 FFmpeg、VLC、CefSharp 等引擎偵測，
+  但部分屬可選整合，不代表所有引擎都在目前執行流程中實際處理媒體。
+
+- ExternalProjects 內有 PianoStudio 的重複/外部副本；
+  本報告不重複計算同一組技術。
+
+- CppSystemsLab 目前沒有可確認的實作程式碼；
+  本報告的 C++ 技術來源是 IoTNexus 與 MetroPulse。
+
+
+二十、主要查核位置
+============================================================
+
+- Windows Forms 主程式
+  - *.cs
+  - *.Designer.cs
+  - WindowsFormsApp1.csproj
+  - packages.config
+
+- Fusion OS 前端
+  - Frontend/src
+  - Frontend/package.json
+  - Frontend/public
+
+- 語音服務
+  - fusion_voice
+  - fusion_voice/requirements.txt
+
+- 整合式應用
+  - IntegratedApps/CosmicGesture
+  - IntegratedApps/CulturaGlobe
+  - IntegratedApps/IoTNexus
+  - IntegratedApps/MetroPulse
+  - IntegratedApps/MultimediaStudio
+  - IntegratedApps/PianoStudio
+  - IntegratedApps/VeriLens
+  - IntegratedApps/WaveStudio
+  - IntegratedApps/FusionRPG
+  - IntegratedApps/TechLab
+
+- Unity 設定
+  - IntegratedApps/FusionRPG/ProjectSettings
+  - IntegratedApps/FusionRPG/Packages
+  - IntegratedApps/FusionRPG/Assets
+
+
+報告結束

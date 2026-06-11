@@ -9,27 +9,44 @@
 <body>
   <canvas id="globe"></canvas>
 
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand-mark">🌏</div>
-      <div class="brand-text">
-        <h1 data-i18n="世界文化星球">世界文化星球</h1>
-        <p data-i18n="探索世界各國的文化、音樂與語言">探索世界各國的文化、音樂與語言</p>
-      </div>
-    </div>
-    <div class="counts" id="counts"></div>
-    <input id="search" class="search" type="text" />
+  <!-- centered museum masthead -->
+  <header class="masthead">
+    <h1 class="mast-title" data-i18n="世界文化星球">世界文化星球</h1>
+    <div class="mast-stats" id="counts"></div>
   </header>
 
-  <aside class="legend" id="legend">
-    <div class="legend-title" data-i18n="類別">類別</div>
-    <div class="legend-cats" id="legendCats"></div>
-    <div class="legend-title" data-i18n="地區">地區</div>
-    <div class="legend-regions" id="legendRegions"></div>
+  <!-- left catalog panel: country list <-> country detail -->
+  <aside class="panel" id="panel">
+    <div class="panel-view" id="panelList">
+      <input id="search" class="panel-search" type="text" />
+      <div class="panel-sec" data-i18n="地區">地區</div>
+      <div class="chip-row" id="legendRegions"></div>
+      <div class="panel-sec" data-i18n="類別">類別</div>
+      <div class="chip-row cats" id="legendCats"></div>
+      <div class="panel-sec" data-i18n="國家清單">國家清單</div>
+      <div class="country-list" id="countryList"></div>
+    </div>
+
+    <div class="panel-view" id="panelDetail" hidden>
+      <div class="detail-head">
+        <div class="detail-name" id="detailName">—</div>
+        <button class="back-btn" id="detailBack">← <span data-i18n="返回">返回</span></button>
+      </div>
+      <div class="detail-stats">
+        <div class="stat"><b id="statItems">0</b><span data-i18n="文化項目">文化項目</span></div>
+        <div class="stat"><b id="statRegion">—</b><span data-i18n="地區">地區</span></div>
+      </div>
+      <div class="detail-greet" id="detailGreet"></div>
+      <div class="detail-items" id="detailItems"></div>
+    </div>
   </aside>
 
-  <div class="hint">
-    <span data-i18n="拖曳旋轉地球 · 滾輪縮放">拖曳旋轉地球 · 滾輪縮放</span>
+  <!-- bottom toolbar -->
+  <div class="toolbar">
+    <button class="tb-btn on" id="tbSpin" data-i18n="旋轉">旋轉</button>
+    <button class="tb-btn on" id="tbLabels" data-i18n="標籤">標籤</button>
+    <button class="tb-btn on" id="tbImages" data-i18n="圖片">圖片</button>
+    <span class="tb-hint" data-i18n="拖曳旋轉地球 · 滾輪縮放">拖曳旋轉地球 · 滾輪縮放</span>
   </div>
 
   <div class="tip" id="tip" hidden></div>
@@ -45,7 +62,7 @@
     <p class="card-desc" id="cardDesc">—</p>
     <p class="card-native" id="cardNative" hidden></p>
     <div class="card-greet" id="cardGreet"></div>
-    <div class="card-note" data-i18n="點擊標記即以當地語言問候並演奏在地旋律">點擊標記即以當地語言問候並演奏在地旋律</div>
+    <div class="card-note" data-i18n="點擊標記即以當地語言朗讀簡介">點擊標記即以當地語言朗讀簡介</div>
   </section>
 
   <div class="splash" id="splash"><span data-i18n="載入中…">載入中…</span></div>

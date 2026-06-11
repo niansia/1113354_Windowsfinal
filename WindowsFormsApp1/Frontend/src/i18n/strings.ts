@@ -378,6 +378,20 @@ export const TRANSLATIONS: Record<string, Entry> = {
     ko: '이름과 비밀번호를 설정해 데스크톱을 보호하세요'
   },
   '輸入密碼以解鎖': { 'zh-CN': '输入密码以解锁', en: 'Enter your password to unlock', ja: 'パスワードを入力してロック解除', ko: '비밀번호를 입력해 잠금 해제' },
+  '新增使用者': { 'zh-CN': '新增用户', en: 'Add a user', ja: 'ユーザーを追加', ko: '사용자 추가' },
+  '為這台裝置建立另一位使用者': { 'zh-CN': '为这台设备创建另一位用户', en: 'Create another user for this device', ja: 'このデバイスに別のユーザーを作成', ko: '이 기기에 다른 사용자 만들기' },
+  '返回登入': { 'zh-CN': '返回登录', en: 'Back to sign-in', ja: 'サインインに戻る', ko: '로그인으로 돌아가기' },
+  '無法建立帳戶，請再試一次': { 'zh-CN': '无法创建账户，请再试一次', en: 'Could not create the account, please try again', ja: 'アカウントを作成できませんでした。もう一度お試しください', ko: '계정을 만들 수 없습니다. 다시 시도하세요' },
+  '重設帳戶': { 'zh-CN': '重置账户', en: 'Reset accounts', ja: 'アカウントをリセット', ko: '계정 재설정' },
+  '重設此裝置的帳戶？': { 'zh-CN': '重置此设备的账户？', en: 'Reset the accounts on this device?', ja: 'このデバイスのアカウントをリセットしますか？', ko: '이 기기의 계정을 재설정할까요?' },
+  '這會刪除此裝置上的所有使用者與密碼，並回到首次設定。此動作無法復原。': {
+    'zh-CN': '这会删除此设备上的所有用户与密码，并回到首次设置。此操作无法恢复。',
+    en: 'This deletes every user and password on this device and returns to first-run setup. This cannot be undone.',
+    ja: 'このデバイス上のすべてのユーザーとパスワードが削除され、初期設定に戻ります。この操作は元に戻せません。',
+    ko: '이 기기의 모든 사용자와 비밀번호가 삭제되고 초기 설정으로 돌아갑니다. 되돌릴 수 없습니다.'
+  },
+  '取消': { 'zh-CN': '取消', en: 'Cancel', ja: 'キャンセル', ko: '취소' },
+  '全部清除': { 'zh-CN': '全部清除', en: 'Erase everything', ja: 'すべて消去', ko: '모두 지우기' },
   '密碼': { 'zh-CN': '密码', en: 'Password', ja: 'パスワード', ko: '비밀번호' },
   '名稱': { 'zh-CN': '名称', en: 'Name', ja: '名前', ko: '이름' },
   '解鎖': { 'zh-CN': '解锁', en: 'Unlock', ja: 'ロック解除', ko: '잠금 해제' },

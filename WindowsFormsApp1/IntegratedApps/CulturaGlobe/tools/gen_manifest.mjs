@@ -29,10 +29,10 @@ for (const [rid, r] of Object.entries(REGIONS)) {
   out.push(`\n## ${r.zh} / ${r.en}  (${list.length})`);
   for (const co of list) {
     out.push(`\n### ${co.zh} / ${co.en}  \`${co.id}\``);
-    out.push(`- \`${co.id}.jpg\` — 主圖標 hero. 搜尋/Search: "${co.en} iconic landmark"`);
+    out.push(`- \`${co.id}.jpg\` — 主圖標 hero. 搜尋: 「${co.zh} 地標」 / Search: "${co.en} famous landmark"`);
     total += 1;
     co.items.forEach((it, i) => {
-      out.push(`- \`${co.id}-${i + 1}.jpg\` — ${it.zh} / ${it.en} (${catName[it.cat]}). 搜尋/Search: "${co.en} ${it.en}"`);
+      out.push(`- \`${co.id}-${i + 1}.jpg\` — ${it.zh} / ${it.en} (${catName[it.cat]}). 搜尋: 「${co.zh} ${it.zh}」 / Search: "${co.en} ${it.en}"`);
       total += 1;
     });
   }

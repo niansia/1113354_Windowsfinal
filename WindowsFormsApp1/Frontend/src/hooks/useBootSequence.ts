@@ -7,6 +7,7 @@ export interface BootState extends BootSnapshot {
   allowSkip: boolean;
   reducedMotion: boolean;
   tier: string;
+  skippedVisual: boolean;   // ?boot=0 -- dev short-circuit, boot overlay never mounts
   skip: () => void;
 }
 
@@ -67,8 +68,20 @@ export function useBootSequence(): BootState {
       return () => cancelAnimationFrame(raf);
     }
 
-    const skipVisual = flag('skip');
-    if (skipVisual) skipRef.current = true;
+    // DEV: ?boot=0 short-circuits boot entirely — no warm-up pipeline, no rAF
+    // dependence, and App never mounts the WebGL boot scene (which can wedge the
+    // compositor on headless/iGPU dev environments).
+    if (flag('skip')) {
+      setSnap({
+        phase: 'reveal',
+        phaseLabel: PHASE_LABELS.reveal,
+        taskLabel: 'FusionOS Ready',
+        progress: 1,
+        modules: [],
+        done: true
+      });
+      return;
+    }
 
     runBoot({
       shouldSkip: () => skipRef.current,
@@ -84,6 +97,7 @@ export function useBootSequence(): BootState {
     allowSkip,
     reducedMotion,
     tier: profile.current.tier,
+    skippedVisual: flag('skip'),
     skip: () => { if (allowSkip) skipRef.current = true; }
   };
 }

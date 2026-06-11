@@ -5,14 +5,15 @@
 import { COUNTRY_TABLE } from './countries.generated.js';
 import { EXTRA_DETAIL } from './countries.detail.js';
 
+// muted museum-ink palette: reads as printed ink on the paper-toned globe
 export const CATEGORIES = [
-  { id: 'language', zh: '語言問候', en: 'Language', glyph: '語', color: '#46e0ff' },
-  { id: 'music', zh: '音樂', en: 'Music', glyph: '♪', color: '#ff6ad5' },
-  { id: 'festival', zh: '節慶', en: 'Festival', glyph: '✦', color: '#ffc15e' },
-  { id: 'landmark', zh: '地標', en: 'Landmark', glyph: '⌂', color: '#8d7bff' },
-  { id: 'cuisine', zh: '美食', en: 'Cuisine', glyph: '❖', color: '#46e7a4' },
-  { id: 'craft', zh: '工藝', en: 'Craft', glyph: '✺', color: '#ff8a5b' },
-  { id: 'myth', zh: '神話信仰', en: 'Myth & Belief', glyph: '☯', color: '#b06bff' }
+  { id: 'language', zh: '語言問候', en: 'Language', glyph: '語', color: '#2f6f9f' },
+  { id: 'music', zh: '音樂', en: 'Music', glyph: '♪', color: '#b04a78' },
+  { id: 'festival', zh: '節慶', en: 'Festival', glyph: '✦', color: '#b58020' },
+  { id: 'landmark', zh: '地標', en: 'Landmark', glyph: '⌂', color: '#6a5ba8' },
+  { id: 'cuisine', zh: '美食', en: 'Cuisine', glyph: '❖', color: '#3d8a5f' },
+  { id: 'craft', zh: '工藝', en: 'Craft', glyph: '✺', color: '#b3592e' },
+  { id: 'myth', zh: '神話信仰', en: 'Myth & Belief', glyph: '☯', color: '#85549a' }
 ];
 
 export const REGIONS = {
@@ -62,7 +63,18 @@ const LANG_GREET = {
   Bislama: G('Halo', 'Halo', 'bi'), Kyrgyz: G('Салам', 'Salam', 'ky'), Guaraní: G('Mba’éichapa', 'Mbaeichapa', 'gn'),
   Aymara: G('Kamisaraki', 'Kamisaraki', 'ay'), Chibarwe: G('Mhoro', 'Mhoro', 'sn'),
   Tajik: G('Салом', 'Salom', 'tg'), Turkmen: G('Salam', 'Salam', 'tk'),
-  'Seychellois Creole': G('Bonzour', 'Bonzour', 'fr'), 'Belizean Creole': G('Hello', 'Hello', 'en')
+  'Seychellois Creole': G('Bonzour', 'Bonzour', 'fr'), 'Belizean Creole': G('Hello', 'Hello', 'en'),
+  Maltese: G('Bonġu', 'Bongu', 'mt'),
+  'Mandarin (Taiwan)': G('你好', 'Nǐ hǎo', 'zh-TW')
+};
+
+// languages with NO TTS voice anywhere (local Windows voices + Google online TTS both
+// probed): narrate via a wider co-official / lingua-franca language instead of English.
+// Keyed by the ISO root of greeting.lang.
+export const SPEAK_FALLBACK = {
+  kk: 'ru', ky: 'ru', tg: 'ru', tk: 'ru', uz: 'ru',   // Central Asia -> Russian
+  hy: 'ru', az: 'ru', ka: 'ru',                       // Caucasus -> Russian
+  so: 'ar'                                            // Somalia -> Arabic (co-official)
 };
 
 // a few restcountries language labels are a co-official / minority tongue; greet in the
@@ -71,7 +83,18 @@ const GREET_OVERRIDE = {
   ar: 'Spanish', pe: 'Spanish', bo: 'Spanish',   // listed Guaraní/Aymara, but Spanish-dominant
   il: 'Hebrew',                                  // listed Arabic
   in: 'Hindi', pk: 'Urdu', ph: 'Filipino',       // listed English
-  uz: 'Uzbek', tj: 'Tajik', tm: 'Turkmen'        // listed Russian
+  uz: 'Uzbek', tj: 'Tajik', tm: 'Turkmen',       // listed Russian
+  // restcountries says "English" but the everyday mainstream language differs --
+  // point these at a language that actually has a TTS voice
+  my: 'Malay', mt: 'Maltese',
+  ke: 'Swahili', tz: 'Swahili', ug: 'Swahili',
+  cm: 'French', mu: 'French',
+  // these list a local language with NO TTS voice anywhere -- narrate in the
+  // co-official/wider language instead so every country actually speaks
+  py: 'Spanish',                                 // Guaraní (no voice) -> Spanish co-official
+  zw: 'English', vu: 'English',                  // Chibarwe / Bislama (no voice)
+  by: 'Russian',                                 // Belarusian listed, Russian is the everyday language
+  tw: 'Mandarin (Taiwan)'                        // zh-TW voice, not zh-CN
 };
 
 // resolve the greeting for a (sometimes messy) restcountries language label:
@@ -228,6 +251,19 @@ const DETAIL = {
     I('craft', '毛利雕刻', 'Māori Carving', '螺旋紋木雕。', 'Spiral Māori carving.') ] }
 };
 
+// Some restcountries centroids land in the open sea between islands, or in a
+// far-flung territory (Malaysia's centroid is in Borneo!). Audited all 193 against
+// the land/ocean mask; these are re-pinned to the country's visual mainland.
+const COORD_FIX = {
+  my: [3.6, 102.2],     // Borneo centroid -> Peninsular Malaysia (above Singapore)
+  ph: [15.2, 121.1],    // Sibuyan Sea -> Luzon
+  id: [-7.4, 110.4],    // Flores Sea -> central Java (the cultural heartland)
+  nz: [-38.6, 176.0],   // Cook Strait -> North Island
+  cu: [22.0, -79.3],    // off the south coast -> on the island
+  sb: [-9.6, 160.2],    // open sea -> Guadalcanal
+  vu: [-17.7, 168.3]    // between islands -> Efate (Port Vila)
+};
+
 // deterministic small pitch variation per country so neighbours don't sound identical
 function hashNum(s) { let h = 0; for (let i = 0; i < s.length; i += 1) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
 
@@ -237,11 +273,12 @@ export const COUNTRIES = COUNTRY_TABLE.map((c) => {
   const variation = Math.pow(2, ((hashNum(c.id) % 5) - 2) / 12); // +-2 semitones
   const music = d.music || { scale: base.scale, timbre: base.timbre, root: Math.round(base.root * variation), tempo: base.tempo };
   const greeting = greetingFor(GREET_OVERRIDE[c.id] || c.lang);
+  const fix = COORD_FIX[c.id];
   return {
     id: c.id,
     zh: d.zh || c.zh,
     en: c.en,
-    lat: c.lat, lon: c.lon, region: c.region,
+    lat: fix ? fix[0] : c.lat, lon: fix ? fix[1] : c.lon, region: c.region,
     music,
     greeting,
     items: d.items || []

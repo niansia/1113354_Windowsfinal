@@ -19,6 +19,13 @@ const DICT = {
   '當地語言問候': { 'zh-CN': '当地语言问候', en: 'Greeting in the local language', ja: '現地語の挨拶', ko: '현지어 인사' },
   '此地文化': { 'zh-CN': '此地文化', en: 'Cultural highlight', ja: '文化ハイライト', ko: '문화 하이라이트' },
   '文化總覽': { 'zh-CN': '文化总览', en: 'Cultural overview', ja: '文化の概要', ko: '문화 개요' },
+  '國家清單': { 'zh-CN': '国家清单', en: 'Countries', ja: '国リスト', ko: '국가 목록' },
+  '返回': { 'zh-CN': '返回', en: 'Back', ja: '戻る', ko: '뒤로' },
+  '文化項目': { 'zh-CN': '文化项目', en: 'Items', ja: '文化項目', ko: '문화 항목' },
+  '旋轉': { 'zh-CN': '旋转', en: 'Rotate', ja: '回転', ko: '회전' },
+  '標籤': { 'zh-CN': '标签', en: 'Labels', ja: 'ラベル', ko: '라벨' },
+  '圖片': { 'zh-CN': '图片', en: 'Images', ja: '画像', ko: '이미지' },
+  '點擊標記即以當地語言朗讀簡介': { 'zh-CN': '点击标记即以当地语言朗读简介', en: 'Tap a marker to hear its intro narrated in the local language', ja: 'マーカーをタップすると現地語で紹介を読み上げます', ko: '마커를 누르면 현지어로 소개를 읽어줍니다' },
   '探索中': { 'zh-CN': '探索中', en: 'Exploring', ja: '探索中', ko: '탐색 중' },
   '載入中…': { 'zh-CN': '加载中…', en: 'Loading…', ja: '読込中…', ko: '로딩 중…' }
 };

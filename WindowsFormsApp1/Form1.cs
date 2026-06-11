@@ -1322,7 +1322,12 @@ namespace WindowsFormsApp1
                 );
                 Debug.WriteLine($"[FusionOS WebView2] userDataFolder={userDataFolder}");
                 
-                var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
+                // Allow the boot chime to play without a user gesture (Chromium autoplay policy).
+                var envOptions = new CoreWebView2EnvironmentOptions
+                {
+                    AdditionalBrowserArguments = "--autoplay-policy=no-user-gesture-required"
+                };
+                var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder, envOptions);
                 await carouselWebView.EnsureCoreWebView2Async(env);
 
                 // Dark default background so the boot screen never flashes white before React paints.
@@ -1739,6 +1744,9 @@ namespace WindowsFormsApp1
         // Handles the SQLite-backed account messages and the live language/time switch.
         // Returns true when the message was an account/language message (so the main
         // receiver stops processing it).
+        // The user this session is signed in as (0 = none yet / pre-login).
+        private long currentAccountUserId;
+
         private bool HandleAccountBridgeMessage(string json, string lower)
         {
             if (!(lower.Contains("fusion_account") || lower.Contains("fusion_set_language"))) return false;
@@ -1758,6 +1766,8 @@ namespace WindowsFormsApp1
                         return true;
                     case "FUSION_ACCOUNT_SETUP":
                     {
+                        // first-run setup AND "add another user" share this op: it creates a
+                        // new row and signs the session in as that user.
                         string dn = Field(msg, "displayName");
                         string em = Field(msg, "email");
                         string pw = Field(msg, "password");
@@ -1765,7 +1775,8 @@ namespace WindowsFormsApp1
                         if (string.IsNullOrWhiteSpace(dn)) dn = "Fusion User";
                         if (string.IsNullOrEmpty(lang)) lang = currentLanguage;
                         lang = NormalizeLang(lang);
-                        AccountDb.CreateUser(dn, em, pw, lang);
+                        FusionUser created = AccountDb.CreateUser(dn, em, pw, lang);
+                        currentAccountUserId = created != null ? created.Id : 0;
                         ApplyHostLocaleSettings(lang, Field(msg, "timezone"), BoolField(msg, "clock24"));
                         PostAccountResult("setup", true, null);
                         PostAccountState();
@@ -1773,25 +1784,36 @@ namespace WindowsFormsApp1
                     }
                     case "FUSION_ACCOUNT_VERIFY":
                     {
-                        bool ok = AccountDb.VerifyPassword(Field(msg, "password"));
+                        long userId = LongField(msg, "userId");
+                        bool ok = AccountDb.VerifyPassword(userId, Field(msg, "password"));
+                        if (ok)
+                        {
+                            FusionUser u = userId > 0 ? AccountDb.GetUser(userId) : AccountDb.GetPrimaryUser();
+                            currentAccountUserId = u != null ? u.Id : 0;
+                            // switch the host locale to the signed-in user's language
+                            if (u != null && !string.IsNullOrEmpty(u.Language))
+                                ApplyHostLocaleSettings(u.Language, null, null);
+                        }
                         PostAccountResult("verify", ok, ok ? null : "INVALID_PASSWORD");
+                        if (ok) PostAccountState();
                         return true;
                     }
                     case "FUSION_ACCOUNT_UPDATE_PROFILE":
                     {
-                        bool ok = AccountDb.UpdateProfile(Field(msg, "displayName"), Field(msg, "email"));
+                        bool ok = AccountDb.UpdateProfile(currentAccountUserId, Field(msg, "displayName"), Field(msg, "email"));
                         PostAccountResult("updateProfile", ok, null);
                         PostAccountState();
                         return true;
                     }
                     case "FUSION_ACCOUNT_CHANGE_PASSWORD":
                     {
-                        bool ok = AccountDb.ChangePassword(Field(msg, "current"), Field(msg, "next"));
+                        bool ok = AccountDb.ChangePassword(currentAccountUserId, Field(msg, "current"), Field(msg, "next"));
                         PostAccountResult("changePassword", ok, ok ? null : "INVALID_PASSWORD");
                         return true;
                     }
                     case "FUSION_ACCOUNT_RESET":
                         AccountDb.ResetAll();
+                        currentAccountUserId = 0;
                         PostAccountResult("reset", true, null);
                         PostAccountState();
                         return true;
@@ -1799,7 +1821,7 @@ namespace WindowsFormsApp1
                     {
                         string lang = NormalizeLang(Field(msg, "language"));
                         ApplyHostLocaleSettings(lang, Field(msg, "timezone"), BoolField(msg, "clock24"));
-                        try { AccountDb.SetLanguage(lang); } catch { }
+                        try { AccountDb.SetLanguage(currentAccountUserId, lang); } catch { }
                         PostAccountResult("setLanguage", true, null);
                         return true;
                     }
@@ -1820,6 +1842,15 @@ namespace WindowsFormsApp1
             object v;
             if (d != null && d.TryGetValue(key, out v) && v != null) return Convert.ToString(v);
             return null;
+        }
+
+        private static long LongField(Dictionary<string, object> d, string key)
+        {
+            object v;
+            if (d == null || !d.TryGetValue(key, out v) || v == null) return 0;
+            long parsed;
+            if (long.TryParse(Convert.ToString(v), out parsed)) return parsed;
+            return 0;
         }
 
         private static bool? BoolField(Dictionary<string, object> d, string key)
@@ -1858,12 +1889,30 @@ namespace WindowsFormsApp1
         private void PostAccountState()
         {
             if (carouselWebView == null || carouselWebView.CoreWebView2 == null) return;
-            FusionUser user = null;
-            try { user = AccountDb.GetPrimaryUser(); } catch { }
-            bool exists = user != null;
-            string dn = exists ? user.DisplayName : string.Empty;
-            string em = exists ? (user.Email ?? string.Empty) : string.Empty;
-            string lang = exists && !string.IsNullOrEmpty(user.Language) ? user.Language : currentLanguage;
+            System.Collections.Generic.List<FusionUser> users = null;
+            try { users = AccountDb.ListUsers(); } catch { }
+            if (users == null) users = new System.Collections.Generic.List<FusionUser>();
+            bool exists = users.Count > 0;
+            // the profile fields describe the signed-in user (or the primary before login)
+            FusionUser current = null;
+            if (currentAccountUserId > 0)
+            {
+                foreach (FusionUser u in users) { if (u.Id == currentAccountUserId) { current = u; break; } }
+            }
+            if (current == null && exists) current = users[0];
+            string dn = current != null ? current.DisplayName : string.Empty;
+            string em = current != null ? (current.Email ?? string.Empty) : string.Empty;
+            string lang = current != null && !string.IsNullOrEmpty(current.Language) ? current.Language : currentLanguage;
+            var usersJson = new StringBuilder("[");
+            for (int i = 0; i < users.Count; i++)
+            {
+                if (i > 0) usersJson.Append(",");
+                usersJson.Append("{\"id\":").Append(users[i].Id)
+                    .Append(",\"displayName\":\"").Append(JsonEscape(users[i].DisplayName ?? "")).Append("\"")
+                    .Append(",\"email\":\"").Append(JsonEscape(users[i].Email ?? "")).Append("\"")
+                    .Append(",\"language\":\"").Append(JsonEscape(users[i].Language ?? "")).Append("\"}");
+            }
+            usersJson.Append("]");
             string jsonOut =
                 "{\"type\":\"FUSION_ACCOUNT_STATE\",\"payload\":{" +
                 "\"exists\":" + (exists ? "true" : "false") + "," +
@@ -1871,6 +1920,8 @@ namespace WindowsFormsApp1
                 "\"displayName\":\"" + JsonEscape(dn) + "\"," +
                 "\"email\":\"" + JsonEscape(em) + "\"," +
                 "\"language\":\"" + JsonEscape(lang) + "\"," +
+                "\"users\":" + usersJson + "," +
+                "\"currentUserId\":" + (current != null ? current.Id : 0) + "," +
                 "\"timezone\":\"" + JsonEscape(currentTimezone) + "\"," +
                 "\"clock24\":" + (currentClock24 ? "true" : "false") +
                 "}}";

@@ -16,7 +16,7 @@ function latLonToVec3(lat, lon, r) {
 
 export function createGlobe(canvas, opts = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
-  renderer.setClearColor(0x05070f, 1);
+  renderer.setClearColor(0xf3edde, 1);          // warm paper -- the museum "atlas" look
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
   let camDist = 7.6;            // a little farther out so the rim labels have room to breathe
@@ -53,22 +53,25 @@ export function createGlobe(canvas, opts = {}) {
       varying vec2 vUv; varying vec3 vN; varying vec3 vWp;
       void main(){
         vec3 N=normalize(vN); vec3 V=normalize(cameraPosition-vWp);
-        // fully + EVENLY lit globe: no day/night, and no dark-vs-bright divide either.
-        // A gamma lift pulls the shadows (forests, savanna, deep ocean) up close to the
-        // deserts, so every region reads bright. Tune via the exponent below.
+        // "paper atlas" rendering: the photo texture only decides land-vs-water and a
+        // little terrain shading; everything is re-inked in warm paper tones.
         vec3 day=texture2D(dayMap,vUv).rgb;
         float ocean=texture2D(specMap,vUv).r;
-        vec3 col=pow(day, vec3(0.55))*1.12;       // lift darks toward the brights
-        col+=vec3(0.05,0.09,0.14)*ocean;          // gentle blue on water
-        col+=0.13;                                // global floor -> nothing reads near-black
-        // very subtle sun glint on water (kept low so there is no hot/dark patch)
-        vec3 R=reflect(-uSunDir,N);
-        float gl=pow(max(dot(R,V),0.0), 28.0)*ocean;
-        col+=vec3(0.6,0.75,0.95)*gl*0.18;
-        // soft atmospheric rim
-        float fres=pow(1.0-max(dot(N,V),0.0),3.0);
-        col+=vec3(0.25,0.5,1.0)*fres*0.45;
-        gl_FragColor=vec4(min(col, vec3(1.08)),1.0);
+        float lum=dot(day, vec3(0.299,0.587,0.114));
+        float isOcean=smoothstep(0.35,0.65,ocean);
+        // ocean: pale paper ruled with thin latitude contour lines
+        float stripe=smoothstep(0.36,0.5,abs(fract(vUv.y*160.0)-0.5));
+        vec3 oceanCol=mix(vec3(0.955,0.935,0.875), vec3(0.80,0.765,0.685), stripe*0.5);
+        // land: warm tan, darker where the terrain is dark, stippled with a dot grid
+        vec3 landTone=mix(vec3(0.835,0.79,0.69), vec3(0.90,0.865,0.775), smoothstep(0.1,0.55,lum));
+        vec2 g=fract(vUv*vec2(480.0,240.0))-0.5;
+        float dotp=smoothstep(0.34,0.16,length(g));
+        vec3 landCol=mix(landTone, vec3(0.52,0.475,0.385), dotp*0.38);
+        vec3 col=mix(landCol, oceanCol, isOcean);
+        // gentle rim shading so the sphere still reads as a volume on the paper page
+        float fres=pow(1.0-max(dot(N,V),0.0),2.0);
+        col=mix(col, col*0.8, fres*0.65);
+        gl_FragColor=vec4(col,1.0);
       }
     `
   });
@@ -93,59 +96,38 @@ export function createGlobe(canvas, opts = {}) {
     }
     const g = new THREE.BufferGeometry().setFromPoints(pts);
     const grid = new THREE.LineSegments(g, new THREE.LineBasicMaterial({
-      color: 0x9fd8ff, transparent: true, opacity: 0.10, depthWrite: false
+      color: 0x6d6354, transparent: true, opacity: 0.22, depthWrite: false   // printed-ink grid
     }));
     world.add(grid);
   }());
 
-  // ---- atmosphere glow ----
+  // ---- soft shadow halo: on a light page an additive glow is invisible, so the
+  // sphere instead casts a faint warm shadow ring that lifts it off the paper ----
   const atmoMat = new THREE.ShaderMaterial({
-    transparent: true, side: THREE.BackSide, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: { uSunDir: { value: sunDir } },
+    transparent: true, side: THREE.BackSide, depthWrite: false,
+    uniforms: {},
     vertexShader: `varying vec3 vN; varying vec3 vWp;
       void main(){ vN=normalize(mat3(modelMatrix)*normal); vec4 wp=modelMatrix*vec4(position,1.0); vWp=wp.xyz;
         gl_Position=projectionMatrix*viewMatrix*wp; }`,
-    fragmentShader: `precision highp float; varying vec3 vN; varying vec3 vWp; uniform vec3 uSunDir;
+    fragmentShader: `precision highp float; varying vec3 vN; varying vec3 vWp;
       void main(){ vec3 N=normalize(vN); vec3 V=normalize(cameraPosition-vWp);
         float i=pow(0.72-dot(N,V),3.0); i=clamp(i,0.0,1.0);
-        vec3 c=vec3(0.32,0.6,1.0);   // uniform sky-blue halo (globe is fully lit)
-        gl_FragColor=vec4(c, i*0.6); }`
+        gl_FragColor=vec4(vec3(0.45,0.40,0.31), i*0.16); }`
   });
-  const atmo = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R * 1.13, 48, 24), atmoMat);
+  const atmo = new THREE.Mesh(new THREE.SphereGeometry(EARTH_R * 1.06, 48, 24), atmoMat);
   world.add(atmo);
-
-  // ---- starfield ----
-  const starGeo = new THREE.BufferGeometry();
-  const starN = 1600; const sp = new Float32Array(starN * 3); const sc = new Float32Array(starN);
-  for (let i = 0; i < starN; i += 1) {
-    const v = new THREE.Vector3().randomDirection().multiplyScalar(40 + Math.random() * 30);
-    sp[i * 3] = v.x; sp[i * 3 + 1] = v.y; sp[i * 3 + 2] = v.z; sc[i] = Math.random();
-  }
-  starGeo.setAttribute('position', new THREE.BufferAttribute(sp, 3));
-  starGeo.setAttribute('aB', new THREE.BufferAttribute(sc, 1));
-  const stars = new THREE.Points(starGeo, new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: { uPr: { value: renderer.getPixelRatio() } },
-    vertexShader: `attribute float aB; varying float vB; uniform float uPr;
-      void main(){ vB=aB; vec4 mv=modelViewMatrix*vec4(position,1.0); gl_Position=projectionMatrix*mv;
-        gl_PointSize=(0.7+aB*1.8)*uPr; }`,
-    fragmentShader: `precision highp float; varying float vB;
-      void main(){ vec2 d=gl_PointCoord-0.5; if(dot(d,d)>0.25) discard;
-        gl_FragColor=vec4(vec3(0.8,0.88,1.0),(0.3+vB*0.7)); }`
-  }));
-  scene.add(stars);
 
   // ---- markers (one Points cloud) ----
   let markerData = [];
   const markerGeo = new THREE.BufferGeometry();
   const markerMat = new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, depthTest: true,
+    transparent: true, depthWrite: false, depthTest: true,   // normal blending: ink dots on paper
     uniforms: { uTime: { value: 0 }, uHover: { value: -1 }, uSel: { value: -1 }, uPr: { value: renderer.getPixelRatio() } },
     vertexShader: `
-      attribute vec3 aColor; attribute float aId; attribute float aSize;
-      uniform float uTime, uHover, uSel, uPr; varying vec3 vColor; varying float vHi;
+      attribute vec3 aColor; attribute float aId; attribute float aSize; attribute float aHide;
+      uniform float uTime, uHover, uSel, uPr; varying vec3 vColor; varying float vHi; varying float vHide;
       void main(){
-        vColor=aColor;
+        vColor=aColor; vHide=aHide;
         float hov = (abs(aId-uHover)<0.5)?1.0:0.0;
         float sel = (abs(aId-uSel)<0.5)?1.0:0.0;
         vHi = max(hov, sel);
@@ -159,14 +141,16 @@ export function createGlobe(canvas, opts = {}) {
       }
     `,
     fragmentShader: `
-      precision highp float; varying vec3 vColor; varying float vHi;
+      precision highp float; varying vec3 vColor; varying float vHi; varying float vHide;
       void main(){
+        if(vHide>0.5) discard;          // node already shows as a photo tile -> no dot
         vec2 d=gl_PointCoord-0.5; float r=length(d);
         if(r>0.5) discard;
-        float core=smoothstep(0.5,0.0,r);
-        float ring=smoothstep(0.5,0.42,r)*0.6;
-        float a=(core*0.85+ring)*(0.7+vHi*0.6);
-        gl_FragColor=vec4(vColor*(0.7+core*0.8+vHi*0.6), a);
+        // solid ink dot with a thin paper-white rim so it pops off the tan globe
+        float rim=smoothstep(0.5,0.40,r)-smoothstep(0.36,0.26,r);
+        vec3 col=mix(vColor*(0.85+vHi*0.35), vec3(0.97,0.95,0.90), rim*0.9);
+        float a=smoothstep(0.5,0.44,r)*(0.85+vHi*0.15);
+        gl_FragColor=vec4(col, a);
       }
     `
   });
@@ -174,27 +158,45 @@ export function createGlobe(canvas, opts = {}) {
   markers.frustumCulled = false;
   world.add(markers);
 
-  // ---- image callouts: a user picture is a SMALL framed photo-tile pinned at its
-  // lat/lon. It stays small by default so hundreds can coexist without covering the
-  // map; on hover (or when selected) it grows and a leader line tethers it to its exact
-  // point -- the "what is this" callout. Tiles are pickable: clicking opens the same
-  // card as the dot. The name shows in the hover tooltip + the card. ----
+  // ---- image tiles: each picture lies FLAT on the globe surface, snapped onto a
+  // global angular grid (one tile per cell), so tiles can NEVER overlap no matter
+  // how many images are supplied -- the reference "mosaic atlas" look where photos
+  // tile the land side by side. Hovering or selecting a tile pops up a single
+  // enlarged billboard copy with a leader line; clicking opens the same card as the
+  // dot. ----
   const calloutGroup = new THREE.Group();
   world.add(calloutGroup);
-  let callouts = [];              // { sprite, dir, marker, aspect, color, emph }
-  let calloutSprites = [];        // sprites only, for raycasting
+  let callouts = [];              // { mesh, dir, marker, aspect, color, emph, tex }
+  let tileMeshes = [];            // meshes only, for raycasting
   let hoverCallout = null, selCallout = null;
   let selectionActive = false;     // while a marker is open, freeze the globe (no autospin drift)
-  const BASE_H = 0.15, BIG_H = 0.42, BASE_LIFT = 1.045, BIG_LIFT = 1.235;
+  const TILE_CELL = 2.6;           // grid cell (degrees); also the max flat-tile size
+  const TILE_LIFT = 1.006;         // just above the graticule, hugging the surface
+  const ZOOM_H = 0.46, ZOOM_LIFT = 1.21;
+  const tileGeoShared = new THREE.PlaneGeometry(1, 1);
 
-  // one reusable leader line, shown only for whichever callout is emphasised
+  // one reusable leader line + one reusable zoom billboard for the focused tile
   const leadGeo = new THREE.BufferGeometry();
   leadGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
   const leadLine = new THREE.Line(leadGeo, new THREE.LineBasicMaterial({
-    color: 0xbcd8ff, transparent: true, opacity: 0.85, depthWrite: false
+    color: 0x55483a, transparent: true, opacity: 0.8, depthWrite: false
   }));
   leadLine.renderOrder = 7; leadLine.visible = false; leadLine.frustumCulled = false;
   calloutGroup.add(leadLine);
+  const zoomSprite = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthTest: false }));
+  zoomSprite.renderOrder = 8; zoomSprite.visible = false; zoomSprite.center.set(0.5, 0.0);
+  calloutGroup.add(zoomSprite);
+
+  // orient a plane so it lies tangent on the sphere with "up" pointing north
+  const _east = new THREE.Vector3(), _north = new THREE.Vector3(), _basis = new THREE.Matrix4();
+  const _upY = new THREE.Vector3(0, 1, 0), _upX = new THREE.Vector3(1, 0, 0);
+  function orientTile(mesh, dir) {
+    const up = Math.abs(dir.y) > 0.99 ? _upX : _upY;
+    _east.crossVectors(up, dir).normalize();
+    _north.crossVectors(dir, _east).normalize();
+    _basis.makeBasis(_east, _north, dir);
+    mesh.quaternion.setFromRotationMatrix(_basis);
+  }
 
   function roundRect(g, x, y, w, h, r) {
     g.beginPath(); g.moveTo(x + r, y);
@@ -206,75 +208,114 @@ export function createGlobe(canvas, opts = {}) {
     const H = 132, W = Math.round(H * aspect);
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const g = cv.getContext('2d');
-    roundRect(g, 2, 2, W - 4, H - 4, 12); g.fillStyle = 'rgba(10,14,24,0.9)'; g.fill();
-    const pad = 5, iw = W - pad * 2, ih = H - pad * 2;          // cover-fit the photo
+    // a little mounted photo: warm-white mat + thin ink frame (museum style)
+    roundRect(g, 2, 2, W - 4, H - 4, 7); g.fillStyle = 'rgba(250,247,238,0.97)'; g.fill();
+    const pad = 6, iw = W - pad * 2, ih = H - pad * 2;          // cover-fit the photo
     const s = Math.max(iw / img.width, ih / img.height);
     const dw = img.width * s, dh = img.height * s;
-    g.save(); roundRect(g, pad, pad, iw, ih, 9); g.clip();
+    g.save(); roundRect(g, pad, pad, iw, ih, 4); g.clip();
     g.drawImage(img, pad + (iw - dw) / 2, pad + (ih - dh) / 2, dw, dh); g.restore();
-    roundRect(g, 2, 2, W - 4, H - 4, 12); g.lineWidth = 3; g.strokeStyle = color || '#9fd8ff'; g.stroke();
+    roundRect(g, 2, 2, W - 4, H - 4, 7); g.lineWidth = 2.5; g.strokeStyle = color || '#55483a'; g.stroke();
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
     return { tex, aspect };
   }
   function clearCallouts() {
-    callouts = []; calloutSprites = []; hoverCallout = null; selCallout = null;
-    leadLine.visible = false;
+    callouts = []; tileMeshes = []; hoverCallout = null; selCallout = null;
+    leadLine.visible = false; zoomSprite.visible = false; zoomSprite.userData.callout = null;
     for (let i = calloutGroup.children.length - 1; i >= 0; i -= 1) {
       const o = calloutGroup.children[i];
-      if (o === leadLine) continue;
+      if (o === leadLine || o === zoomSprite) continue;
       calloutGroup.remove(o);
       if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); }
     }
   }
   function setImageCallouts(list) {
     clearCallouts();
+    // global angular grid: quantize each tile to a cell; if taken, spiral outward to
+    // the nearest free one. One tile per cell == overlap is impossible by design.
+    const occupied = new Set();
+    const rad = Math.PI / 180;
+    const lonStepAt = (latC) => TILE_CELL / Math.max(0.30, Math.cos(latC * rad));
+    function allocCell(lat, lon) {
+      const r0 = Math.round(lat / TILE_CELL);
+      for (let radius = 0; radius <= 9; radius += 1) {
+        let best = null;
+        for (let dr = -radius; dr <= radius; dr += 1) {
+          const r = r0 + dr;
+          const latC = r * TILE_CELL;
+          if (Math.abs(latC) > 82) continue;
+          const step = lonStepAt(latC);
+          const c0 = Math.round(lon / step);
+          for (let dc = -radius; dc <= radius; dc += 1) {
+            if (Math.max(Math.abs(dr), Math.abs(dc)) !== radius) continue;   // ring only
+            const c = c0 + dc;
+            const key = r + ':' + c;
+            if (occupied.has(key)) continue;
+            const lonC = c * step;
+            const d = (latC - lat) * (latC - lat)
+              + (lonC - lon) * (lonC - lon) * Math.cos(latC * rad) * Math.cos(latC * rad);
+            if (!best || d < best.d) best = { key, latC, lonC, d };
+          }
+        }
+        if (best) { occupied.add(best.key); return best; }
+      }
+      return null;            // crowded beyond belief -> skip; the dot still marks it
+    }
     list.forEach((item) => {
-      const dir = latLonToVec3(item.lat, item.lon, 1).normalize();
-      const color = item.color || '#9fd8ff';
+      const cell = allocCell(item.lat, item.lon);
+      if (!cell) return;
+      const dir = latLonToVec3(cell.latC, cell.lonC, 1).normalize();
+      const color = item.color || '#55483a';
       const img = new Image();
       img.onload = () => {
         const { tex, aspect } = makeTileTexture(img, color);
-        const sp = new THREE.Sprite(new THREE.SpriteMaterial({
-          map: tex, transparent: true, depthTest: true, depthWrite: false
+        const mesh = new THREE.Mesh(tileGeoShared, new THREE.MeshBasicMaterial({
+          map: tex, transparent: true, depthWrite: false
         }));
-        sp.scale.set(BASE_H * aspect, BASE_H, 1);
-        sp.center.set(0.5, 0.0);                 // bottom-anchored -> "stands" on its point
-        sp.position.copy(dir).multiplyScalar(EARTH_R * BASE_LIFT);
-        sp.renderOrder = 6;
-        const co = { sprite: sp, dir, marker: item.marker, aspect, color, emph: 0 };
-        sp.userData.callout = co;
-        callouts.push(co); calloutSprites.push(sp);
-        calloutGroup.add(sp);
+        const size = EARTH_R * TILE_CELL * rad * 0.94;          // fits inside its cell
+        mesh.scale.set(aspect >= 1 ? size : size * aspect, aspect >= 1 ? size / aspect : size, 1);
+        mesh.position.copy(dir).multiplyScalar(EARTH_R * TILE_LIFT);
+        orientTile(mesh, dir);
+        mesh.renderOrder = 5;
+        const co = { mesh, dir, marker: item.marker, aspect, color, emph: 0, tex };
+        mesh.userData.callout = co;
+        callouts.push(co); tileMeshes.push(mesh);
+        calloutGroup.add(mesh);
       };
       img.onerror = () => { /* image missing/failed -> the dot still marks it */ };
       img.src = item.url;
     });
   }
 
-  // per-frame: ease each callout toward its emphasised/at-rest size and draw the leader
-  // line for the most-emphasised one. Only the moving ones are touched.
+  // per-frame: the flat tiles never move; only the single zoom billboard eases up
+  // over whichever tile is hovered/selected, tethered by the leader line.
   const _leadA = new THREE.Vector3(), _leadB = new THREE.Vector3();
   function updateCallouts() {
     let active = null;
     for (let i = 0; i < callouts.length; i += 1) {
       const co = callouts[i];
       const target = (co === selCallout || co === hoverCallout) ? 1 : 0;
-      if (Math.abs(co.emph - target) > 0.001) co.emph += (target - co.emph) * 0.2; else co.emph = target;
-      const h = BASE_H + (BIG_H - BASE_H) * co.emph;
-      const lift = BASE_LIFT + (BIG_LIFT - BASE_LIFT) * co.emph;
-      co.sprite.scale.set(h * co.aspect, h, 1);
-      co.sprite.position.copy(co.dir).multiplyScalar(EARTH_R * lift);
-      if (co.emph > 0.05 && (!active || co.emph > active.emph)) active = co;
+      if (Math.abs(co.emph - target) > 0.001) co.emph += (target - co.emph) * 0.22; else co.emph = target;
+      if (co.emph > 0.04 && (!active || co.emph > active.emph)) active = co;
     }
     if (active) {
-      _leadA.copy(active.dir).multiplyScalar(EARTH_R * 1.012);
-      _leadB.copy(active.sprite.position);
+      const e = active.emph;
+      zoomSprite.material.map = active.tex;
+      zoomSprite.material.opacity = Math.min(1, e * 1.6);
+      const h = ZOOM_H * (0.55 + 0.45 * e);
+      zoomSprite.scale.set(h * active.aspect, h, 1);
+      zoomSprite.position.copy(active.dir).multiplyScalar(EARTH_R * (TILE_LIFT + (ZOOM_LIFT - TILE_LIFT) * e));
+      zoomSprite.visible = true;
+      zoomSprite.userData.callout = active;
+      _leadA.copy(active.dir).multiplyScalar(EARTH_R * 1.01);
+      _leadB.copy(zoomSprite.position);
       const p = leadGeo.attributes.position;
       p.setXYZ(0, _leadA.x, _leadA.y, _leadA.z); p.setXYZ(1, _leadB.x, _leadB.y, _leadB.z);
       p.needsUpdate = true;
       leadLine.material.color.set(active.color);
       leadLine.visible = true;
     } else {
+      zoomSprite.visible = false; zoomSprite.userData.callout = null;
       leadLine.visible = false;
     }
   }
@@ -291,12 +332,17 @@ export function createGlobe(canvas, opts = {}) {
     return Math.sqrt(cx * cx + cy * cy + cz * cz) < EARTH_R * 0.998;
   }
   function pickCallout() {
-    if (!calloutSprites.length) return null;
+    if (!calloutGroup.visible || !tileMeshes.length) return null;
     raycaster.setFromCamera(ndc, camera);
-    const hits = raycaster.intersectObjects(calloutSprites, false);
+    // the zoom billboard covers its tile while shown -> give it first claim
+    if (zoomSprite.visible && zoomSprite.userData.callout) {
+      const zh = raycaster.intersectObject(zoomSprite, false);
+      if (zh.length && !occludedByEarth(zoomSprite.getWorldPosition(_wp))) return zoomSprite.userData.callout;
+    }
+    const hits = raycaster.intersectObjects(tileMeshes, false);
     for (let i = 0; i < hits.length; i += 1) {
-      const sp = hits[i].object;
-      if (!occludedByEarth(sp.getWorldPosition(_wp))) return sp.userData.callout || null;
+      const o = hits[i].object;
+      if (!occludedByEarth(o.getWorldPosition(_wp))) return o.userData.callout || null;
     }
     return null;
   }
@@ -305,19 +351,20 @@ export function createGlobe(canvas, opts = {}) {
   // names stacked along the globe's left/right rim -- the British-Museum "data planet"
   // look. SVG overlay above the globe but under the UI panels (z-index 3). ----
   const SVGNS = 'http://www.w3.org/2000/svg';
-  const HALO_MAX = 46;
+  const HALO_MAX = 72;                 // dense museum-catalog rows, like the reference
+  let haloEnabled = true;
   const halo = document.createElementNS(SVGNS, 'svg');
   Object.assign(halo.style, { position: 'fixed', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 3, overflow: 'visible' });
   document.body.appendChild(halo);
   const haloPool = [];
   for (let i = 0; i < HALO_MAX; i += 1) {
     const ln = document.createElementNS(SVGNS, 'line');
-    ln.setAttribute('stroke', 'rgba(190,214,255,0.34)'); ln.setAttribute('stroke-width', '1');
+    ln.setAttribute('stroke', 'rgba(90,78,60,0.4)'); ln.setAttribute('stroke-width', '0.8');
     const tx = document.createElementNS(SVGNS, 'text');
-    tx.setAttribute('font-size', '12.5'); tx.setAttribute('fill', 'rgba(228,238,255,0.92)');
+    tx.setAttribute('font-size', '11.5'); tx.setAttribute('fill', 'rgba(52,45,34,0.92)');
     tx.setAttribute('font-family', '"Microsoft JhengHei","PingFang TC","Noto Sans CJK TC",sans-serif');
     tx.setAttribute('dominant-baseline', 'middle');
-    tx.setAttribute('stroke', 'rgba(4,8,16,0.7)'); tx.setAttribute('stroke-width', '3'); tx.setAttribute('paint-order', 'stroke');
+    tx.setAttribute('stroke', 'rgba(244,238,224,0.85)'); tx.setAttribute('stroke-width', '3'); tx.setAttribute('paint-order', 'stroke');
     halo.appendChild(ln); halo.appendChild(tx);
     haloPool.push({ ln, tx });
   }
@@ -326,14 +373,14 @@ export function createGlobe(canvas, opts = {}) {
   function hideHalo() { for (let i = 0; i < HALO_MAX; i += 1) { haloPool[i].ln.style.display = 'none'; haloPool[i].tx.style.display = 'none'; } }
   function updateHalo(now) {
     if (now - haloT < 90) return; haloT = now;          // ~11 fps is plenty
-    if (!opts.labelOf || !markerData.length) { hideHalo(); return; }
+    if (!haloEnabled || !opts.labelOf || !markerData.length) { hideHalo(); return; }
     const W = window.innerWidth, H = window.innerHeight;
     _ho.set(0, 0, 0).project(camera);
     const cx = (_ho.x * 0.5 + 0.5) * W, cy = (-_ho.y * 0.5 + 0.5) * H;
     _hr.set(EARTH_R, 0, 0).project(camera);
     const rim = Math.hypot((_hr.x * 0.5 + 0.5) * W - cx, (-_hr.y * 0.5 + 0.5) * H - cy);
     // one marker per angular sector (front hemisphere only) -> a spread, uncluttered set
-    const SECT = 44; const buckets = new Array(SECT).fill(null);
+    const SECT = 72; const buckets = new Array(SECT).fill(null);
     for (let i = 0; i < markerData.length; i += 1) {
       const m = markerData[i];
       _hw.copy(latLonToVec3(m.lat, m.lon, EARTH_R * 1.02)).applyMatrix4(world.matrixWorld);
@@ -346,7 +393,7 @@ export function createGlobe(canvas, opts = {}) {
       if (!buckets[b] || prom > buckets[b].prom) buckets[b] = { m, sx, sy, prom, right: dx >= 0 };
     }
     const chosen = buckets.filter(Boolean);
-    const GAP = 17;
+    const GAP = 14.5;
     const place = (arr, side) => {
       arr.sort((a, b) => a.sy - b.sy);
       const lx = side > 0 ? Math.min(cx + rim + 14, W - 8) : Math.max(cx - rim - 14, 8);
@@ -378,22 +425,26 @@ export function createGlobe(canvas, opts = {}) {
     const col = new Float32Array(n * 3);
     const ids = new Float32Array(n);
     const siz = new Float32Array(n);
+    const hid = new Float32Array(n);
     for (let i = 0; i < n; i += 1) {
       const m = list[i];
       const v = latLonToVec3(m.lat, m.lon, EARTH_R * (1.01 + (m.tier || 0) * 0.012));
       pos[i * 3] = v.x; pos[i * 3 + 1] = v.y; pos[i * 3 + 2] = v.z;
       col[i * 3] = m.color[0]; col[i * 3 + 1] = m.color[1]; col[i * 3 + 2] = m.color[2];
       ids[i] = i; siz[i] = m.size || 7;
+      hid[i] = m.hasImg ? 1 : 0;     // photo tile replaces the dot (label/halo keeps it)
     }
     markerGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     markerGeo.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
     markerGeo.setAttribute('aId', new THREE.BufferAttribute(ids, 1));
     markerGeo.setAttribute('aSize', new THREE.BufferAttribute(siz, 1));
+    markerGeo.setAttribute('aHide', new THREE.BufferAttribute(hid, 1));
     markerGeo.attributes.position.needsUpdate = true;
   }
 
   // ---- interaction: hand-written orbit + zoom + inertia + autospin ----
   let yaw = -1.6, pitch = -0.12, vYaw = 0, vPitch = 0;   // open on Africa/Europe/Asia (land + markers)
+  let autospin = true;
   let dragging = false, lastX = 0, lastY = 0, moved = 0, lastInteract = 0;
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
@@ -408,9 +459,17 @@ export function createGlobe(canvas, opts = {}) {
     raycaster.setFromCamera(ndc, camera);
     raycaster.params.Points.threshold = 0.06 * (camDist / 6.2);
     const hits = raycaster.intersectObject(markers);
-    if (!hits.length) return -1;
-    // nearest to camera among close hits
-    return hits[0].index;
+    // nearest to camera among close hits; skip dots hidden behind a photo tile AND
+    // dots on the far hemisphere (the ray passes through the globe, depthTest only
+    // hides them visually -- without this you could hover Cuba from Asia).
+    for (let i = 0; i < hits.length; i += 1) {
+      const m = markerData[hits[i].index];
+      if (!m || m.hasImg) continue;
+      _hw.copy(latLonToVec3(m.lat, m.lon, EARTH_R * 1.01)).applyMatrix4(world.matrixWorld);
+      if (occludedByEarth(_hw)) continue;
+      return hits[i].index;
+    }
+    return -1;
   }
 
   canvas.addEventListener('pointerdown', (e) => {
@@ -472,7 +531,13 @@ export function createGlobe(canvas, opts = {}) {
     // desired yaw/pitch so the marker faces the camera (+z)
     const ty = Math.atan2(v.x, v.z);
     const tp = Math.asin(Math.max(-1, Math.min(1, v.y)));
-    focusTarget = { yaw: -ty, pitch: -tp }; focusT = 0;
+    // world euler is XYZ (Rx·Ry): after yaw brings the point to (0, y, s), a rotation
+    // of +tp about x (not -tp) levels it onto +z, i.e. the screen centre.
+    // Take the SHORTEST path: after long autospin yaw has wound up many turns, and
+    // chasing the absolute angle would spin the globe all the way back.
+    const TWO_PI = Math.PI * 2;
+    const dYaw = ((((-ty - yaw) % TWO_PI) + TWO_PI + Math.PI) % TWO_PI) - Math.PI;
+    focusTarget = { yaw: yaw + dYaw, pitch: tp }; focusT = 0;
     vYaw = 0; vPitch = 0;                 // kill drift so the view settles and stays put
     lastInteract = performance.now();
   }
@@ -489,14 +554,14 @@ export function createGlobe(canvas, opts = {}) {
     renderer.setSize(w, h, false);
     canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
     camera.aspect = w / h; camera.updateProjectionMatrix();
-    markerMat.uniforms.uPr.value = pr; stars.material.uniforms.uPr.value = pr;
+    markerMat.uniforms.uPr.value = pr;
   }
   function frame() {
     raf = requestAnimationFrame(frame);
     if (window.innerWidth !== lastW || window.innerHeight !== lastH) resize();
     const dt = clock.getDelta(); const t = clock.elapsedTime;
     markerMat.uniforms.uTime.value = t;
-    const idle = performance.now() - lastInteract > 3500;
+    const idle = performance.now() - lastInteract > 3500 && autospin;
     if (focusTarget) {
       focusT = Math.min(1, focusT + dt * 1.6);
       const e = 1 - Math.pow(1 - focusT, 3);
@@ -512,7 +577,6 @@ export function createGlobe(canvas, opts = {}) {
     }
     world.rotation.y = yaw; world.rotation.x = pitch;
     camera.position.z += (camDist - camera.position.z) * 0.12;
-    stars.rotation.y += dt * 0.003;
     updateCallouts();
     renderer.render(scene, camera);
     updateHalo(performance.now());        // after render -> world/camera matrices are current
@@ -523,7 +587,18 @@ export function createGlobe(canvas, opts = {}) {
     setMarkers,
     setImageCallouts,
     focus: focusOn,
+    // programmatic selection (e.g. from the country-list panel): highlight + fly to it
+    select: (marker) => {
+      const idx = markerData.indexOf(marker);
+      if (idx < 0) return false;
+      markerMat.uniforms.uSel.value = idx; selectionActive = true;
+      focusOn(marker);
+      return true;
+    },
     clearSelection: () => { markerMat.uniforms.uSel.value = -1; selCallout = null; selectionActive = false; },
+    setAutospin: (on) => { autospin = !!on; },
+    setHaloVisible: (on) => { haloEnabled = !!on; if (!on) hideHalo(); },
+    setCalloutsVisible: (on) => { calloutGroup.visible = !!on; if (!on) { hoverCallout = null; } },
     resize,
     dispose: () => { cancelAnimationFrame(raf); renderer.dispose(); }
   };

@@ -7,6 +7,7 @@ import { FusionLogin, type LoginPhase } from './components/FusionLogin';
 import { useAccount } from './account/AccountContext';
 import { addHostMessageListener, sendMessageToHost } from './utils/bridge';
 import { fusionRuntimeCache } from './boot/runtimeCache';
+import { playBootChime, playUnlockSound } from './audio/systemSounds';
 
 // FusionOS startup orchestrator.
 //
@@ -59,13 +60,21 @@ export default function App() {
     return () => window.clearTimeout(timer);
   }, [bootReadyToLeave]);
 
-  // Mount the login layer when authentication is required.
+  // Mount the login layer when authentication is required. The startup chime plays
+  // exactly here — boot has finished and the login surface appears (like a real OS).
   useEffect(() => {
     if (boot.done && !authed && (status === 'needsSetup' || status === 'locked')) {
       setLoginMounted(true);
       setLoginPhase('idle');
+      playBootChime();
     }
   }, [boot.done, authed, status]);
+
+  // Startup chime: once, when boot hands off to the login screen (the host runs the
+  // WebView with autoplay allowed; in a plain browser it may stay silent — fine).
+  useEffect(() => {
+    if (bootReadyToLeave) playBootChime();
+  }, [bootReadyToLeave]);
 
   // Once authenticated: mount Home, then play a Windows-style hand-off —
   //   "歡迎" welcome beat → login zooms/blurs out → desktop settles in underneath.
@@ -73,6 +82,7 @@ export default function App() {
     if (!authed) return;
     setShowHome(true);
     if (loginMounted) {
+      playUnlockSound();
       setLoginPhase('welcome');
       const toExit = window.setTimeout(() => {
         setLoginPhase('exit'); // login zoom-fade begins
@@ -106,7 +116,7 @@ export default function App() {
         </div>
       )}
       {loginMounted && <FusionLogin phase={loginPhase} />}
-      {!overlayGone && <FusionBootSequence state={boot} fadingOut={bootReadyToLeave} onSkip={boot.skip} />}
+      {!overlayGone && !boot.skippedVisual && <FusionBootSequence state={boot} fadingOut={bootReadyToLeave} onSkip={boot.skip} />}
     </>
   );
 }

@@ -7,8 +7,8 @@
   justify-content: center;
   overflow: hidden;
   background:
-    radial-gradient(120% 90% at 62% 24%, rgba(86, 150, 255, 0.18), transparent 46%),
-    radial-gradient(92% 82% at 84% 66%, rgba(178, 92, 255, 0.13), transparent 44%),
+    radial-gradient(120% 90% at 62% 24%, rgba(86, 130, 200, 0.14), transparent 46%),
+    radial-gradient(92% 82% at 84% 66%, rgba(120, 110, 180, 0.1), transparent 44%),
     linear-gradient(180deg, #05080f 0%, #03050c 56%, #01020a 100%);
   color: #eaf2ff;
   font-family: 'Inter', 'Microsoft JhengHei UI', system-ui, sans-serif;
@@ -40,6 +40,13 @@
   pointer-events: none;
 }
 
+/* ---- muted avatar tones: flat duotone discs, not neon gradients ---- */
+.fl-av-0 { background: #44607f; }
+.fl-av-1 { background: #4f7263; }
+.fl-av-2 { background: #7a5e4c; }
+.fl-av-3 { background: #6a5a80; }
+.fl-av-4 { background: #806045; }
+
 /* "歡迎" welcome beat shown over the card right after a correct password. */
 .fusion-login-welcome {
   position: absolute;
@@ -66,16 +73,10 @@
   display: grid;
   place-items: center;
   font-size: 38px;
-  font-weight: 700;
-  color: #03101c;
-  background: radial-gradient(circle at 32% 28%, #aef0ff, #4cc3ff 52%, #6a8cff);
-  box-shadow: 0 0 46px rgba(96, 190, 255, 0.5);
-  animation: fusion-welcome-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes fusion-welcome-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.04); }
+  font-weight: 600;
+  color: #f2f6fc;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .fusion-login-welcome-ring {
@@ -83,8 +84,8 @@
   inset: -12px;
   border-radius: 50%;
   border: 2px solid transparent;
-  border-top-color: rgba(150, 220, 255, 0.9);
-  border-right-color: rgba(120, 170, 255, 0.5);
+  border-top-color: rgba(214, 226, 240, 0.85);
+  border-right-color: rgba(160, 178, 200, 0.4);
   animation: fusion-welcome-spin 1s linear infinite;
 }
 
@@ -96,7 +97,6 @@
   font-size: 24px;
   font-weight: 650;
   letter-spacing: 0.01em;
-  text-shadow: 0 0 24px rgba(120, 190, 255, 0.4);
 }
 
 .fusion-login-welcome-sub {
@@ -108,8 +108,8 @@
   position: absolute;
   inset: -20%;
   background:
-    radial-gradient(38% 38% at 22% 28%, rgba(34, 211, 238, 0.16), transparent 70%),
-    radial-gradient(40% 40% at 80% 72%, rgba(156, 124, 255, 0.16), transparent 72%);
+    radial-gradient(38% 38% at 22% 28%, rgba(70, 110, 170, 0.13), transparent 70%),
+    radial-gradient(40% 40% at 80% 72%, rgba(110, 100, 160, 0.12), transparent 72%);
   filter: blur(30px);
   animation: fusion-login-drift 16s ease-in-out infinite alternate;
   pointer-events: none;
@@ -122,18 +122,39 @@
 
 .fusion-login-card {
   position: relative;
-  width: min(92vw, 384px);
+  width: min(92vw, 392px);
   padding: 34px 30px 24px;
-  border-radius: 24px;
+  border-radius: 18px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 12px;
-  background: linear-gradient(160deg, rgba(18, 28, 52, 0.82), rgba(8, 14, 30, 0.86));
-  border: 1px solid rgba(120, 180, 255, 0.16);
+  background: linear-gradient(170deg, rgba(17, 24, 40, 0.85), rgba(9, 13, 25, 0.88));
+  border: 1px solid rgba(160, 185, 220, 0.14);
   box-shadow: 0 30px 90px rgba(2, 8, 24, 0.66), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(22px) saturate(1.25);
-  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  backdrop-filter: blur(22px) saturate(1.15);
+  -webkit-backdrop-filter: blur(22px) saturate(1.15);
+}
+
+.fusion-login-back {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: rgba(170, 190, 216, 0.75);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 7px;
+}
+
+.fusion-login-back:hover {
+  color: #eaf2ff;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .fusion-login-avatar {
@@ -144,10 +165,10 @@
   display: grid;
   place-items: center;
   font-size: 30px;
-  font-weight: 700;
-  color: #03101c;
-  background: radial-gradient(circle at 32% 28%, #aef0ff, #4cc3ff 52%, #6a8cff);
-  box-shadow: 0 12px 34px rgba(76, 195, 255, 0.4), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  color: #f2f6fc;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.14);
   margin-bottom: 4px;
 }
 
@@ -166,6 +187,60 @@
   color: rgba(178, 200, 234, 0.78);
 }
 
+/* ---- user picker tiles (multi-account lock screen) ---- */
+.fusion-login-users {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  margin: -2px 0 6px;
+}
+
+.fusion-login-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px 5px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(160, 185, 220, 0.16);
+  color: rgba(196, 212, 232, 0.85);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.fusion-login-user:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f2f6fc;
+}
+
+.fusion-login-user.is-selected {
+  background: rgba(235, 241, 248, 0.92);
+  border-color: rgba(235, 241, 248, 0.92);
+  color: #16202e;
+  font-weight: 600;
+}
+
+.fusion-login-user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #f2f6fc;
+  flex: 0 0 auto;
+}
+
+.fusion-login-user-name {
+  max-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .fusion-login-field {
   display: flex;
   flex-direction: column;
@@ -177,8 +252,8 @@
 .fusion-login-field input {
   height: 42px;
   padding: 0 14px;
-  border-radius: 12px;
-  border: 1px solid rgba(120, 170, 255, 0.18);
+  border-radius: 10px;
+  border: 1px solid rgba(160, 185, 220, 0.2);
   background: rgba(6, 12, 26, 0.7);
   color: #eaf2ff;
   font-size: 14px;
@@ -187,45 +262,50 @@
 }
 
 .fusion-login-field input:focus {
-  border-color: rgba(96, 200, 255, 0.6);
-  box-shadow: 0 0 0 3px rgba(60, 170, 255, 0.16);
+  border-color: rgba(214, 228, 244, 0.55);
+  box-shadow: 0 0 0 3px rgba(180, 205, 235, 0.12);
 }
 
 .fusion-login-error {
   margin-top: 2px;
   padding: 9px 12px;
-  border-radius: 10px;
+  border-radius: 9px;
   font-size: 12.5px;
   color: #ffd0da;
-  background: rgba(255, 86, 120, 0.12);
-  border: 1px solid rgba(255, 96, 128, 0.34);
+  background: rgba(255, 86, 120, 0.1);
+  border: 1px solid rgba(255, 96, 128, 0.3);
 }
 
+/* ---- primary action: a calm, solid "key" button — no gradients, no glow ---- */
 .fusion-login-submit {
   margin-top: 8px;
-  height: 46px;
-  border: none;
-  border-radius: 13px;
+  height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 600;
-  color: #03121f;
+  color: #141e2c;
   cursor: pointer;
-  background: linear-gradient(120deg, #77f6ff 0%, #5aa0ff 52%, #8f7bff 100%);
-  box-shadow: 0 14px 34px rgba(78, 150, 255, 0.34);
-  transition: transform 0.12s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+  background: #e8eef6;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 }
 
 .fusion-login-submit:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 18px 40px rgba(78, 150, 255, 0.44);
+  background: #f7fafd;
+}
+
+.fusion-login-submit:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .fusion-login-submit:disabled {
-  opacity: 0.7;
+  opacity: 0.65;
   cursor: default;
 }
 
@@ -246,21 +326,36 @@
   color: rgba(150, 178, 214, 0.66);
 }
 
-.fusion-login-reset {
+.fusion-login-foot-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* quiet text-chip actions under the form */
+.fusion-login-ghost {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: none;
-  border: none;
-  color: rgba(150, 186, 240, 0.72);
+  background: transparent;
+  border: 1px solid rgba(160, 185, 220, 0.18);
+  color: rgba(170, 192, 220, 0.78);
   font-size: 11.5px;
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.fusion-login-reset:hover {
-  color: #cfe4ff;
-  text-decoration: underline;
+.fusion-login-ghost:hover {
+  color: #eaf2ff;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(190, 208, 230, 0.32);
+}
+
+.fusion-login-ghost.is-danger:hover {
+  color: #ffb9ad;
+  border-color: rgba(220, 110, 95, 0.45);
+  background: rgba(190, 70, 56, 0.1);
 }
 
 .fusion-login-langs {
@@ -269,7 +364,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 6px;
-  border-top: 1px solid rgba(120, 170, 255, 0.12);
+  border-top: 1px solid rgba(160, 185, 220, 0.1);
   padding-top: 14px;
 }
 
@@ -277,21 +372,126 @@
   padding: 5px 10px;
   border-radius: 999px;
   font-size: 11.5px;
-  color: rgba(176, 198, 232, 0.74);
-  background: rgba(10, 18, 36, 0.6);
-  border: 1px solid rgba(120, 170, 255, 0.14);
+  color: rgba(176, 198, 232, 0.72);
+  background: transparent;
+  border: 1px solid rgba(160, 185, 220, 0.16);
   cursor: pointer;
   transition: all 0.16s ease;
 }
 
 .fusion-login-langs button:hover {
   color: #eaf2ff;
-  border-color: rgba(120, 180, 255, 0.36);
+  border-color: rgba(190, 208, 230, 0.34);
 }
 
 .fusion-login-langs button.is-active {
-  color: #03121f;
+  color: #16202e;
   font-weight: 600;
-  background: linear-gradient(120deg, #8af0ff, #69b4ff);
-  border-color: transparent;
+  background: rgba(235, 241, 248, 0.92);
+  border-color: rgba(235, 241, 248, 0.92);
+}
+
+/* ---- reset confirmation dialog ---- */
+.fusion-login-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 5, 12, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fusion-login-in 0.18s ease both;
+}
+
+.fusion-login-modal {
+  width: min(88vw, 360px);
+  padding: 24px 24px 20px;
+  border-radius: 16px;
+  background: linear-gradient(170deg, rgba(22, 29, 44, 0.97), rgba(12, 17, 30, 0.97));
+  border: 1px solid rgba(170, 195, 225, 0.16);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  animation: fusion-modal-in 0.22s cubic-bezier(0.3, 1.2, 0.5, 1) both;
+}
+
+@keyframes fusion-modal-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.fusion-login-modal-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #e8b54a;
+  background: rgba(214, 158, 50, 0.12);
+  border: 1px solid rgba(220, 170, 70, 0.3);
+}
+
+.fusion-login-modal-title {
+  margin: 2px 0 0;
+  font-size: 16.5px;
+  font-weight: 650;
+}
+
+.fusion-login-modal-body {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: rgba(178, 198, 226, 0.8);
+}
+
+.fusion-login-modal-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 9px;
+  width: 100%;
+}
+
+.fusion-login-btn-secondary,
+.fusion-login-btn-danger {
+  flex: 1;
+  height: 40px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.fusion-login-btn-secondary {
+  border: 1px solid rgba(170, 195, 225, 0.22);
+  background: rgba(255, 255, 255, 0.05);
+  color: #dbe6f2;
+}
+
+.fusion-login-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.fusion-login-btn-danger {
+  border: 1px solid rgba(196, 84, 66, 0.6);
+  background: #a8402f;
+  color: #ffe7e1;
+}
+
+.fusion-login-btn-danger:hover {
+  background: #bf4a37;
+}
+
+.fusion-login-btn-secondary:active,
+.fusion-login-btn-danger:active {
+  transform: translateY(1px);
 }

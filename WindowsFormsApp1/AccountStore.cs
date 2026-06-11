@@ -17,8 +17,8 @@ namespace WindowsFormsApp1
     // Local SQLite-backed account store for FusionOS. Holds the desktop profile
     // (display name, email), a PBKDF2-hashed password, and the chosen UI language.
     // The DB lives under %LocalAppData%\FusionOS\fusion.db so it persists across runs
-    // and never touches the project folder. A single primary user (id = 1) drives the
-    // login screen, but the schema supports more rows.
+    // and never touches the project folder. Multiple users are supported: the login
+    // screen lists every row and verifies against the picked one.
     public sealed class AccountStore
     {
         private const int SaltBytes = 16;
@@ -97,6 +97,17 @@ namespace WindowsFormsApp1
 
         // ---- Public API used by the bridge ----
 
+        private static FusionUser ReadUser(SQLiteDataReader reader)
+        {
+            return new FusionUser
+            {
+                Id = reader.GetInt64(0),
+                DisplayName = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                Email = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                Language = reader.IsDBNull(3) ? "" : reader.GetString(3)
+            };
+        }
+
         public FusionUser GetPrimaryUser()
         {
             using (var conn = Open())
@@ -106,13 +117,37 @@ namespace WindowsFormsApp1
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (!reader.Read()) return null;
-                    return new FusionUser
-                    {
-                        Id = reader.GetInt64(0),
-                        DisplayName = reader.IsDBNull(1) ? "" : reader.GetString(1),
-                        Email = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                        Language = reader.IsDBNull(3) ? "" : reader.GetString(3)
-                    };
+                    return ReadUser(reader);
+                }
+            }
+        }
+
+        public System.Collections.Generic.List<FusionUser> ListUsers()
+        {
+            var users = new System.Collections.Generic.List<FusionUser>();
+            using (var conn = Open())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT id, displayName, email, language FROM users ORDER BY id;";
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read()) users.Add(ReadUser(reader));
+                }
+            }
+            return users;
+        }
+
+        public FusionUser GetUser(long id)
+        {
+            using (var conn = Open())
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "SELECT id, displayName, email, language FROM users WHERE id = @id;";
+                cmd.Parameters.AddWithValue("@id", id);
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (!reader.Read()) return null;
+                    return ReadUser(reader);
                 }
             }
         }
@@ -142,16 +177,28 @@ namespace WindowsFormsApp1
                 cmd.Parameters.AddWithValue("@createdAt", now);
                 cmd.Parameters.AddWithValue("@updatedAt", now);
                 cmd.ExecuteNonQuery();
+                cmd.CommandText = "SELECT last_insert_rowid();";
+                cmd.Parameters.Clear();
+                long newId = Convert.ToInt64(cmd.ExecuteScalar());
+                return GetUser(newId);
             }
-            return GetPrimaryUser();
         }
 
-        public bool VerifyPassword(string password)
+        // userId <= 0 means "the primary (first) user" -- the pre-multi-user behaviour.
+        public bool VerifyPassword(long userId, string password)
         {
             using (var conn = Open())
             using (var cmd = conn.CreateCommand())
             {
-                cmd.CommandText = "SELECT pwHash, pwSalt, iterations FROM users ORDER BY id LIMIT 1;";
+                if (userId > 0)
+                {
+                    cmd.CommandText = "SELECT pwHash, pwSalt, iterations FROM users WHERE id = @id;";
+                    cmd.Parameters.AddWithValue("@id", userId);
+                }
+                else
+                {
+                    cmd.CommandText = "SELECT pwHash, pwSalt, iterations FROM users ORDER BY id LIMIT 1;";
+                }
                 using (var reader = cmd.ExecuteReader())
                 {
                     if (!reader.Read()) return false;
@@ -163,9 +210,14 @@ namespace WindowsFormsApp1
             }
         }
 
-        public bool UpdateProfile(string displayName, string email)
+        public bool VerifyPassword(string password)
         {
-            var user = GetPrimaryUser();
+            return VerifyPassword(0, password);
+        }
+
+        public bool UpdateProfile(long userId, string displayName, string email)
+        {
+            var user = userId > 0 ? GetUser(userId) : GetPrimaryUser();
             if (user == null) return false;
             using (var conn = Open())
             using (var cmd = conn.CreateCommand())
@@ -179,11 +231,11 @@ namespace WindowsFormsApp1
             }
         }
 
-        public bool ChangePassword(string current, string next)
+        public bool ChangePassword(long userId, string current, string next)
         {
-            if (!VerifyPassword(current)) return false;
-            var user = GetPrimaryUser();
+            var user = userId > 0 ? GetUser(userId) : GetPrimaryUser();
             if (user == null) return false;
+            if (!VerifyPassword(user.Id, current)) return false;
             byte[] salt = NewSalt();
             string hash = Hash(next, salt, Pbkdf2Iterations);
             using (var conn = Open())
@@ -199,9 +251,9 @@ namespace WindowsFormsApp1
             }
         }
 
-        public void SetLanguage(string language)
+        public void SetLanguage(long userId, string language)
         {
-            var user = GetPrimaryUser();
+            var user = userId > 0 ? GetUser(userId) : GetPrimaryUser();
             if (user == null) return;
             using (var conn = Open())
             using (var cmd = conn.CreateCommand())
@@ -212,6 +264,11 @@ namespace WindowsFormsApp1
                 cmd.Parameters.AddWithValue("@id", user.Id);
                 cmd.ExecuteNonQuery();
             }
+        }
+
+        public void SetLanguage(string language)
+        {
+            SetLanguage(0, language);
         }
 
         // Wipe the local account so a forgotten password never locks the demo out.
