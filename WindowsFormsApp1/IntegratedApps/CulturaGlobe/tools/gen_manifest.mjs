@@ -16,7 +16,10 @@ const out = [
   'Drop images into `web/images/` using the filenames below; restart the app to see them on the globe.',
   '',
   '- `<id>.jpg` = 該國主圖標 (hero) ; `<id>-N.jpg` = 該國的第 N 個文化條目。',
-  '- 格式 / formats: .jpg .jpeg .png .webp ；建議橫向、約 600×400 以上。',
+  '- **副檔名可互換**：下面雖寫 `.jpg`，但 `.jpg` / `.jpeg` / `.png` / `.webp` 都會自動辨識，',
+  '  只要「基底檔名」(例如 `cn-1`) 一致即可，不必特地轉檔。同一基底有多個檔時依此順序取用。',
+  '  / Extension is interchangeable: drop `cn-1.png` or `cn-1.jpg` — only the base name matters.',
+  '- 建議橫向、約 600×400 以上。',
   ''
 ];
 
@@ -38,7 +41,7 @@ for (const [rid, r] of Object.entries(REGIONS)) {
   }
 }
 
-out.splice(7, 0, `共 **${total}** 個可選圖片（${COUNTRIES.length} 國）。Total **${total}** optional images across ${COUNTRIES.length} countries.`, '');
+out.splice(10, 0, `共 **${total}** 個可選圖片（${COUNTRIES.length} 國）。Total **${total}** optional images across ${COUNTRIES.length} countries.`, '');
 
 writeFileSync(join(here, '..', 'IMAGES.md'), out.join('\n') + '\n', 'utf-8');
 console.log(`wrote IMAGES.md (${total} images, ${COUNTRIES.length} countries)`);

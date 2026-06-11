@@ -4,7 +4,10 @@
 Drop images into `web/images/` using the filenames below; restart the app to see them on the globe.
 
 - `<id>.jpg` = 該國主圖標 (hero) ; `<id>-N.jpg` = 該國的第 N 個文化條目。
-- 格式 / formats: .jpg .jpeg .png .webp ；建議橫向、約 600×400 以上。
+- **副檔名可互換**：下面雖寫 `.jpg`，但 `.jpg` / `.jpeg` / `.png` / `.webp` 都會自動辨識，
+  只要「基底檔名」(例如 `cn-1`) 一致即可，不必特地轉檔。同一基底有多個檔時依此順序取用。
+  / Extension is interchangeable: drop `cn-1.png` or `cn-1.jpg` — only the base name matters.
+- 建議橫向、約 600×400 以上。
 共 **689** 個可選圖片（193 國）。Total **689** optional images across 193 countries.
 
 

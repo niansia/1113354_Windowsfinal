@@ -35,11 +35,14 @@ function introOf(m) {
 }
 
 // ---- build markers: one "hero" per country + one per curated culture item ----
+// `img` is the BASE filename (no extension) -- the actual file may be .jpg/.jpeg/.png/
+// .webp, resolved against what the server reports on disk (see imgFile below). So you
+// can drop `cn-1.png` or `cn-1.jpg` interchangeably without editing anything.
 const ALL = [];
 for (const co of COUNTRIES) {
   ALL.push({
     id: co.id + '-0', lat: co.lat, lon: co.lon, category: 'landmark',
-    img: co.id + '.jpg', color: hexRGB(CAT.landmark.color), size: 9, tier: 0,
+    img: co.id, color: hexRGB(CAT.landmark.color), size: 9, tier: 0,
     country: co, item: null, isHero: true
   });
   co.items.forEach((it, i) => {
@@ -53,12 +56,16 @@ for (const co of COUNTRIES) {
     const lon = pos ? pos[1] : co.lon + (Math.cos(ang) * ring) / Math.max(0.4, Math.cos(co.lat * Math.PI / 180));
     ALL.push({
       id: co.id + '-' + idx, lat, lon, category: it.cat,
-      img: co.id + '-' + idx + '.jpg', color: hexRGB((CAT[it.cat] || CATEGORIES[0]).color),
+      img: co.id + '-' + idx, color: hexRGB((CAT[it.cat] || CATEGORIES[0]).color),
       size: 7, tier: idx, country: co, item: it, isHero: false
     });
   });
 }
-let presentImages = new Set();   // filenames the server reports as actually on disk
+
+// any of these extensions works; when several exist for one base, this is the pick order
+const IMG_EXTS = ['jpg', 'jpeg', 'png', 'webp'];
+let presentByBase = new Map();          // base name (no ext) -> actual filename on disk
+const imgFile = (m) => presentByBase.get(m.img);   // resolved filename, or undefined
 
 // ---- filter state ----
 const activeCats = new Set(CATEGORIES.map((c) => c.id));
@@ -103,12 +110,12 @@ function applyFilter() {
   const vis = visibleMarkers();
   // a node with a supplied photo shows ONLY the clickable tile -- its dot hides
   // (otherwise it reads as "image still missing"); halo labels keep the node.
-  vis.forEach((m) => { m.hasImg = presentImages.has(m.img); });
+  vis.forEach((m) => { m.hasImg = !!imgFile(m); });
   globe.setMarkers(vis);
   globe.setImageCallouts(
-    vis.filter((m) => presentImages.has(m.img))
+    vis.filter((m) => imgFile(m))
       .map((m) => ({
-        lat: m.lat, lon: m.lon, url: 'images/' + m.img,
+        lat: m.lat, lon: m.lon, url: 'images/' + imgFile(m),
         color: (CAT[m.category] || CATEGORIES[0]).color,
         marker: m
       }))
@@ -120,7 +127,20 @@ function applyFilter() {
 async function loadImageList() {
   try {
     const d = await (await fetch('/api/images', { cache: 'no-store' })).json();
-    presentImages = new Set(d.images || []);
+    // map each base name -> the actual file, preferring the IMG_EXTS order when a
+    // base has more than one (e.g. both cn-1.jpg and cn-1.png on disk).
+    const next = new Map();
+    const rank = (ext) => { const i = IMG_EXTS.indexOf(ext); return i < 0 ? 99 : i; };
+    for (const name of (d.images || [])) {
+      const dot = name.lastIndexOf('.');
+      if (dot < 0) continue;
+      const base = name.slice(0, dot);
+      const ext = name.slice(dot + 1).toLowerCase();
+      if (!IMG_EXTS.includes(ext)) continue;
+      const cur = next.get(base);
+      if (!cur || rank(ext) < rank(cur.slice(cur.lastIndexOf('.') + 1).toLowerCase())) next.set(base, name);
+    }
+    presentByBase = next;
   } catch (e) { /* no images yet -> dots */ }
   applyFilter();
 }
@@ -137,8 +157,9 @@ function openCard(m) {
   const cat = CAT[m.category];
   const flagEl = $('#cardFlag');
   const imgEl = $('#cardImg');
-  if (presentImages.has(m.img)) {
-    imgEl.src = 'images/' + m.img; imgEl.hidden = false; flagEl.hidden = true;
+  const file = imgFile(m);
+  if (file) {
+    imgEl.src = 'images/' + file; imgEl.hidden = false; flagEl.hidden = true;
   } else {
     flagEl.textContent = cat.glyph; flagEl.style.color = cat.color;
     flagEl.hidden = false; imgEl.hidden = true;
