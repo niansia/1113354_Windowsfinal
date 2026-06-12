@@ -17,11 +17,15 @@ import {
   Gamepad2,
   Globe2,
   Home,
+  Lock,
   LucideIcon,
   Map as MapIcon,
   Menu,
+  Moon,
   Music,
   Plus,
+  Power,
+  RotateCcw,
   Settings,
   Sparkles,
   Terminal,
@@ -51,6 +55,7 @@ import { getPerformanceProfile } from '../utils/performanceProfile';
 import { addHostMessageListener, launchApp, sendMessageToHost } from '../utils/bridge';
 import { ACCOUNT_TEXT } from '../settings/settingsText';
 import { formatFusionDate, formatFusionTime } from '../i18n/localeFormatting';
+import { POWER_ACTIONS, toHostSystemAction, type PowerAction } from '../system/powerActions';
 
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
 const CARD_W = 208;
@@ -133,10 +138,13 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   // Voice assistant overlay (summoned by orb / Alt+V / wake word).
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [desktopContextMenu, setDesktopContextMenu] = useState<DesktopContextMenuState | null>(null);
+  const [powerMenuOpen, setPowerMenuOpen] = useState(false);
+  const [sleeping, setSleeping] = useState(false);
   const [viewportW, setViewportW] = useState(0);
   const [dragDX, setDragDX] = useState(0);
   const runViewportRef = useRef<HTMLDivElement>(null);
   const dockRailRef = useRef<HTMLDivElement>(null);
+  const powerControlRef = useRef<HTMLDivElement>(null);
   const selectedDockBtnRef = useRef<HTMLButtonElement>(null);
   const dragStartXRef = useRef<number | null>(null);
   const dragMovedRef = useRef(false);
@@ -146,7 +154,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   // Sandboxed FusionOS preferences (localStorage only — never touches the host OS).
   const { settings, update } = useSettings();
   const { t, tf, lang } = useI18n();
-  const { profile: userProfile } = useAccount();
+  const { profile: userProfile, signOut } = useAccount();
 
   const profile = useMemo(() => getPerformanceProfile(), []);
   const selectedApp = apps[selectedIndex] ?? apps[0] ?? FUSION_APPS[0];
@@ -274,6 +282,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   const homeClassName = [
     'fusion-stage',
     'fusion-os-home',
+    sleeping ? 'fusion-is-sleeping' : '',
     settings.transparency ? '' : 'fusion-no-glass',
     settings.animations ? '' : 'fusion-reduce-motion',
     settings.highContrast ? 'fusion-high-contrast' : '',
@@ -289,6 +298,50 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   } as React.CSSProperties;
 
   const veilOpacity = Math.max(0, Math.min(0.62, (100 - settings.brightness) / 100));
+
+  const runPowerAction = useCallback((action: PowerAction) => {
+    setPowerMenuOpen(false);
+
+    if (action === 'lock') {
+      signOut();
+      return;
+    }
+
+    if (action === 'sleep') {
+      setSleeping(true);
+      return;
+    }
+
+    const message = toHostSystemAction(action);
+    if (message) sendMessageToHost(message.type, message.data);
+  }, [signOut]);
+
+  useEffect(() => {
+    if (!powerMenuOpen) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!powerControlRef.current?.contains(event.target as Node)) {
+        setPowerMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPowerMenuOpen(false);
+    };
+
+    window.addEventListener('pointerdown', closeOnOutsidePointer);
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.removeEventListener('pointerdown', closeOnOutsidePointer);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [powerMenuOpen]);
+
+  useEffect(() => {
+    if (!sleeping) return;
+    const wakeOnKey = () => setSleeping(false);
+    window.addEventListener('keydown', wakeOnKey);
+    return () => window.removeEventListener('keydown', wakeOnKey);
+  }, [sleeping]);
 
   useEffect(() => {
     return addHostMessageListener((message) => {
@@ -328,7 +381,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (overlayApp) return;
+      if (overlayApp || sleeping || powerMenuOpen) return;
       const target = event.target as HTMLElement | null;
       const tag = target?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
@@ -355,7 +408,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [apps, launchSelectedApp, selectApp, selectIndex, selectedIndex, overlayApp]);
+  }, [apps, launchSelectedApp, selectApp, selectIndex, selectedIndex, overlayApp, powerMenuOpen, sleeping]);
 
   const openDesktopContextMenu = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -605,6 +658,46 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
         <button type="button" className="dock-step" onClick={() => selectIndex(selectedIndex + 1)} title={t('下一個應用程式')}>
           <ChevronRight size={21} />
         </button>
+        <div className="fusion-power-control" ref={powerControlRef}>
+          {powerMenuOpen && (
+            <div className="fusion-power-menu" id="fusion-power-menu" role="menu" aria-label={t('電源選項')}>
+              {POWER_ACTIONS.map((action) => {
+                const Icon =
+                  action.id === 'lock'
+                    ? Lock
+                    : action.id === 'sleep'
+                      ? Moon
+                      : action.id === 'restart'
+                        ? RotateCcw
+                        : Power;
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    role="menuitem"
+                    className={action.id === 'shutdown' ? 'is-danger' : ''}
+                    onClick={() => runPowerAction(action.id)}
+                  >
+                    <Icon size={18} strokeWidth={1.8} />
+                    <span>{t(action.label)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <button
+            type="button"
+            className={`fusion-power-button ${powerMenuOpen ? 'is-open' : ''}`}
+            title={t('電源選項')}
+            aria-label={t('電源選項')}
+            aria-haspopup="menu"
+            aria-expanded={powerMenuOpen}
+            aria-controls={powerMenuOpen ? 'fusion-power-menu' : undefined}
+            onClick={() => setPowerMenuOpen((open) => !open)}
+          >
+            <Power size={23} strokeWidth={1.8} />
+          </button>
+        </div>
       </nav>
 
       {desktopContextMenu && (
@@ -668,6 +761,23 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       <div className="fusion-brightness-veil" style={{ opacity: veilOpacity }} aria-hidden="true" />
       <div className="fusion-night-veil" style={{ opacity: settings.nightLight ? 1 : 0 }} aria-hidden="true" />
       <DesktopPet settings={settings} onChange={update} />
+
+      {sleeping && (
+        <button
+          type="button"
+          className="fusion-sleep-surface"
+          onPointerDown={() => setSleeping(false)}
+          aria-label={t('按任意鍵或點一下以喚醒')}
+        >
+          <span className="fusion-sleep-orb" aria-hidden="true">
+            <Moon size={28} strokeWidth={1.5} />
+          </span>
+          <strong>{formatFusionTime(now, lang, settings.timezone, settings.clock24)}</strong>
+          <span>{formatFusionDate(now, lang, settings.timezone)}</span>
+          <small>{t('Fusion OS 正在睡眠')}</small>
+          <em>{t('按任意鍵或點一下以喚醒')}</em>
+        </button>
+      )}
 
       <FusionSettings
         open={overlayApp === 'set'}

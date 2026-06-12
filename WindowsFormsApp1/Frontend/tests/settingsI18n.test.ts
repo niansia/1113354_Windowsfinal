@@ -48,3 +48,13 @@ test('account fallback labels follow the settings language', () => {
   assert.equal(render(ACCOUNT_TEXT.fusionUser, 'en'), 'Fusion User');
   assert.equal(render(ACCOUNT_TEXT.guest, 'en'), 'Guest');
 });
+
+test('power menu labels follow the selected system language', () => {
+  assert.equal(render('電源選項', 'en'), 'Power options');
+  assert.equal(render('鎖定', 'en'), 'Lock');
+  assert.equal(render('睡眠', 'ja'), 'スリープ');
+  assert.equal(render('關機', 'ko'), '종료');
+  assert.equal(render('重新啟動', 'zh-CN'), '重新启动');
+  assert.equal(render('Fusion OS 正在睡眠', 'en'), 'Fusion OS is sleeping');
+  assert.equal(render('按任意鍵或點一下以喚醒', 'en'), 'Press any key or click to wake');
+});

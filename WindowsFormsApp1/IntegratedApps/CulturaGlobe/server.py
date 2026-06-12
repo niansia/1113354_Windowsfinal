@@ -25,6 +25,10 @@ WEB_ROOT = APP_ROOT / "web"
 TTS_CACHE: dict[str, bytes] = {}
 TTS_CACHE_MAX = 300
 
+# /api/birdsong cache: iNat taxon id -> (audio bytes | None, content-type | None)
+BIRDSONG_CACHE: dict = {}
+BIRDSONG_CACHE_MAX = 400
+
 MIME = {
     ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8",
     ".mjs": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
@@ -86,6 +90,53 @@ def make_handler():
                 self.end_headers()
                 self.wfile.write(body)
                 return
+            if path == "/api/birdsong":
+                # stream a REAL bird recording for a given iNaturalist taxon id: query
+                # iNat for the top sound observation of that species and proxy the audio
+                # back same-origin (CORS-free for an <audio> element). Cached per taxon.
+                qs = urllib.parse.parse_qs(self.path.split("?", 1)[1]) if "?" in self.path else {}
+                taxon = qs.get("taxon", [""])[0]
+                if not re.fullmatch(r"\d{1,9}", taxon):
+                    self.send_error(400)
+                    return
+                cached = BIRDSONG_CACHE.get(taxon)
+                if cached is None:
+                    try:
+                        api = ("https://api.inaturalist.org/v1/observations?taxon_id=" + taxon
+                               + "&sounds=true&per_page=1&order=desc&order_by=votes&quality_grade=research")
+                        req = urllib.request.Request(api, headers={"User-Agent": "CulturaGlobe/1.0"})
+                        with urllib.request.urlopen(req, timeout=8) as r:
+                            data = json.loads(r.read().decode("utf-8"))
+                        results = data.get("results") or []
+                        sound_url = None
+                        if results and results[0].get("sounds"):
+                            sound_url = results[0]["sounds"][0].get("file_url")
+                        if not sound_url:
+                            BIRDSONG_CACHE[taxon] = (None, None)  # negative cache
+                            self.send_error(404)
+                            return
+                        sreq = urllib.request.Request(sound_url, headers={"User-Agent": "CulturaGlobe/1.0"})
+                        with urllib.request.urlopen(sreq, timeout=10) as sr:
+                            ctype = sr.headers.get("Content-Type") or "audio/mpeg"
+                            audio = sr.read()
+                        if len(BIRDSONG_CACHE) >= BIRDSONG_CACHE_MAX:
+                            BIRDSONG_CACHE.clear()
+                        cached = (audio, ctype)
+                        BIRDSONG_CACHE[taxon] = cached
+                    except Exception:
+                        self.send_error(502)
+                        return
+                if cached[0] is None:
+                    self.send_error(404)
+                    return
+                audio, ctype = cached
+                self.send_response(200)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Content-Length", str(len(audio)))
+                self.send_header("Cache-Control", "max-age=86400")
+                self.end_headers()
+                self.wfile.write(audio)
+                return
             if path == "/api/images":
                 # list user-supplied marker images so the client loads only what exists
                 d = WEB_ROOT / "images"
@@ -102,7 +153,12 @@ def make_handler():
             self.send_response(200)
             self.send_header("Content-Type", MIME.get(target.suffix.lower(), "application/octet-stream"))
             self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
+            # the 1100 bird cutouts are immutable build artifacts -- let the browser
+            # cache them so the birds page opens instantly after the first visit
+            if path.startswith("/birdcut/"):
+                self.send_header("Cache-Control", "max-age=604800")
+            else:
+                self.send_header("Cache-Control", "no-store")
             self.end_headers()
             self.wfile.write(body)
 

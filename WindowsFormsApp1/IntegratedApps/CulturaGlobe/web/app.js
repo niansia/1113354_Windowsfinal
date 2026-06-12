@@ -9,6 +9,13 @@ import { t, loc, setLang, getLang, LANGS } from './i18n.js';
 const $ = (s) => document.querySelector(s);
 const params = new URLSearchParams(location.search);
 (function initLang() { const l = params.get('lang'); if (l && LANGS.indexOf(l) >= 0) setLang(l); })();
+// keep the culture/birds page tabs language-aware
+(function wireTabs() {
+  const q = params.get('lang') ? '?lang=' + params.get('lang') : '';
+  const c = $('#tabCulture'), b = $('#tabBirds');
+  if (c) c.href = 'index.html' + q;
+  if (b) b.href = 'birds.html' + q;
+})();
 
 const CAT = Object.fromEntries(CATEGORIES.map((c) => [c.id, c]));
 function hexRGB(hex) {

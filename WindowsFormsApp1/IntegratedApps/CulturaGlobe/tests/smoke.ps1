@@ -12,7 +12,8 @@ Write-Host "== Cultura globe smoke ==" -ForegroundColor Cyan
 # 1) bundled assets present (self-contained / offline)
 $assets = @("web\vendor\three.module.js", "web\textures\earth_atmos_2048.jpg",
             "web\textures\earth_lights_2048.png", "web\textures\earth_specular_2048.jpg",
-            "web\data.js", "web\audio.js", "web\globe.js", "web\app.js", "web\index.html")
+            "web\data.js", "web\audio.js", "web\globe.js", "web\app.js", "web\index.html",
+            "web\birds.html", "web\birds.js", "web\birds.generated.js", "web\birdSong.js")
 foreach ($a in $assets) {
     $p = Join-Path $root $a
     if ((Test-Path $p) -and (Get-Item $p).Length -gt 0) { Ok "asset $a ($([math]::Round((Get-Item $p).Length/1kb))KB)" }
@@ -29,7 +30,7 @@ try {
     }
     if ($ready) { Ok "server /api/health responded" } else { Bad "server not ready" }
     if ($ready) {
-        foreach ($route in @("/", "/data.js", "/globe.js", "/vendor/three.module.js", "/textures/earth_atmos_2048.jpg")) {
+        foreach ($route in @("/", "/data.js", "/globe.js", "/vendor/three.module.js", "/textures/earth_atmos_2048.jpg", "/birds.html", "/birds.js", "/birdData.js")) {
             try {
                 $r = Invoke-WebRequest "http://127.0.0.1:$port$route" -TimeoutSec 5 -UseBasicParsing
                 if ($r.StatusCode -eq 200 -and $r.RawContentLength -gt 0) { Ok "served $route" } else { Bad "route $route" }

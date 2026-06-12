@@ -1709,6 +1709,12 @@ namespace WindowsFormsApp1
                     return;
                 }
 
+                if (lower.Contains("fusion_system_action"))
+                {
+                    HandleFusionSystemAction(message);
+                    return;
+                }
+
                 if (lower.Contains("launch_app"))
                 {
                     if (lower.Contains("\"piano\"") || lower.Contains("\"88\"")) LaunchPianoStudio();
@@ -2573,6 +2579,51 @@ namespace WindowsFormsApp1
                 ShowToast("Desktop action failed: " + ex.Message, Color.FromArgb(255, 148, 168));
                 PostAppLaunchStatus("dir", "error", "Desktop action failed");
             }
+        }
+
+        private void HandleFusionSystemAction(string json)
+        {
+            Dictionary<string, object> message;
+            try
+            {
+                message = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json);
+            }
+            catch
+            {
+                return;
+            }
+
+            string action = Field(message, "action");
+            if (!string.Equals(action, "shutdown", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(action, "restart", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            Action execute = delegate
+            {
+                try
+                {
+                    if (string.Equals(action, "restart", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = Application.ExecutablePath,
+                            UseShellExecute = true
+                        });
+                    }
+
+                    Application.Exit();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[FusionOS Power] " + ex);
+                    ShowToast("Unable to complete the power action.", Color.FromArgb(255, 148, 168));
+                }
+            };
+
+            if (InvokeRequired) BeginInvoke(execute);
+            else execute();
         }
 
         private string GetFusionDesktopDirectory()
@@ -5959,9 +6010,6 @@ namespace WindowsFormsApp1
         private static TimeZoneInfo ResolveTimeZone(string timezone)
         {
             string id = NormalizeTimezone(timezone);
-            try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
-            catch { }
-
             string windowsId = null;
             switch (id)
             {
@@ -5977,6 +6025,9 @@ namespace WindowsFormsApp1
                 try { return TimeZoneInfo.FindSystemTimeZoneById(windowsId); }
                 catch { }
             }
+
+            try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
+            catch { }
 
             return TimeZoneInfo.Local;
         }

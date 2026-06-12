@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Cultura — 世界鳥類星球</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="birds-page">
+  <canvas id="globe"></canvas>
+
+  <!-- centered museum masthead with the culture/birds page tabs -->
+  <header class="masthead">
+    <nav class="mast-tabs">
+      <a id="tabCulture" href="index.html" data-i18n="文化星球">文化星球</a>
+      <a id="tabBirds" href="birds.html" class="is-active" data-i18n="鳥類星球">鳥類星球</a>
+    </nav>
+    <h1 class="mast-title" data-i18n="世界鳥類星球">世界鳥類星球</h1>
+    <div class="mast-stats" id="counts"></div>
+  </header>
+
+  <!-- left catalog panel -->
+  <aside class="panel" id="panel">
+    <div class="panel-view">
+      <input id="search" class="panel-search" type="text" />
+      <div class="panel-sec" data-i18n="季節">季節</div>
+      <div class="chip-row" id="seasonChips"></div>
+      <div class="panel-sec" data-i18n="大洲">大洲</div>
+      <div class="chip-row" id="regionChips"></div>
+      <div class="panel-sec" data-i18n="鳥類圖鑑">鳥類圖鑑</div>
+      <div class="country-list" id="birdList"></div>
+    </div>
+  </aside>
+
+  <!-- bottom toolbar -->
+  <div class="toolbar">
+    <button class="tb-btn on" id="tbSpin" data-i18n="旋轉">旋轉</button>
+    <button class="tb-btn on" id="tbLabels" data-i18n="標籤">標籤</button>
+    <span class="tb-hint" data-i18n="點擊地球上的鳥即可聆聽鳴聲">點擊地球上的鳥即可聆聽鳴聲</span>
+  </div>
+
+  <div class="tip" id="tip" hidden></div>
+
+  <section class="card" id="card" hidden>
+    <button class="card-close" id="cardClose" data-i18n="關閉">關閉</button>
+    <img class="card-img bird-card-img" id="cardImg" alt="" />
+    <div class="card-country" id="cardName">—</div>
+    <div class="card-region" id="cardNameEn">—</div>
+    <div class="bird-sci" id="cardSci">—</div>
+    <div class="bird-chips">
+      <span class="card-cat" id="cardRegionChip"></span>
+      <span class="card-cat" id="cardSeasonChip"></span>
+    </div>
+    <p class="card-desc" id="cardDesc">—</p>
+    <button type="button" class="bird-play" id="playBtn">
+      <span data-i18n="重播鳴聲">重播鳴聲</span>
+    </button>
+    <div class="card-note" data-i18n="照片與鳴聲皆來自 iNaturalist 公民科學資料庫；若無實錄則以程式合成鳴聲">照片與鳴聲皆來自 iNaturalist 公民科學資料庫；若無實錄則以程式合成鳴聲</div>
+  </section>
+
+  <div class="splash" id="splash"><span data-i18n="載入中…">載入中…</span></div>
+
+  <script type="module" src="birds.js"></script>
+</body>
+</html>

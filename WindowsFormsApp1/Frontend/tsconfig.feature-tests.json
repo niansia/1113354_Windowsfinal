@@ -21,10 +21,12 @@
     "src/assistant/microphoneSelection.ts",
     "src/assistant/wakeWords.ts",
     "src/circuit/**/*.ts",
+    "src/system/**/*.ts",
     "tests/appCatalog.test.ts",
     "tests/circuitSimulator.test.ts",
     "tests/localeFormatting.test.ts",
     "tests/microphoneSelection.test.ts",
+    "tests/powerActions.test.ts",
     "tests/wakeWords.test.ts"
   ]
 }

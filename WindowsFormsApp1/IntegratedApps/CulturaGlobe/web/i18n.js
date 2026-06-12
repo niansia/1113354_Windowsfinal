@@ -27,7 +27,28 @@ const DICT = {
   '圖片': { 'zh-CN': '图片', en: 'Images', ja: '画像', ko: '이미지' },
   '點擊標記即以當地語言朗讀簡介': { 'zh-CN': '点击标记即以当地语言朗读简介', en: 'Tap a marker to hear its intro narrated in the local language', ja: 'マーカーをタップすると現地語で紹介を読み上げます', ko: '마커를 누르면 현지어로 소개를 읽어줍니다' },
   '探索中': { 'zh-CN': '探索中', en: 'Exploring', ja: '探索中', ko: '탐색 중' },
-  '載入中…': { 'zh-CN': '加载中…', en: 'Loading…', ja: '読込中…', ko: '로딩 중…' }
+  '載入中…': { 'zh-CN': '加载中…', en: 'Loading…', ja: '読込中…', ko: '로딩 중…' },
+  '文化星球': { 'zh-CN': '文化星球', en: 'Cultures', ja: '文化プラネット', ko: '문화 행성' },
+  '鳥類星球': { 'zh-CN': '鸟类星球', en: 'Birds', ja: '鳥プラネット', ko: '조류 행성' },
+  '世界鳥類星球': { 'zh-CN': '世界鸟类星球', en: 'Birds of the World', ja: '世界の鳥プラネット', ko: '세계 조류 행성' },
+  '季節': { 'zh-CN': '季节', en: 'Season', ja: '季節', ko: '계절' },
+  '大洲': { 'zh-CN': '大洲', en: 'Continent', ja: '大陸', ko: '대륙' },
+  '鳥類圖鑑': { 'zh-CN': '鸟类图鉴', en: 'Field guide', ja: '鳥類図鑑', ko: '조류 도감' },
+  '種鳥類': { 'zh-CN': '种鸟类', en: 'bird species', ja: '種の鳥', ko: '종의 새' },
+  '個大洲': { 'zh-CN': '个大洲', en: 'continents', ja: 'の大陸', ko: '개 대륙' },
+  '搜尋鳥類…': { 'zh-CN': '搜索鸟类…', en: 'Search birds…', ja: '鳥を検索…', ko: '새 검색…' },
+  '重播鳴聲': { 'zh-CN': '重播鸣声', en: 'Replay the song', ja: '鳴き声を再生', ko: '울음소리 재생' },
+  '載入鳴聲中…': { 'zh-CN': '加载鸣声中…', en: 'Loading the recording…', ja: '録音を読込中…', ko: '녹음 불러오는 중…' },
+  '合成鳴聲（無實錄）': { 'zh-CN': '合成鸣声（无实录）', en: 'Synthesized (no recording found)', ja: '合成音（録音なし）', ko: '합성음 (녹음 없음)' },
+  '… 在地球上探索其餘 {n} 種': { 'zh-CN': '… 在地球上探索其余 {n} 种', en: '… explore the other {n} on the globe', ja: '… 残り {n} 種は地球上で', ko: '… 나머지 {n}종은 지구에서' },
+  '遷徙中': { 'zh-CN': '迁徙中', en: 'migrating', ja: '渡り中', ko: '이동 중' },
+  '點擊地球上的鳥即可聆聽鳴聲': { 'zh-CN': '点击地球上的鸟即可聆听鸣声', en: 'Click a bird on the globe to hear its song', ja: '地球上の鳥をクリックすると鳴き声が聴けます', ko: '지구의 새를 클릭하면 울음소리를 들을 수 있어요' },
+  '照片與鳴聲皆來自 iNaturalist 公民科學資料庫；若無實錄則以程式合成鳴聲': {
+    'zh-CN': '照片与鸣声皆来自 iNaturalist 公民科学数据库；若无实录则以程序合成鸣声',
+    en: 'Photos and songs come from the iNaturalist citizen-science database; a synthesized call is used when no recording exists',
+    ja: '写真と鳴き声は iNaturalist の市民科学データベースより。録音がない場合は合成音を使用します',
+    ko: '사진과 울음소리는 iNaturalist 시민과학 데이터베이스에서 가져옵니다. 녹음이 없으면 합성음을 사용합니다'
+  }
 };
 
 const LANGS = ['zh-TW', 'zh-CN', 'en', 'ja', 'ko'];

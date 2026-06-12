@@ -344,6 +344,25 @@ export const TRANSLATIONS: Record<string, Entry> = {
   '時區': { 'zh-CN': '时区', en: 'Time zone', ja: 'タイムゾーン', ko: '표준 시간대' },
   '使用 24 小時制': { 'zh-CN': '使用 24 小时制', en: 'Use 24-hour clock', ja: '24 時間表示を使う', ko: '24시간제 사용' },
 
+  // ---------- Home: power menu ----------
+  '電源選項': { 'zh-CN': '电源选项', en: 'Power options', ja: '電源オプション', ko: '전원 옵션' },
+  '鎖定': { 'zh-CN': '锁定', en: 'Lock', ja: 'ロック', ko: '잠금' },
+  '睡眠': { 'zh-CN': '睡眠', en: 'Sleep', ja: 'スリープ', ko: '절전' },
+  '關機': { 'zh-CN': '关机', en: 'Shut down', ja: 'シャットダウン', ko: '종료' },
+  '重新啟動': { 'zh-CN': '重新启动', en: 'Restart', ja: '再起動', ko: '다시 시작' },
+  'Fusion OS 正在睡眠': {
+    'zh-CN': 'Fusion OS 正在睡眠',
+    en: 'Fusion OS is sleeping',
+    ja: 'Fusion OS はスリープ中です',
+    ko: 'Fusion OS가 절전 모드입니다'
+  },
+  '按任意鍵或點一下以喚醒': {
+    'zh-CN': '按任意键或点击以唤醒',
+    en: 'Press any key or click to wake',
+    ja: 'いずれかのキーを押すかクリックして復帰',
+    ko: '아무 키나 누르거나 클릭하여 깨우기'
+  },
+
   // ---------- Settings: accounts ----------
   '個人資料': { 'zh-CN': '个人资料', en: 'Profile', ja: 'プロフィール', ko: '프로필' },
   '顯示名稱': { 'zh-CN': '显示名称', en: 'Display name', ja: '表示名', ko: '표시 이름' },
