@@ -63,13 +63,15 @@ export function createGlobe(canvas, opts = {}) {
           // NIGHT atlas: near-black ocean, warm-lit landmasses, faint city lights,
           // a dotted land texture -- the "万羽拾音" planet.
           vec3 night=texture2D(nightMap,vUv).rgb;
-          vec3 oceanCol=vec3(0.035,0.045,0.065);
-          vec3 landTone=mix(vec3(0.10,0.085,0.065), vec3(0.30,0.235,0.14), smoothstep(0.08,0.5,lum));
+          vec3 oceanCol=vec3(0.04,0.05,0.072);
+          // brighter, sun-lit landmasses (the map read too dark before)
+          vec3 landTone=mix(vec3(0.22,0.185,0.135), vec3(0.70,0.575,0.36), smoothstep(0.06,0.55,lum));
           vec2 g=fract(vUv*vec2(480.0,240.0))-0.5;
           float dotp=smoothstep(0.34,0.16,length(g));
-          vec3 landCol=mix(landTone, landTone*1.5, dotp*0.5);
+          vec3 landCol=mix(landTone, landTone*1.45, dotp*0.5);
+          landCol*=0.7+0.78*day;                         // restore real terrain detail + lift
           col=mix(landCol, oceanCol, isOcean);
-          col+=night*vec3(1.0,0.85,0.5)*0.5;             // city lights, warm
+          col+=night*vec3(1.0,0.85,0.5)*0.45;            // city lights, warm
           float fres=pow(1.0-max(dot(N,V),0.0),2.5);
           col+=vec3(0.55,0.42,0.2)*fres*0.4;             // warm gold limb
         } else {
@@ -93,7 +95,11 @@ export function createGlobe(canvas, opts = {}) {
 
   // ---- graticule: a faint lat/lon grid that tiles the globe into cells (the
   // "data-planet" look). depthTest hides the lines on the far hemisphere. ----
+  // Paper (culture) page: a faint full lat/lon graticule. The birds page instead draws a
+  // fine grid that covers ONLY land, one cell per bird (built by setLandGrid below once the
+  // page's land mask has loaded) -- so there are no empty cells floating over the ocean.
   (function buildGraticule() {
+    if (dark) return;
     const pts = [];
     const R = EARTH_R * 1.003;
     const seg = 4;                       // sampling step along each line (degrees)
@@ -108,12 +114,41 @@ export function createGlobe(canvas, opts = {}) {
       }
     }
     const g = new THREE.BufferGeometry().setFromPoints(pts);
-    const grid = new THREE.LineSegments(g, new THREE.LineBasicMaterial({
-      color: dark ? 0xb08a44 : 0x6d6354, transparent: true,   // gold grid on night, ink on paper
-      opacity: dark ? 0.3 : 0.22, depthWrite: false
-    }));
-    world.add(grid);
+    world.add(new THREE.LineSegments(g, new THREE.LineBasicMaterial({
+      color: 0x6d6354, transparent: true, opacity: 0.22, depthWrite: false
+    })));
   }());
+
+  // birds page: draw the supplied cells as bird-sized grid squares. The page hands us the
+  // SAME cells the birds are placed in (centres), so every bird sits inside a box and the
+  // ocean stays clean. Lines are kept faint so the planet reads calm and coherent. The big
+  // static land grid is built once (setLandGrid); a tiny dynamic set of used coastal cells
+  // is updated per filter (setLandGridExtra) so it doesn't rebuild the whole grid each time.
+  const GRID_R = EARTH_R * 1.004;         // just above the surface, below the bird tiles
+  function gridMeshFromCells(cells) {
+    const pts = [];
+    for (const c of cells) {
+      const a = latLonToVec3(c.latLo, c.lonLo, GRID_R), b = latLonToVec3(c.latLo, c.lonHi, GRID_R);
+      const d = latLonToVec3(c.latHi, c.lonHi, GRID_R), e = latLonToVec3(c.latHi, c.lonLo, GRID_R);
+      pts.push(a, b, b, d, d, e, e, a);                                          // four cell edges
+    }
+    return new THREE.LineSegments(
+      new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineBasicMaterial({ color: 0xb89255, transparent: true, opacity: 0.14, depthWrite: false })
+    );
+  }
+  let landGridMesh = null, extraGridMesh = null;
+  function setLandGrid(cells) {
+    if (landGridMesh) { world.remove(landGridMesh); landGridMesh.geometry.dispose(); landGridMesh.material.dispose(); }
+    landGridMesh = gridMeshFromCells(cells);
+    world.add(landGridMesh);
+  }
+  function setLandGridExtra(cells) {
+    if (extraGridMesh) { world.remove(extraGridMesh); extraGridMesh.geometry.dispose(); extraGridMesh.material.dispose(); extraGridMesh = null; }
+    if (!cells || !cells.length) return;
+    extraGridMesh = gridMeshFromCells(cells);
+    world.add(extraGridMesh);
+  }
 
   // ---- soft shadow halo: on a light page an additive glow is invisible, so the
   // sphere instead casts a faint warm shadow ring that lifts it off the paper ----
@@ -321,6 +356,11 @@ export function createGlobe(canvas, opts = {}) {
   // zoom / selection flow as callouts; picking is done in screen space. ----
   let cutoutMeshes = [];
   let cutoutItems = [];
+  // "release the birds": a shared uniform (all atlas meshes reference the same object) eased
+  // between 0 (perched on the map) and 1 (scattered into the sky around the planet).
+  const flyUniform = { value: 0 };
+  let flyTarget = 0, flyT = 0;
+  function setBirdsFlying(on) { flyTarget = on ? 1 : 0; }
   function clearCutouts() {
     for (const m of cutoutMeshes) {
       calloutGroup.remove(m);
@@ -331,11 +371,14 @@ export function createGlobe(canvas, opts = {}) {
     for (const it of cutoutItems) { if (it.tex) { it.tex.dispose(); it.tex = null; } }
     cutoutMeshes = []; cutoutItems = [];
   }
-  function setCutouts(list) {
+  function setCutouts(list, opts) {
     clearCallouts();
     clearCutouts();
     const rad = Math.PI / 180;
-    // same one-per-grid-cell placement as the tiles, so birds spread instead of piling
+    // When the caller has ALREADY laid the items onto a tidy per-continent grid
+    // (snap:false), use their lat/lon verbatim -- re-snapping would fight that layout.
+    // Otherwise quantise each item to a free angular cell so nothing piles up.
+    const snap = !opts || opts.snap !== false;
     const occupied = new Set();
     const lonStepAt = (latC) => TILE_CELL / Math.max(0.30, Math.cos(latC * rad));
     function allocCell(lat, lon) {
@@ -368,11 +411,11 @@ export function createGlobe(canvas, opts = {}) {
     // every bird is fitted INSIDE one grid cell (the grid is physically square at any
     // latitude), so the flock reads as an even field -- no piling, no size jumble.
     const cellWorld = EARTH_R * TILE_CELL * rad;
-    const baseH = cellWorld * 0.94;
+    const fitWorld = cellWorld * 0.92;   // fill most of the cell, with a margin so neighbours never overlap
     const atlases = [];
     const placed = [];
     list.forEach((item) => {
-      const cell = allocCell(item.lat, item.lon);
+      const cell = snap ? allocCell(item.lat, item.lon) : { latC: item.lat, lonC: item.lon };
       if (!cell) return;
       const slot = placed.length;
       const ai = Math.floor(slot / PER);
@@ -389,36 +432,51 @@ export function createGlobe(canvas, opts = {}) {
       const dw = Math.max(1, Math.round(img.width * s)), dh = Math.max(1, Math.round(img.height * s));
       a.g.drawImage(img, cx + (CELL - dw) / 2, cy + CELL - dh, dw, dh);   // feet at cell bottom
       a.n += 1;
-      const aspect = Math.max(0.45, Math.min(1.7, img.width / img.height));
+      // narrower aspect clamp + fit-inside-cell so every bird is roughly the same size and
+      // always stays within its square (no bird spills into a neighbour's cell)
+      const aspect = Math.max(0.62, Math.min(1.5, img.width / img.height));
+      const w = aspect >= 1 ? fitWorld : fitWorld * aspect;
+      const h = aspect >= 1 ? fitWorld / aspect : fitWorld;
       const dir = latLonToVec3(cell.latC, cell.lonC, 1).normalize();
       placed.push({
         atlas: ai,
         uv: [(cx + (CELL - dw) / 2) / ATLAS, 1 - (cy + CELL) / ATLAS, dw / ATLAS, dh / ATLAS],
         dir,
-        w: baseH * aspect, h: baseH,
+        w, h,
         marker: item.marker, aspect, color: item.color || '#e0b15a', emph: 0, tex: null, img
       });
     });
 
-    // one instanced mesh per atlas: a unit bottom-anchored quad, billboarded in the
-    // vertex shader (view-space offset), per-instance position/size/uv-rect.
+    // one instanced mesh per atlas: a unit CENTRE-anchored quad, billboarded in the
+    // vertex shader (view-space offset), per-instance position/size/uv-rect. Centre-anchored
+    // so the bird sits in the middle of its cell rather than standing on the gridline.
     for (let ai = 0; ai < atlases.length; ai++) {
       const items = placed.filter((p) => p.atlas === ai);
       const n = items.length;
       if (!n) continue;
       const geo = new THREE.InstancedBufferGeometry();
-      const quad = new THREE.PlaneGeometry(1, 1).translate(0, 0.5, 0);
+      const quad = new THREE.PlaneGeometry(1, 1);
       geo.index = quad.index;
       geo.setAttribute('position', quad.getAttribute('position'));
       geo.setAttribute('uv', quad.getAttribute('uv'));
       const iPos = new Float32Array(n * 3), iSize = new Float32Array(n * 2), iUV = new Float32Array(n * 4);
+      const iSky = new Float32Array(n * 3), iPhase = new Float32Array(n);
       items.forEach((p, k) => {
         const v = p.dir.clone().multiplyScalar(EARTH_R * 1.002);
         iPos[k * 3] = v.x; iPos[k * 3 + 1] = v.y; iPos[k * 3 + 2] = v.z;
+        // sky target: lifted out along its own normal to a random height, with a little
+        // sideways jitter so the flock reads as a drifting cloud rather than a shell
+        const skyR = EARTH_R * (1.32 + Math.random() * 0.92);
+        iSky[k * 3] = p.dir.x * skyR + (Math.random() - 0.5) * EARTH_R * 0.42;
+        iSky[k * 3 + 1] = p.dir.y * skyR + (Math.random() - 0.5) * EARTH_R * 0.42;
+        iSky[k * 3 + 2] = p.dir.z * skyR + (Math.random() - 0.5) * EARTH_R * 0.42;
+        iPhase[k] = Math.random();           // staggers lift-off so they don't all leave at once
         iSize[k * 2] = p.w; iSize[k * 2 + 1] = p.h;
         iUV[k * 4] = p.uv[0]; iUV[k * 4 + 1] = p.uv[1]; iUV[k * 4 + 2] = p.uv[2]; iUV[k * 4 + 3] = p.uv[3];
       });
       geo.setAttribute('iPos', new THREE.InstancedBufferAttribute(iPos, 3));
+      geo.setAttribute('iSky', new THREE.InstancedBufferAttribute(iSky, 3));
+      geo.setAttribute('iPhase', new THREE.InstancedBufferAttribute(iPhase, 1));
       geo.setAttribute('iSize', new THREE.InstancedBufferAttribute(iSize, 2));
       geo.setAttribute('iUV', new THREE.InstancedBufferAttribute(iUV, 4));
       geo.instanceCount = n;
@@ -428,14 +486,20 @@ export function createGlobe(canvas, opts = {}) {
       tex.flipY = true;
       const mat = new THREE.ShaderMaterial({
         transparent: true, depthTest: true, depthWrite: false,
-        uniforms: { uAtlas: { value: tex } },
+        uniforms: { uAtlas: { value: tex }, uFly: flyUniform },
         vertexShader: `
-          attribute vec3 iPos; attribute vec2 iSize; attribute vec4 iUV;
+          attribute vec3 iPos; attribute vec3 iSky; attribute float iPhase;
+          attribute vec2 iSize; attribute vec4 iUV;
+          uniform float uFly;
           varying vec2 vUv;
           void main(){
             vUv = vec2(iUV.x + uv.x * iUV.z, iUV.y + uv.y * iUV.w);
-            vec4 mv = modelViewMatrix * vec4(iPos, 1.0);
-            mv.xy += position.xy * iSize;     // screen-aligned billboard, feet anchored
+            // staggered, eased lift between the map position and the sky position
+            float local = clamp(uFly * 1.55 - iPhase * 0.55, 0.0, 1.0);
+            float e = local * local * (3.0 - 2.0 * local);
+            vec3 wp = mix(iPos, iSky, e);
+            vec4 mv = modelViewMatrix * vec4(wp, 1.0);
+            mv.xy += position.xy * iSize;     // screen-aligned billboard, centre anchored
             gl_Position = projectionMatrix * mv;
           }
         `,
@@ -444,7 +508,10 @@ export function createGlobe(canvas, opts = {}) {
           void main(){
             vec4 c = texture2D(uAtlas, vUv);
             if (c.a < 0.2) discard;
-            gl_FragColor = c;
+            // lift shadows + a small floor so dark-plumaged birds stay visible on the
+            // night-sky globe instead of sinking into the black background
+            vec3 col = pow(c.rgb, vec3(0.72)) * 1.22 + 0.05;
+            gl_FragColor = vec4(min(col, vec3(1.0)), c.a);
           }
         `
       });
@@ -461,7 +528,7 @@ export function createGlobe(canvas, opts = {}) {
   // screen-space picking for the instanced cutouts (no per-instance raycast needed)
   const _cw = new THREE.Vector3(), _cv = new THREE.Vector3();
   function pickCutoutScreen() {
-    if (!cutoutItems.length) return null;
+    if (!cutoutItems.length || flyT > 0.02) return null;   // birds in flight aren't pickable
     const W = window.innerWidth, H = window.innerHeight;
     const px = (ndc.x * 0.5 + 0.5) * W, py = (-ndc.y * 0.5 + 0.5) * H;
     const P11 = camera.projectionMatrix.elements[5];
@@ -476,9 +543,9 @@ export function createGlobe(canvas, opts = {}) {
       const sy = -(_cv.y / z) * P11 * (H / 2) + H / 2;
       const hPx = it.h * P11 * (H / 2) / z;
       const wPx = it.w * P11 * (H / 2) / z;
-      if (px < sx - wPx / 2 || px > sx + wPx / 2) continue;
-      if (py > sy || py < sy - hPx) continue;
-      const d = Math.abs(px - sx) + Math.abs(py - (sy - hPx / 2));
+      if (px < sx - wPx / 2 || px > sx + wPx / 2) continue;   // centre-anchored hit box
+      if (py < sy - hPx / 2 || py > sy + hPx / 2) continue;
+      const d = Math.abs(px - sx) + Math.abs(py - sy);
       if (d < bestD) { bestD = d; best = it; }
     }
     if (best && !best.tex && best.img) {
@@ -845,6 +912,8 @@ export function createGlobe(canvas, opts = {}) {
     }
     world.rotation.y = yaw; world.rotation.x = pitch;
     camera.position.z += (camDist - camera.position.z) * 0.12;
+    flyT += (flyTarget - flyT) * Math.min(1, dt * 2.4);     // ease the flock up / back down
+    flyUniform.value = flyT;
     updateCallouts();
     renderer.render(scene, camera);
     updateHalo(performance.now());        // after render -> world/camera matrices are current
@@ -855,6 +924,9 @@ export function createGlobe(canvas, opts = {}) {
     setMarkers,
     setImageCallouts,
     setCutouts,
+    setLandGrid,
+    setLandGridExtra,
+    setBirdsFlying,
     focus: focusOn,
     // programmatic selection (e.g. from the country-list panel): highlight + fly to it
     select: (marker) => {

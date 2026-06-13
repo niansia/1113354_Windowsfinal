@@ -34,6 +34,145 @@ function hexRGB(hex) {
 // (by observation count, i.e. array order) so 1000+ image loads don't stampede.
 const MAX_PHOTOS = (() => { const p = new URLSearchParams(location.search).get('photos'); return p !== null ? parseInt(p, 10) : 220; })();
 
+// --- continent grid layout (Rui-style "frame the cells, drop one bird per cell") ---
+// One SHARED global lattice drives both the placement and the drawn grid lines, so every
+// bird lands in the exact CENTRE of a cell (never on a line) and the grid hugs the real
+// coastline. Cells are bird-sized; each continent's birds are spread evenly over the land
+// cells that fall inside its box. No per-country coordinate is needed.
+const CELL = 2.6;             // degrees; == globe.js TILE_CELL == one bird's footprint
+const RAD = Math.PI / 180;
+// [latMin, latMax, lonMin, lonMax] -- the box that scopes each 大洲. Boxes are resolved in
+// REGION_ORDER, so a cell in an overlap belongs to the first matching continent (unique).
+const REGION_BOX = {
+  europe:   [36, 72, -11, 50],
+  asia:     [6, 56, 44, 150],
+  africa:   [-35, 37, -18, 52],
+  namerica: [12, 70, -128, -58],
+  samerica: [-56, 13, -82, -33],
+  oceania:  [-48, 8, 110, 180],
+  polar:    [-82, -60, -180, 180]
+};
+const REGION_ORDER = ['europe', 'namerica', 'samerica', 'africa', 'oceania', 'asia', 'polar'];
+function regionOf(lat, lon) {
+  for (const r of REGION_ORDER) {
+    const b = REGION_BOX[r];
+    if (lat >= b[0] && lat <= b[1] && lon >= b[2] && lon <= b[3]) return r;
+  }
+  return null;
+}
+
+// --- land mask: red channel of the specular map (ocean reflects = bright, land = dark) ---
+let LAND_MASK = null;
+function loadLandMask() {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const w = 720, h = 360;
+      const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+      const g = cv.getContext('2d'); g.drawImage(img, 0, 0, w, h);
+      LAND_MASK = { w, h, data: g.getImageData(0, 0, w, h).data };
+      resolve();
+    };
+    img.onerror = () => resolve();   // no mask -> isLand() passes everything (whole-box fill)
+    img.src = 'textures/earth_specular_2048.jpg';
+  });
+}
+function isLand(lat, lon) {
+  if (!LAND_MASK) return true;
+  const { w, h, data } = LAND_MASK;
+  let x = Math.floor((lon + 180) / 360 * w);
+  let y = Math.floor((90 - lat) / 180 * h);
+  x = ((x % w) + w) % w; y = Math.max(0, Math.min(h - 1, y));
+  return data[(y * w + x) * 4] < 128;
+}
+
+// Enumerate the global lattice ONCE (after the mask loads): each cell carries its exact
+// edges (for the drawn grid) and centre (where a bird sits). Land cells are bucketed per
+// continent; coastal (water touching land) cells are kept as a fallback for ocean-heavy
+// Oceania so its species still sit on island shores rather than open sea.
+let CELLS = null;             // { land:[cell], birdByRegion:{r:[cell]}, coastByRegion:{r:[cell]} }
+function buildCells() {
+  const land = [], birdByRegion = {}, coastByRegion = {};
+  for (let latLo = -82; latLo < 82; latLo += CELL) {
+    const lat = latLo + CELL / 2;                              // cell-centre latitude
+    const lonStep = CELL / Math.max(0.30, Math.cos(lat * RAD)); // square cells
+    for (let lonLo = -180; lonLo < 180; lonLo += lonStep) {
+      const lon = lonLo + lonStep / 2;                         // cell-centre longitude
+      const cell = { latLo, latHi: latLo + CELL, lonLo, lonHi: lonLo + lonStep, lat, lon };
+      if (isLand(lat, lon)) {
+        land.push(cell);
+        const r = regionOf(lat, lon);
+        if (r) (birdByRegion[r] || (birdByRegion[r] = [])).push(cell);
+      } else {
+        let near = false;                                      // water within one cell of land
+        for (let dl = -CELL; dl <= CELL && !near; dl += CELL)
+          for (let dn = -lonStep; dn <= lonStep && !near; dn += lonStep)
+            if (isLand(lat + dl, lon + dn)) near = true;
+        const r = near && regionOf(lat, lon);
+        if (r) (coastByRegion[r] || (coastByRegion[r] = [])).push(cell);
+      }
+    }
+  }
+  CELLS = { land, birdByRegion, coastByRegion };
+}
+
+// Drop every bird onto a unique cell CENTRE, spread evenly across its continent's land.
+// Any coastal (non-land) cell a bird ends up on is recorded in extraGridCells so the grid
+// can box it too -- keeping every bird inside a cell without sprinkling empty sea squares.
+let extraGridCells = [];
+function layoutGrid(markers) {
+  if (!CELLS) { layoutGridFallback(markers); return; }
+  extraGridCells = [];
+  const byRegion = new Map();
+  for (const m of markers) {
+    const region = REGION_BOX[m.bird.region] ? m.bird.region : 'asia';
+    if (!byRegion.has(region)) byRegion.set(region, []);
+    byRegion.get(region).push(m);
+  }
+  for (const [region, list] of byRegion) {
+    const landCells = CELLS.birdByRegion[region] || [];
+    const coastCells = CELLS.coastByRegion[region] || [];
+    // enough land cells -> land only (clean); otherwise borrow coastal island cells
+    let pool = landCells.length >= list.length ? landCells : landCells.concat(coastCells);
+    if (!pool.length) pool = landCells.length ? landCells : coastCells;
+    if (!pool.length) continue;
+    const stride = pool.length / list.length;
+    list.forEach((m, i) => {
+      const idx = Math.min(pool.length - 1, Math.floor(i * stride));
+      const c = pool[idx];
+      m.lat = c.lat; m.lon = c.lon;
+      if (idx >= landCells.length) extraGridCells.push(c);   // a coastal cell -> box it too
+    });
+  }
+}
+
+// Used only before the land mask has loaded: a plain whole-box fill so the first paint
+// still shows something sensible (replaced by the land-snapped layout a moment later).
+function layoutGridFallback(markers) {
+  const byRegion = new Map();
+  for (const m of markers) {
+    const region = REGION_BOX[m.bird.region] ? m.bird.region : 'asia';
+    if (!byRegion.has(region)) byRegion.set(region, []);
+    byRegion.get(region).push(m);
+  }
+  for (const [region, list] of byRegion) {
+    const [latMin, latMax, lonMin, lonMax] = REGION_BOX[region];
+    const n = list.length; if (!n) continue;
+    const midCos = Math.max(0.34, Math.cos(((latMin + latMax) / 2) * RAD));
+    const cols = Math.max(1, Math.round(Math.sqrt(n * (lonMax - lonMin) * midCos / (latMax - latMin))));
+    const latStep = Math.max(CELL, (latMax - latMin) / Math.ceil(n / cols));
+    const lonStep = Math.max(CELL / midCos, (lonMax - lonMin) / cols);
+    const lonMid = (lonMin + lonMax) / 2;
+    list.forEach((m, i) => {
+      const row = Math.floor(i / cols), col = i % cols;
+      const inRow = Math.min(cols, n - row * cols);
+      m.lat = latMax - (row + 0.5) * latStep;
+      m.lon = lonMid - ((inRow - 1) * lonStep) / 2 + col * lonStep;
+    });
+  }
+}
+
 let season = (() => {
   const m = new Date().getMonth() + 1;
   return m <= 2 || m === 12 ? 'winter' : m <= 5 ? 'spring' : m <= 8 ? 'summer' : 'autumn';
@@ -89,6 +228,8 @@ function applyFilter() {
     color: hexRGB(REGION_COLORS[b.region] || '#c9c2b0'),
     size: 6, tier: 0, hasImg: false, bird: b
   }));
+  layoutGrid(currentMarkers);          // place each bird on its continent's grid
+  if (CELLS) globe.setLandGridExtra(extraGridCells);  // box the few coastal birds (land grid is static)
   globe.setMarkers(currentMarkers);
   renderCounts(list.length);
   buildBirdList(list);
@@ -112,7 +253,7 @@ function applyFilter() {
         }
       });
       if (items.length >= 30) {
-        globe.setCutouts(items.slice());
+        globe.setCutouts(items.slice(), { snap: false });   // positions already gridded
         globe.setMarkers(currentMarkers);   // hide dots for birds now shown as cutouts
       }
     }
@@ -268,6 +409,12 @@ function bindToggle(id, fn) {
 }
 bindToggle('#tbSpin', (on) => globe.setAutospin(on));
 bindToggle('#tbLabels', (on) => globe.setHaloVisible(on));
+// "放飛": release every bird into the sky; toggle again to land them back on their cell.
+bindToggle('#tbFly', (on) => {
+  globe.setBirdsFlying(on);
+  closeCard();                                              // no open card while airborne
+  globe.setHaloVisible(!on && $('#tbLabels').classList.contains('on'));   // labels point at cells
+});
 
 /* ---- search ---- */
 $('#search').placeholder = t('搜尋鳥類…');
@@ -301,5 +448,10 @@ window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCard();
 /* ---- boot ---- */
 applyStatic();
 buildChips();
-applyFilter();
+applyFilter();                                   // first paint (whole-box fill if mask not ready)
+loadLandMask().then(() => {
+  buildCells();                                   // enumerate the shared lattice once
+  globe.setLandGrid(CELLS.land);                  // static land grid (built once)
+  applyFilter();                                  // re-snap birds onto cell centres + coastal boxes
+});
 setTimeout(() => $('#splash').classList.add('hide'), 600);

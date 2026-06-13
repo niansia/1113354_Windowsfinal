@@ -24,6 +24,7 @@ const DICT = {
   '文化項目': { 'zh-CN': '文化项目', en: 'Items', ja: '文化項目', ko: '문화 항목' },
   '旋轉': { 'zh-CN': '旋转', en: 'Rotate', ja: '回転', ko: '회전' },
   '標籤': { 'zh-CN': '标签', en: 'Labels', ja: 'ラベル', ko: '라벨' },
+  '放飛': { 'zh-CN': '放飞', en: 'Release', ja: '放つ', ko: '날리기' },
   '圖片': { 'zh-CN': '图片', en: 'Images', ja: '画像', ko: '이미지' },
   '點擊標記即以當地語言朗讀簡介': { 'zh-CN': '点击标记即以当地语言朗读简介', en: 'Tap a marker to hear its intro narrated in the local language', ja: 'マーカーをタップすると現地語で紹介を読み上げます', ko: '마커를 누르면 현지어로 소개를 읽어줍니다' },
   '探索中': { 'zh-CN': '探索中', en: 'Exploring', ja: '探索中', ko: '탐색 중' },
