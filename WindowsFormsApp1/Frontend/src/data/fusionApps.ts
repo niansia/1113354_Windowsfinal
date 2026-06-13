@@ -61,7 +61,7 @@ export const FUSION_APPS: FusionApp[] = [
     color: '#ff6a9e',
     category: 'system',
     tags: ['啟動器', '應用程式', '入口'],
-    status: '15 個應用程式',
+    status: '23 個應用程式',
     launchMode: 'overlay',
     featured: true
   },
@@ -115,6 +115,19 @@ export const FUSION_APPS: FusionApp[] = [
     featured: true
   },
   {
+    id: 'style',
+    title: '虛擬造型工作室',
+    subtitle: '3D 彩妝與穿搭預覽',
+    description: '在可旋轉的 3D 模特兒上試用彩妝、服裝與配色，建立並儲存個人造型。',
+    glyph: 'LOOK',
+    color: '#ff75bd',
+    category: 'creative',
+    tags: ['3D', '彩妝', '穿搭', '配色'],
+    status: '即時預覽',
+    launchMode: 'overlay',
+    featured: true
+  },
+  {
     id: 'piano',
     title: '鋼琴工作室',
     subtitle: '演奏工作區',
@@ -125,6 +138,19 @@ export const FUSION_APPS: FusionApp[] = [
     tags: ['音訊', '音樂', '鋼琴'],
     status: '已就緒',
     launchMode: 'host'
+  },
+  {
+    id: 'flashcards',
+    title: '英文單字卡',
+    subtitle: '單字學習工作區',
+    description: '匯入 TSV、TXT、CSV 與試算表，查詢單字、進行語音練習與測驗，並檢視學習報表。',
+    glyph: 'ABC',
+    color: '#79e6ff',
+    category: 'utilities',
+    tags: ['英文', '單字', '測驗', '語音'],
+    status: '已就緒',
+    launchMode: 'host',
+    featured: true
   },
   {
     id: 'media',
@@ -241,12 +267,12 @@ export const FUSION_APPS: FusionApp[] = [
     id: 'toolbox',
     title: '工具箱',
     subtitle: '日常實用工具',
-    description: '使用計算、換算、色彩、文字、安全性、時間與繪圖工具。',
+    description: '使用工程數學、計算、換算、色彩、文字、安全性、時間與繪圖工具。',
     glyph: 'UTIL',
     color: '#ff8bb8',
     category: 'utilities',
-    tags: ['計算機', '換算器', '小畫家', '實用工具'],
-    status: '10 個工具',
+    tags: ['工程數學', '計算機', '換算器', '小畫家'],
+    status: '11 個工具',
     launchMode: 'overlay'
   },
   {

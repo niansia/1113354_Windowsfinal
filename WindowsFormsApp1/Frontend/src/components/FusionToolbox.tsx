@@ -12,6 +12,7 @@ import {
   Paintbrush,
   Palette,
   Ruler,
+  Sigma,
   Type,
   Wrench,
   X,
@@ -20,6 +21,7 @@ import {
 import { useI18n } from '../i18n/I18nContext';
 import { useSettings } from '../state/SettingsContext';
 import { formatFusionDateTime } from '../i18n/localeFormatting';
+import { EngineeringMathLab } from './toolbox/EngineeringMathLab';
 
 interface FusionToolboxProps {
   open: boolean;
@@ -449,6 +451,7 @@ function PaintTool() {
 interface ToolDef { id: string; label: string; icon: LucideIcon; render: () => React.ReactElement; }
 const TOOLS: ToolDef[] = [
   { id: 'calc', label: '計算機', icon: CalcIcon, render: () => <CalculatorTool /> },
+  { id: 'engineering-math', label: '工程數學實驗室', icon: Sigma, render: () => <EngineeringMathLab /> },
   { id: 'unit', label: '單位轉換', icon: Ruler, render: () => <UnitTool /> },
   { id: 'color', label: '顏色工具', icon: Palette, render: () => <ColorTool /> },
   { id: 'base64', label: 'Base64', icon: Binary, render: () => <Base64Tool /> },

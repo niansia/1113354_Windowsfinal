@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowRight,
+  BookOpenText,
   CircuitBoard,
   Clock3,
   Code2,
@@ -46,6 +47,7 @@ const CATEGORY_LABELS: Array<{ id: 'all' | AppCategory; label: string }> = [
 const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   circuit: CircuitBoard,
   piano: KeyboardMusic,
+  flashcards: BookOpenText,
   media: Video,
   wav: Headphones,
   cosmic: Hand,

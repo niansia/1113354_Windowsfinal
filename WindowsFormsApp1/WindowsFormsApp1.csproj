@@ -129,6 +129,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="IntegratedApps\PianoStudio\**\*.*" />
+    <None Include="IntegratedApps\EnglishFlashcards\**\*.*" />
     <None Include="IntegratedApps\MultimediaStudio\**\*.*" />
     <None Include="IntegratedApps\WaveStudio\**\*.*" />
     <None Include="IntegratedApps\CosmicGesture\**\*.*" />
@@ -141,6 +142,7 @@
     <None Remove="IntegratedApps\CosmicGesture\node_modules\**\*.*" />
     <None Remove="IntegratedApps\CosmicGesture\.vite\**\*.*" />
     <IntegratedAppProject Include="IntegratedApps\PianoStudio\**\*.csproj" />
+    <IntegratedAppProject Include="IntegratedApps\EnglishFlashcards\**\*.csproj" />
     <IntegratedAppProject Include="IntegratedApps\MultimediaStudio\**\*.csproj" />
     <IntegratedAppProject Include="IntegratedApps\WaveStudio\**\*.csproj" />
   </ItemGroup>

@@ -8,7 +8,7 @@
     "build": "node scripts/copy-mediapipe.js && tsc && vite build",
     "preview": "vite preview",
     "test:pet": "tsc -p tsconfig.pet-tests.json && node --test ../output/pet-tests/tests/desktopPetRegistry.test.js ../output/pet-tests/tests/settingsI18n.test.js",
-    "test:features": "tsc -p tsconfig.feature-tests.json && node --test ../output/feature-tests/tests/appCatalog.test.js ../output/feature-tests/tests/circuitSimulator.test.js ../output/feature-tests/tests/localeFormatting.test.js ../output/feature-tests/tests/microphoneSelection.test.js ../output/feature-tests/tests/powerActions.test.js ../output/feature-tests/tests/wakeWords.test.js"
+    "test:features": "tsc -p tsconfig.feature-tests.json && node --test ../output/feature-tests/tests/appCatalog.test.js ../output/feature-tests/tests/circuitSimulator.test.js ../output/feature-tests/tests/engineeringMath.test.js ../output/feature-tests/tests/localeFormatting.test.js ../output/feature-tests/tests/microphoneSelection.test.js ../output/feature-tests/tests/powerActions.test.js ../output/feature-tests/tests/styleEngine.test.js ../output/feature-tests/tests/wakeWords.test.js"
   },
   "keywords": [],
   "author": "",

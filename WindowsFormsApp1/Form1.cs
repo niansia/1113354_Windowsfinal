@@ -1132,6 +1132,7 @@ namespace WindowsFormsApp1
             AddDesktopIcon(L("ThisPC"), "PC", L("ThisPCDesc"), accent3);
             AddDesktopIcon(L("ProjectFiles"), "DIR", L("ProjectFilesDesc"), Color.FromArgb(90, 212, 255));
             AddDesktopIcon(L("PianoStudio"), "88", L("PianoStudioDesc"), Color.FromArgb(205, 95, 255), LaunchPianoStudio);
+            AddDesktopIcon(L("EnglishFlashcards"), "ABC", L("EnglishFlashcardsDesc"), Color.FromArgb(121, 230, 255), LaunchEnglishFlashcards);
             AddDesktopIcon(L("MultimediaStudio"), "VID", L("MultimediaStudioDesc"), Color.FromArgb(88, 220, 255), LaunchMultimediaStudio);
             AddDesktopIcon(L("WaveStudio"), "WAV", L("WaveStudioDesc"), Color.FromArgb(120, 235, 218), LaunchWaveStudio);
             AddDesktopIcon(L("CosmicGesture"), "COS", L("CosmicGestureDesc"), Color.FromArgb(103, 125, 255), LaunchCosmicGesture);
@@ -1288,6 +1289,7 @@ namespace WindowsFormsApp1
             apps.Controls.Add(StartItem(L("FileManager"), L("FileManagerDesc"), accent));
             apps.Controls.Add(StartItem(L("AppRegistry"), L("AppRegistryDesc"), Color.FromArgb(255, 196, 96)));
             apps.Controls.Add(StartItem(L("PianoStudio"), L("StartPianoDesc"), accent2));
+            apps.Controls.Add(StartItem(L("EnglishFlashcards"), L("StartEnglishFlashcardsDesc"), Color.FromArgb(121, 230, 255)));
             apps.Controls.Add(StartItem(L("MultimediaStudio"), L("StartMultimediaDesc"), Color.FromArgb(88, 220, 255)));
             apps.Controls.Add(StartItem(L("WaveStudio"), L("StartWaveDesc"), Color.FromArgb(120, 235, 218)));
             apps.Controls.Add(StartItem(L("CosmicGesture"), L("StartCosmicDesc"), accent3));
@@ -1718,6 +1720,7 @@ namespace WindowsFormsApp1
                 if (lower.Contains("launch_app"))
                 {
                     if (lower.Contains("\"piano\"") || lower.Contains("\"88\"")) LaunchPianoStudio();
+                    else if (lower.Contains("\"flashcards\"") || lower.Contains("\"abc\"")) LaunchEnglishFlashcards();
                     else if (lower.Contains("\"media\"") || lower.Contains("\"vid\"")) LaunchMultimediaStudio();
                     else if (lower.Contains("\"wav\"") || lower.Contains("\"wave\"")) LaunchWaveStudio();
                     else if (lower.Contains("\"cosmic\"") || lower.Contains("\"cos\"")) LaunchCosmicGesture();
@@ -2198,6 +2201,11 @@ namespace WindowsFormsApp1
                 if (name == L("PianoStudio"))
                 {
                     LaunchPianoStudio();
+                    return;
+                }
+                if (name == L("EnglishFlashcards"))
+                {
+                    LaunchEnglishFlashcards();
                     return;
                 }
                 if (name == L("MultimediaStudio"))
@@ -2798,6 +2806,11 @@ namespace WindowsFormsApp1
         private void LaunchPianoStudio()
         {
             LaunchIntegratedExeApp("piano", "PianoStudio", "PianoStudio", accent2);
+        }
+
+        private void LaunchEnglishFlashcards()
+        {
+            LaunchIntegratedExeApp("flashcards", "EnglishFlashcards", "EnglishFlashcards", Color.FromArgb(121, 230, 255));
         }
 
         private void LaunchMultimediaStudio()
@@ -5537,6 +5550,7 @@ namespace WindowsFormsApp1
                 case "ThisPC": return zh ? "本機" : "This PC";
                 case "ProjectFiles": return zh ? "專案檔案" : "Project Files";
                 case "PianoStudio": return zh ? "鋼琴工作室" : "Piano Studio";
+                case "EnglishFlashcards": return zh ? "英文單字卡" : "English Flashcards";
                 case "MultimediaStudio": return zh ? "影音中心" : "AURORA Cinema";
                 case "WaveStudio": return zh ? "音訊工作室" : "Wave Studio";
                 case "CosmicGesture": return zh ? "宇宙手勢" : "Cosmic Gesture";
@@ -5557,6 +5571,7 @@ namespace WindowsFormsApp1
                 case "ThisPCDesc": return zh ? "系統檔案管理與電腦資訊入口。" : "System file manager and computer information.";
                 case "ProjectFilesDesc": return zh ? "存放舊作品與新作品的預設資料夾。" : "Default folder for all old and new school projects.";
                 case "PianoStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/PianoStudio。啟動鋼琴學習與音樂工具。" : "Integrated app package: IntegratedApps/PianoStudio.";
+                case "EnglishFlashcardsDesc": return zh ? "內建英文單字查詢、語音練習、測驗與學習報表。" : "Vocabulary lookup, speech practice, quizzes, and learning reports.";
                 case "MultimediaStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/MultimediaStudio。啟動 AURORA Cinema 多媒體播放器。" : "Integrated app package: IntegratedApps/MultimediaStudio.";
                 case "WaveStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/WaveStudio。啟動 WAV 與音訊播放工具。" : "Integrated app package: IntegratedApps/WaveStudio.";
                 case "CosmicGestureDesc": return zh ? "內建應用程式套件：IntegratedApps/CosmicGesture。啟動 Python + JavaScript 的 WebGL 宇宙手勢系統。" : "Integrated app package: IntegratedApps/CosmicGesture.";
@@ -5576,6 +5591,7 @@ namespace WindowsFormsApp1
                 case "AppRegistry": return zh ? "應用登錄" : "App Registry";
                 case "AppRegistryDesc": return zh ? "保留每個作品模組的登錄清單。" : "Reserved list for every project module.";
                 case "StartPianoDesc": return zh ? "從系統啟動 1113354_piano。" : "Launch 1113354_piano from the system.";
+                case "StartEnglishFlashcardsDesc": return zh ? "開啟英文單字學習、測驗與報表工具。" : "Open the vocabulary learning, quiz, and reporting tools.";
                 case "StartMultimediaDesc": return zh ? "從系統啟動 1113354_multimedia。" : "Launch 1113354_multimedia from the system.";
                 case "StartWaveDesc": return zh ? "從系統啟動 1113354_wav。" : "Launch 1113354_wav from the system.";
                 case "StartCosmicDesc": return zh ? "啟動手勢控制的 3D 宇宙。" : "Launch the gesture-controlled 3D universe.";

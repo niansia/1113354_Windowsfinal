@@ -59,8 +59,16 @@ export const FEATURE_TRANSLATIONS: Record<string, Entry> = {
   '已上線': entry('已上线', 'Online', 'オンライン', '온라인'),
   '本機資料': entry('本机数据', 'Local', 'ローカル', '로컬'),
   '可匯入': entry('可导入', 'Import', 'インポート可能', '가져오기 가능'),
-  '15 個應用程式': entry('15 个应用程序', '15 apps', '15 個のアプリ', '앱 15개'),
-  '10 個工具': entry('10 个工具', '10 tools', '10 個のツール', '도구 10개'),
+  '22 個應用程式': entry('22 个应用程序', '22 apps', '22 個のアプリ', '앱 22개'),
+  '23 個應用程式': entry('23 个应用程序', '23 apps', '23 個のアプリ', '앱 23개'),
+  '11 個工具': entry('11 个工具', '11 tools', '11 個のツール', '도구 11개'),
+  '工程數學': entry('工程数学', 'Engineering math', '工学数学', '공학 수학'),
+  '使用工程數學、計算、換算、色彩、文字、安全性、時間與繪圖工具。': entry(
+    '使用工程数学、计算、换算、色彩、文字、安全性、时间与绘图工具。',
+    'Use engineering math, calculation, conversion, color, text, security, time, and drawing tools.',
+    '工学数学、計算、変換、色、テキスト、セキュリティ、時間、描画ツールを使用します。',
+    '공학 수학, 계산, 변환, 색상, 텍스트, 보안, 시간 및 그리기 도구를 사용합니다.'
+  ),
   'Fusion 應用程式與工作室': entry('Fusion 应用程序与工作室', 'Fusion applications and studios', 'Fusion アプリとスタジオ', 'Fusion 앱 및 스튜디오'),
   '搜尋應用程式、工具與工作室': entry('搜索应用程序、工具与工作室', 'Search apps, tools, and studios', 'アプリ、ツール、スタジオを検索', '앱, 도구 및 스튜디오 검색'),
   '關閉應用程式中心': entry('关闭应用程序中心', 'Close App Center', 'アプリセンターを閉じる', '앱 센터 닫기'),

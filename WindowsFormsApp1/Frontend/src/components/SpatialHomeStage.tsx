@@ -4,6 +4,7 @@ import {
   AppWindow,
   AudioWaveform,
   Bluetooth,
+  BookOpenText,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -27,6 +28,7 @@ import {
   Power,
   RotateCcw,
   Settings,
+  Shirt,
   Sparkles,
   Terminal,
   Volume2,
@@ -57,6 +59,10 @@ import { ACCOUNT_TEXT } from '../settings/settingsText';
 import { formatFusionDate, formatFusionTime } from '../i18n/localeFormatting';
 import { POWER_ACTIONS, toHostSystemAction, type PowerAction } from '../system/powerActions';
 
+const LazyFusionStyleStudio = React.lazy(() =>
+  import('./FusionStyleStudio').then((module) => ({ default: module.FusionStyleStudio }))
+);
+
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
 const CARD_W = 208;
 const CARD_GAP = 16;
@@ -83,6 +89,7 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   pc: Cpu,
   dir: Folder,
   piano: Music,
+  flashcards: BookOpenText,
   media: Clapperboard,
   wav: AudioWaveform,
   cosmic: Sparkles,
@@ -93,6 +100,7 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   tool: AppWindow,
   toolbox: Wrench,
   circuit: CircuitBoard,
+  style: Shirt,
   db: Database,
   web: Globe2,
   game: Gamepad2,
@@ -181,6 +189,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       app.id === 'tool' ||
       app.id === 'db' ||
       app.id === 'circuit' ||
+      app.id === 'style' ||
       app.id === 'toolbox'
     ) {
       setOverlayApp(app.id);
@@ -821,6 +830,15 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
         onClose={() => setOverlayApp('tool')}
         accent={settings.accent}
       />
+      {overlayApp === 'style' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionStyleStudio
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#ff75bd"
+          />
+        </React.Suspense>
+      )}
 
       <FusionAssistant
         enabled={settings.assistantEnabled}

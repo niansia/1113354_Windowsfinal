@@ -1,7 +1,7 @@
 export type AppId =
-  | 'pc' | 'dir' | 'piano' | 'media' | 'wav' | 'cosmic' | 'user'
+  | 'pc' | 'dir' | 'piano' | 'flashcards' | 'media' | 'wav' | 'cosmic' | 'user'
   | 'metro' | 'iot' | 'verify' | 'cultura' | 'add' | 'dev' | 'tool' | 'db' | 'web'
-  | 'game' | 'cmd' | 'set' | 'circuit' | 'toolbox';
+  | 'game' | 'cmd' | 'set' | 'circuit' | 'toolbox' | 'style';
 
 export type GestureType =
   | 'INDEX_SWIPE'
