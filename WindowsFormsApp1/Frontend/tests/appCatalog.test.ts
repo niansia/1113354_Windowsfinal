@@ -11,6 +11,7 @@ import {
 import { FEATURE_TRANSLATIONS } from '../src/i18n/featureTranslations.js';
 import { TRANSLATIONS } from '../src/i18n/strings.js';
 import { STYLE_TRANSLATIONS } from '../src/style/styleText.js';
+import { SPORTS_TRANSLATIONS } from '../src/sports/sportsText.js';
 
 test('keeps the primary dock focused on shell-level destinations', () => {
   assert.deepEqual(
@@ -71,6 +72,27 @@ test('registers Development Lab as a data structures and algorithms overlay', ()
   assert.equal(APP_CENTER_APPS.some((app) => app.id === 'dev'), true);
 });
 
+test('registers Global Sports Center as a translated data overlay', () => {
+  const sports = getAppById('sports');
+
+  assert.equal(sports?.title, '全球體育中心');
+  assert.equal(sports?.subtitle, '即時比分、賽程與 AI 預測');
+  assert.equal(sports?.category, 'data');
+  assert.equal(sports?.launchMode, 'overlay');
+  assert.equal(sports?.featured, true);
+  assert.equal(APP_CENTER_APPS.some((app) => app.id === 'sports'), true);
+});
+
+test('wires Global Sports Center into the React overlay shell', () => {
+  const repositoryRoot = resolve(process.cwd(), '..');
+  const shellSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
+  const entrySource = readFileSync(resolve(repositoryRoot, 'Frontend/src/main.tsx'), 'utf8');
+
+  assert.match(shellSource, /FusionSportsCenter/);
+  assert.match(shellSource, /overlayApp === 'sports'/);
+  assert.match(entrySource, /fusionSportsCenter\.css/);
+});
+
 test('wires English Flashcards into the WinForms host build and launch route', () => {
   const repositoryRoot = resolve(process.cwd(), '..');
   const hostSource = readFileSync(resolve(repositoryRoot, 'Form1.cs'), 'utf8');
@@ -92,7 +114,7 @@ test('uses Traditional Chinese source keys for the default app catalog', () => {
 test('provides every app catalog field in all selectable languages', () => {
   for (const app of FUSION_APPS) {
     for (const source of [app.title, app.subtitle, app.description, app.status, ...app.tags]) {
-      const translation = STYLE_TRANSLATIONS[source] ?? FEATURE_TRANSLATIONS[source] ?? TRANSLATIONS[source];
+      const translation = SPORTS_TRANSLATIONS[source] ?? STYLE_TRANSLATIONS[source] ?? FEATURE_TRANSLATIONS[source] ?? TRANSLATIONS[source];
       assert.ok(translation, `missing translation entry for "${source}"`);
       for (const lang of ['zh-CN', 'en', 'ja', 'ko'] as const) {
         assert.ok(translation[lang], `missing ${lang} translation for "${source}"`);

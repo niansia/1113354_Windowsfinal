@@ -14,6 +14,9 @@ const UNDERTONES = ['warm', 'cool', 'neutral'];
 const BODY_PRESETS = ['petite', 'balanced', 'tall'];
 const HAIR_STYLES = ['bob', 'waves', 'bun', 'updo', 'ponytail'];
 const FINISHES = ['matte', 'satin', 'glow'];
+const EYELINER_STYLES = ['natural', 'tightline', 'puppy', 'wing', 'fox', 'smoky'];
+const BROW_STYLES = ['natural', 'straight', 'soft-arch', 'defined-arch', 'lifted'];
+const LASH_STYLES = ['natural', 'doll', 'cat', 'wispy'];
 const TOPS = ['none', 'fitted', 'relaxed', 'cropped', 'blazer', 'knit', 'offshoulder'];
 const BOTTOMS = ['none', 'trousers', 'skirt', 'shorts', 'wideleg', 'maxiskirt', 'pleated'];
 const DRESSES = ['none', 'column', 'flare', 'aline', 'cocktail', 'gown', 'mermaid'];
@@ -31,6 +34,9 @@ const normalizeLook = (value) => {
     const avatar = value.avatar;
     const makeup = value.makeup;
     const wardrobe = value.wardrobe;
+    const eyelinerStyle = makeup.eyelinerStyle === 'bold'
+        ? 'smoky'
+        : asEnum(makeup.eyelinerStyle, EYELINER_STYLES, fallback.makeup.eyelinerStyle);
     const top = asEnum(wardrobe.top, TOPS, fallback.wardrobe.top);
     const bottom = asEnum(wardrobe.bottom, BOTTOMS, fallback.wardrobe.bottom);
     const dress = asEnum(wardrobe.dress, DRESSES, fallback.wardrobe.dress);
@@ -61,15 +67,24 @@ const normalizeLook = (value) => {
             eyelinerEnabled: typeof makeup.eyelinerEnabled === 'boolean'
                 ? makeup.eyelinerEnabled
                 : fallback.makeup.eyelinerEnabled,
+            eyelinerColor: isHex(makeup.eyelinerColor) ? makeup.eyelinerColor : fallback.makeup.eyelinerColor,
             eyelinerIntensity: asNumber(makeup.eyelinerIntensity, fallback.makeup.eyelinerIntensity),
-            eyelinerStyle: asEnum(makeup.eyelinerStyle, ['natural', 'wing', 'bold', 'tightline'], fallback.makeup.eyelinerStyle),
+            eyelinerStyle,
+            eyelinerThickness: asNumber(makeup.eyelinerThickness, fallback.makeup.eyelinerThickness),
+            eyelinerWingLength: asNumber(makeup.eyelinerWingLength, fallback.makeup.eyelinerWingLength),
+            eyelinerWingLift: asNumber(makeup.eyelinerWingLift, fallback.makeup.eyelinerWingLift, -1, 1),
             foundationIntensity: asNumber(makeup.foundationIntensity, fallback.makeup.foundationIntensity),
             contourIntensity: asNumber(makeup.contourIntensity, fallback.makeup.contourIntensity),
             highlightIntensity: asNumber(makeup.highlightIntensity, fallback.makeup.highlightIntensity),
             lashIntensity: asNumber(makeup.lashIntensity, fallback.makeup.lashIntensity),
+            lashStyle: asEnum(makeup.lashStyle, LASH_STYLES, fallback.makeup.lashStyle),
+            lashLength: asNumber(makeup.lashLength, fallback.makeup.lashLength),
+            lashCurl: asNumber(makeup.lashCurl, fallback.makeup.lashCurl),
             aegyoIntensity: asNumber(makeup.aegyoIntensity, fallback.makeup.aegyoIntensity),
             browColor: isHex(makeup.browColor) ? makeup.browColor : fallback.makeup.browColor,
-            browIntensity: asNumber(makeup.browIntensity, fallback.makeup.browIntensity)
+            browIntensity: asNumber(makeup.browIntensity, fallback.makeup.browIntensity),
+            browStyle: asEnum(makeup.browStyle, BROW_STYLES, fallback.makeup.browStyle),
+            browThickness: asNumber(makeup.browThickness, fallback.makeup.browThickness)
         },
         wardrobe: {
             top: normalizedDress !== 'none' ? 'none' : top,

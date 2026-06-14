@@ -17,6 +17,7 @@ import {
   Search,
   Sparkles,
   Terminal,
+  Trophy,
   UserRound,
   Video,
   Wrench,
@@ -58,7 +59,8 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   toolbox: Wrench,
   user: UserRound,
   add: FolderInput,
-  game: Gamepad2
+  game: Gamepad2,
+  sports: Trophy
 };
 
 const RECENT_KEY = 'fusion-app-center-recent-v1';

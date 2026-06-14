@@ -31,6 +31,7 @@ import {
   Shirt,
   Sparkles,
   Terminal,
+  Trophy,
   Volume2,
   Wrench,
   Wifi
@@ -62,6 +63,10 @@ import { POWER_ACTIONS, toHostSystemAction, type PowerAction } from '../system/p
 
 const LazyFusionStyleStudio = React.lazy(() =>
   import('./FusionStyleStudio').then((module) => ({ default: module.FusionStyleStudio }))
+);
+
+const LazyFusionSportsCenter = React.lazy(() =>
+  import('./FusionSportsCenter').then((module) => ({ default: module.FusionSportsCenter }))
 );
 
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
@@ -102,6 +107,7 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   toolbox: Wrench,
   circuit: CircuitBoard,
   style: Shirt,
+  sports: Trophy,
   db: Database,
   web: Globe2,
   game: Gamepad2,
@@ -192,6 +198,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       app.id === 'circuit' ||
       app.id === 'dev' ||
       app.id === 'style' ||
+      app.id === 'sports' ||
       app.id === 'toolbox'
     ) {
       setOverlayApp(app.id);
@@ -843,6 +850,15 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
             open
             onClose={() => setOverlayApp('tool')}
             accent="#ff75bd"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'sports' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionSportsCenter
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#55e6ff"
           />
         </React.Suspense>
       )}

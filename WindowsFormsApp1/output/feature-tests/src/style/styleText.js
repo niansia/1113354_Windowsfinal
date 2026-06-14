@@ -283,5 +283,36 @@ exports.STYLE_TRANSLATIONS = {
     '已載入你的全身照。': entry('已载入你的全身照。', 'Your full-body photo is loaded.', '全身写真を読み込みました。', '전신 사진을 불러왔습니다.'),
     '紅洋裝': entry('红连衣裙', 'Red dress', '赤いワンピース', '레드 드레스'),
     '印花洋裝': entry('印花连衣裙', 'Patterned dress', '柄ワンピース', '패턴 드레스'),
-    '花卉上衣': entry('花卉上衣', 'Floral top', '花柄トップス', '플로럴 탑')
+    '花卉上衣': entry('花卉上衣', 'Floral top', '花柄トップス', '플로럴 탑'),
+    // ── Eyeliner styles ──
+    '眼線樣式': entry('眼线样式', 'Liner style', 'アイラインの形', '아이라이너 스타일'),
+    '貓眼': entry('猫眼', 'Winged', 'キャットアイ', '캣아이'),
+    '內眼線': entry('内眼线', 'Tightline', 'インライン', '점막 라인'),
+    '下垂眼線': entry('下垂眼线', 'Puppy', 'たれ目ライン', '퍼피 라인'),
+    '狐狸眼': entry('狐狸眼', 'Fox eye', 'フォックスアイ', '폭스 아이'),
+    '煙燻': entry('烟熏', 'Smoky', 'スモーキー', '스모키'),
+    '線條粗細': entry('线条粗细', 'Line thickness', 'ラインの太さ', '라인 굵기'),
+    '眼尾長度': entry('眼尾长度', 'Tail length', '目尻の長さ', '꼬리 길이'),
+    '眼尾角度': entry('眼尾角度', 'Tail angle', '目尻の角度', '꼬리 각도'),
+    // ── Brow and lash shaping ──
+    '眉型': entry('眉形', 'Brow shape', '眉の形', '눈썹 모양'),
+    '自然眉': entry('自然眉', 'Natural brow', 'ナチュラル眉', '내추럴 브로우'),
+    '平直眉': entry('平直眉', 'Straight brow', '平行眉', '일자 눈썹'),
+    '柔弧眉': entry('柔弧眉', 'Soft arch', 'ソフトアーチ', '소프트 아치'),
+    '高挑眉': entry('高挑眉', 'Defined arch', 'シャープアーチ', '디파인드 아치'),
+    '上揚眉': entry('上扬眉', 'Lifted brow', 'リフト眉', '리프트 브로우'),
+    '眉毛粗細': entry('眉毛粗细', 'Brow thickness', '眉の太さ', '눈썹 굵기'),
+    '睫毛樣式': entry('睫毛样式', 'Lash style', 'まつ毛スタイル', '속눈썹 스타일'),
+    '自然睫毛': entry('自然睫毛', 'Natural lashes', 'ナチュラル', '내추럴 래시'),
+    '娃娃睫毛': entry('娃娃睫毛', 'Doll lashes', 'ドール', '돌 래시'),
+    '貓眼睫毛': entry('猫眼睫毛', 'Cat-eye lashes', 'キャットアイ', '캣아이 래시'),
+    '羽束睫毛': entry('羽束睫毛', 'Wispy lashes', '束感まつ毛', '위스피 래시'),
+    '睫毛長度': entry('睫毛长度', 'Lash length', 'まつ毛の長さ', '속눈썹 길이'),
+    '捲翹度': entry('卷翘度', 'Curl', 'カール', '컬'),
+    // ── Eyeliner colors ──
+    '墨黑': entry('墨黑', 'Ink black', 'インクブラック', '잉크 블랙'),
+    '深棕': entry('深棕', 'Deep brown', 'ダークブラウン', '딥 브라운'),
+    '灰棕': entry('灰棕', 'Taupe', 'トープ', '토프'),
+    '酒紅': entry('酒红', 'Burgundy', 'バーガンディ', '버건디'),
+    '靛藍': entry('靛蓝', 'Indigo', 'インディゴ', '인디고')
 };

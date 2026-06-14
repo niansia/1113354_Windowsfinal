@@ -2,7 +2,9 @@ export type Undertone = 'warm' | 'cool' | 'neutral';
 export type BodyPreset = 'petite' | 'balanced' | 'tall';
 export type HairStyle = 'bob' | 'waves' | 'bun' | 'updo' | 'ponytail';
 export type MakeupFinish = 'matte' | 'satin' | 'glow';
-export type EyelinerStyle = 'natural' | 'wing' | 'bold' | 'tightline';
+export type EyelinerStyle = 'natural' | 'tightline' | 'puppy' | 'wing' | 'fox' | 'smoky';
+export type BrowStyle = 'natural' | 'straight' | 'soft-arch' | 'defined-arch' | 'lifted';
+export type LashStyle = 'natural' | 'doll' | 'cat' | 'wispy';
 export type StyleView = 'full' | 'face' | 'outfit';
 
 export type TopId = 'none' | 'fitted' | 'relaxed' | 'cropped' | 'blazer' | 'knit' | 'offshoulder';
@@ -39,16 +41,25 @@ export interface MakeupStyle {
   lipstickIntensity: number;
   lipstickFinish: MakeupFinish;
   eyelinerEnabled: boolean;
+  eyelinerColor: string;
   eyelinerIntensity: number;
   eyelinerStyle: EyelinerStyle;
+  eyelinerThickness: number;
+  eyelinerWingLength: number;
+  eyelinerWingLift: number;
   // ── detailed features (landmark-driven) ──
   foundationIntensity: number;
   contourIntensity: number;
   highlightIntensity: number;
   lashIntensity: number;
+  lashStyle: LashStyle;
+  lashLength: number;
+  lashCurl: number;
   aegyoIntensity: number;
   browColor: string;
   browIntensity: number;
+  browStyle: BrowStyle;
+  browThickness: number;
 }
 
 export interface WardrobeStyle {

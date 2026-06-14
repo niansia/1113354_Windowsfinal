@@ -40,7 +40,9 @@ import {
   upsertSavedLook
 } from '../style/styleStorage';
 import type {
+  BrowStyle,
   EyelinerStyle,
+  LashStyle,
   MakeupFinish,
   MakeupStyle,
   OutfitLook,
@@ -78,6 +80,13 @@ const randomItem = <T,>(items: readonly T[]) => items[Math.floor(Math.random() *
 const roleColors = (role: StyleColorRole) => STYLE_COLORS.filter((color) => color.roles.includes(role));
 const makeupColor = (look: StyleLook, target: StyleColorRole) =>
   target === 'lip' ? look.makeup.lipstickColor : target === 'eye' ? look.makeup.eyeshadowColor : look.makeup.blushColor;
+const EYELINER_COLORS = [
+  { name: '墨黑', hex: '#17131A' },
+  { name: '深棕', hex: '#3B2925' },
+  { name: '灰棕', hex: '#514A4B' },
+  { name: '酒紅', hex: '#5D2637' },
+  { name: '靛藍', hex: '#252E59' }
+];
 
 type MakeupTarget =
   | 'foundation' | 'contour' | 'highlight' | 'blush' | 'eyeshadow'
@@ -91,6 +100,7 @@ interface TargetSpec {
   colorKey?: keyof MakeupStyle;
   colorRole?: StyleColorRole;
   browPalette?: boolean;
+  eyelinerPalette?: boolean;
   finishKey?: keyof MakeupStyle;
   toggleKey?: keyof MakeupStyle;
 }
@@ -101,7 +111,7 @@ const TARGETS: TargetSpec[] = [
   { id: 'highlight', label: '高光', icon: <Sun size={15} />, intensityKey: 'highlightIntensity' },
   { id: 'blush', label: '腮紅', icon: <Heart size={15} />, intensityKey: 'blushIntensity', colorKey: 'blushColor', colorRole: 'blush' },
   { id: 'eyeshadow', label: '眼影', icon: <Eye size={15} />, intensityKey: 'eyeshadowIntensity', colorKey: 'eyeshadowColor', colorRole: 'eye', finishKey: 'eyeshadowFinish' },
-  { id: 'eyeliner', label: '眼線', icon: <PenTool size={15} />, intensityKey: 'eyelinerIntensity', toggleKey: 'eyelinerEnabled' },
+  { id: 'eyeliner', label: '眼線', icon: <PenTool size={15} />, intensityKey: 'eyelinerIntensity', colorKey: 'eyelinerColor', eyelinerPalette: true, toggleKey: 'eyelinerEnabled' },
   { id: 'lash', label: '睫毛', icon: <Brush size={15} />, intensityKey: 'lashIntensity' },
   { id: 'aegyo', label: '臥蠶', icon: <Star size={15} />, intensityKey: 'aegyoIntensity' },
   { id: 'brow', label: '眉毛', icon: <PenLine size={15} />, intensityKey: 'browIntensity', colorKey: 'browColor', browPalette: true },
@@ -160,6 +170,111 @@ function FinishSelector({
         </button>
       ))}
     </div>
+  );
+}
+
+function EyelinerStyleSelector({
+  value, onChange, translate
+}: {
+  value: EyelinerStyle;
+  onChange: (style: EyelinerStyle) => void;
+  translate: (source: string) => string;
+}) {
+  const styles: Array<{ id: EyelinerStyle; label: string }> = [
+    { id: 'natural', label: '自然' },
+    { id: 'tightline', label: '內眼線' },
+    { id: 'puppy', label: '下垂眼線' },
+    { id: 'wing', label: '貓眼' },
+    { id: 'fox', label: '狐狸眼' },
+    { id: 'smoky', label: '煙燻' }
+  ];
+  return (
+    <div className="style-segmented">
+      {styles.map((style) => (
+        <button key={style.id} type="button" className={value === style.id ? 'is-selected' : ''} onClick={() => onChange(style.id)}>
+          {translate(style.label)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function BrowStyleSelector({
+  value, onChange, translate
+}: {
+  value: BrowStyle;
+  onChange: (style: BrowStyle) => void;
+  translate: (source: string) => string;
+}) {
+  const styles: Array<{ id: BrowStyle; label: string }> = [
+    { id: 'natural', label: '自然眉' },
+    { id: 'straight', label: '平直眉' },
+    { id: 'soft-arch', label: '柔弧眉' },
+    { id: 'defined-arch', label: '高挑眉' },
+    { id: 'lifted', label: '上揚眉' }
+  ];
+  return (
+    <div className="style-segmented">
+      {styles.map((style) => (
+        <button key={style.id} type="button" className={value === style.id ? 'is-selected' : ''} onClick={() => onChange(style.id)}>
+          {translate(style.label)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function LashStyleSelector({
+  value, onChange, translate
+}: {
+  value: LashStyle;
+  onChange: (style: LashStyle) => void;
+  translate: (source: string) => string;
+}) {
+  const styles: Array<{ id: LashStyle; label: string }> = [
+    { id: 'natural', label: '自然睫毛' },
+    { id: 'doll', label: '娃娃睫毛' },
+    { id: 'cat', label: '貓眼睫毛' },
+    { id: 'wispy', label: '羽束睫毛' }
+  ];
+  return (
+    <div className="style-segmented four">
+      {styles.map((style) => (
+        <button key={style.id} type="button" className={value === style.id ? 'is-selected' : ''} onClick={() => onChange(style.id)}>
+          {translate(style.label)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MakeupRange({
+  label,
+  value,
+  onChange,
+  translate,
+  disabled = false,
+  min = 0,
+  max = 1
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  translate: (source: string) => string;
+  disabled?: boolean;
+  min?: number;
+  max?: number;
+}) {
+  const percentage = Math.round(((value - min) / (max - min)) * 100);
+  const displayValue = min < 0
+    ? `${value >= 0 ? '+' : ''}${Math.round(value * 100)}%`
+    : `${percentage}%`;
+  return (
+    <label className="style-range">
+      <span>{translate(label)} <b>{displayValue}</b></span>
+      <input type="range" min={min} max={max} step="0.01" disabled={disabled}
+        value={value} onChange={(event) => onChange(Number(event.target.value))} />
+    </label>
   );
 }
 
@@ -442,7 +557,13 @@ export const FusionStyleStudio: React.FC<FusionStyleStudioProps> = ({ open, onCl
 
   const makeupPanel = () => {
     const spec = TARGETS.find((target) => target.id === makeupTarget) ?? TARGETS[0];
-    const colors = spec.browPalette ? HAIR_COLORS : spec.colorRole ? roleColors(spec.colorRole) : [];
+    const colors = spec.browPalette
+      ? HAIR_COLORS
+      : spec.eyelinerPalette
+        ? EYELINER_COLORS
+        : spec.colorRole
+          ? roleColors(spec.colorRole)
+          : [];
     const intensity = look.makeup[spec.intensityKey] as number;
     const toggleOn = spec.toggleKey ? (look.makeup[spec.toggleKey] as boolean) : true;
     return (
@@ -466,10 +587,56 @@ export const FusionStyleStudio: React.FC<FusionStyleStudioProps> = ({ open, onCl
           {colors.length > 0 && (
             <ColorSwatches colors={colors} value={look.makeup[spec.colorKey as keyof MakeupStyle] as string} onChange={(hex) => updateMakeup({ [spec.colorKey as string]: hex } as Partial<MakeupStyle>)} translate={t} />
           )}
-          <label className="style-range">
-            <span>{t('濃度')} <b>{Math.round(intensity * 100)}%</b></span>
-            <input type="range" min="0" max="1" step="0.01" disabled={spec.toggleKey ? !toggleOn : false} value={intensity} onChange={(event) => updateMakeup({ [spec.intensityKey as string]: Number(event.target.value) } as Partial<MakeupStyle>)} />
-          </label>
+          {spec.id === 'eyeliner' && (
+            <>
+              <span className="style-control-label">{t('眼線樣式')}</span>
+              <EyelinerStyleSelector value={look.makeup.eyelinerStyle} onChange={(style) => updateMakeup({ eyelinerStyle: style })} translate={t} />
+            </>
+          )}
+          {spec.id === 'brow' && (
+            <>
+              <span className="style-control-label">{t('眉型')}</span>
+              <BrowStyleSelector value={look.makeup.browStyle} onChange={(style) => updateMakeup({ browStyle: style })} translate={t} />
+            </>
+          )}
+          {spec.id === 'lash' && (
+            <>
+              <span className="style-control-label">{t('睫毛樣式')}</span>
+              <LashStyleSelector value={look.makeup.lashStyle} onChange={(style) => updateMakeup({ lashStyle: style })} translate={t} />
+            </>
+          )}
+          <MakeupRange label="濃度" value={intensity} translate={t}
+            disabled={spec.toggleKey ? !toggleOn : false}
+            onChange={(value) => updateMakeup({ [spec.intensityKey as string]: value } as Partial<MakeupStyle>)} />
+          {spec.id === 'eyeliner' && (
+            <>
+              <MakeupRange label="線條粗細" value={look.makeup.eyelinerThickness} translate={t}
+                disabled={!toggleOn}
+                onChange={(value) => updateMakeup({ eyelinerThickness: value })} />
+              {!['natural', 'tightline'].includes(look.makeup.eyelinerStyle) && (
+                <>
+                  <MakeupRange label="眼尾長度" value={look.makeup.eyelinerWingLength} translate={t}
+                    disabled={!toggleOn}
+                    onChange={(value) => updateMakeup({ eyelinerWingLength: value })} />
+                  <MakeupRange label="眼尾角度" value={look.makeup.eyelinerWingLift} min={-1} max={1} translate={t}
+                    disabled={!toggleOn}
+                    onChange={(value) => updateMakeup({ eyelinerWingLift: value })} />
+                </>
+              )}
+            </>
+          )}
+          {spec.id === 'brow' && (
+            <MakeupRange label="眉毛粗細" value={look.makeup.browThickness} translate={t}
+              onChange={(value) => updateMakeup({ browThickness: value })} />
+          )}
+          {spec.id === 'lash' && (
+            <>
+              <MakeupRange label="睫毛長度" value={look.makeup.lashLength} translate={t}
+                onChange={(value) => updateMakeup({ lashLength: value })} />
+              <MakeupRange label="捲翹度" value={look.makeup.lashCurl} translate={t}
+                onChange={(value) => updateMakeup({ lashCurl: value })} />
+            </>
+          )}
           {spec.finishKey && (
             <>
               <span className="style-control-label">{t('質感')}</span>

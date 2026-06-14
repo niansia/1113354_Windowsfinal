@@ -11,6 +11,7 @@ const fusionApps_js_1 = require("../src/data/fusionApps.js");
 const featureTranslations_js_1 = require("../src/i18n/featureTranslations.js");
 const strings_js_1 = require("../src/i18n/strings.js");
 const styleText_js_1 = require("../src/style/styleText.js");
+const sportsText_js_1 = require("../src/sports/sportsText.js");
 (0, node_test_1.default)('keeps the primary dock focused on shell-level destinations', () => {
     strict_1.default.deepEqual(fusionApps_js_1.PRIMARY_SHELL_APPS.map((app) => app.id), ['pc', 'dir', 'tool', 'web', 'game', 'set']);
 });
@@ -55,6 +56,23 @@ const styleText_js_1 = require("../src/style/styleText.js");
     strict_1.default.equal(developmentLab?.tags.includes('視覺化'), true);
     strict_1.default.equal(fusionApps_js_1.APP_CENTER_APPS.some((app) => app.id === 'dev'), true);
 });
+(0, node_test_1.default)('registers Global Sports Center as a translated data overlay', () => {
+    const sports = (0, fusionApps_js_1.getAppById)('sports');
+    strict_1.default.equal(sports?.title, '全球體育中心');
+    strict_1.default.equal(sports?.subtitle, '即時比分、賽程與 AI 預測');
+    strict_1.default.equal(sports?.category, 'data');
+    strict_1.default.equal(sports?.launchMode, 'overlay');
+    strict_1.default.equal(sports?.featured, true);
+    strict_1.default.equal(fusionApps_js_1.APP_CENTER_APPS.some((app) => app.id === 'sports'), true);
+});
+(0, node_test_1.default)('wires Global Sports Center into the React overlay shell', () => {
+    const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
+    const shellSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
+    const entrySource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/main.tsx'), 'utf8');
+    strict_1.default.match(shellSource, /FusionSportsCenter/);
+    strict_1.default.match(shellSource, /overlayApp === 'sports'/);
+    strict_1.default.match(entrySource, /fusionSportsCenter\.css/);
+});
 (0, node_test_1.default)('wires English Flashcards into the WinForms host build and launch route', () => {
     const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
     const hostSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Form1.cs'), 'utf8');
@@ -73,7 +91,7 @@ const styleText_js_1 = require("../src/style/styleText.js");
 (0, node_test_1.default)('provides every app catalog field in all selectable languages', () => {
     for (const app of fusionApps_js_1.FUSION_APPS) {
         for (const source of [app.title, app.subtitle, app.description, app.status, ...app.tags]) {
-            const translation = styleText_js_1.STYLE_TRANSLATIONS[source] ?? featureTranslations_js_1.FEATURE_TRANSLATIONS[source] ?? strings_js_1.TRANSLATIONS[source];
+            const translation = sportsText_js_1.SPORTS_TRANSLATIONS[source] ?? styleText_js_1.STYLE_TRANSLATIONS[source] ?? featureTranslations_js_1.FEATURE_TRANSLATIONS[source] ?? strings_js_1.TRANSLATIONS[source];
             strict_1.default.ok(translation, `missing translation entry for "${source}"`);
             for (const lang of ['zh-CN', 'en', 'ja', 'ko']) {
                 strict_1.default.ok(translation[lang], `missing ${lang} translation for "${source}"`);

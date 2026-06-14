@@ -13,6 +13,11 @@ const sample = new Date('2026-06-05T04:55:00.000Z');
     strict_1.default.equal((0, localeFormatting_js_1.normalizeLanguage)('fr'), 'zh-TW');
     strict_1.default.equal((0, localeFormatting_js_1.normalizeLanguage)('en'), 'en');
 });
+(0, node_test_1.default)('builds sports date keys and event labels in the selected system timezone', () => {
+    const sample = new Date('2026-06-14T16:30:00Z');
+    strict_1.default.equal((0, localeFormatting_js_1.fusionCalendarKey)(sample, 'Asia/Taipei'), '2026-06-15');
+    strict_1.default.match((0, localeFormatting_js_1.formatFusionEventDateTime)(sample, 'en', 'America/New_York', false), /Jun|June/);
+});
 (0, node_test_1.default)('formats the shell clock with the configured locale, timezone, and clock mode', () => {
     strict_1.default.equal((0, localeFormatting_js_1.formatFusionTime)(sample, 'zh-TW', 'Asia/Taipei', true), '12:55');
     strict_1.default.match((0, localeFormatting_js_1.formatFusionDate)(sample, 'zh-TW', 'Asia/Taipei'), /6月5日/);

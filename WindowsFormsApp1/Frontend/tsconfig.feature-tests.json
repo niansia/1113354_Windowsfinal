@@ -24,14 +24,18 @@
     "src/devlab/**/*.ts",
     "src/math/**/*.ts",
     "src/system/**/*.ts",
+    "src/sports/**/*.ts",
     "src/style/**/*.ts",
     "tests/appCatalog.test.ts",
     "tests/circuitSimulator.test.ts",
     "tests/developmentLab.test.ts",
     "tests/engineeringMath.test.ts",
     "tests/localeFormatting.test.ts",
+    "tests/makeupGeometry.test.ts",
     "tests/microphoneSelection.test.ts",
     "tests/powerActions.test.ts",
+    "tests/sportsProviders.test.ts",
+    "tests/sportsSimulation.test.ts",
     "tests/styleEngine.test.ts",
     "tests/wakeWords.test.ts"
   ]

@@ -240,6 +240,19 @@ export const FUSION_APPS: FusionApp[] = [
     featured: true
   },
   {
+    id: 'sports',
+    title: '全球體育中心',
+    subtitle: '即時比分、賽程與 AI 預測',
+    description: '追蹤大型體育賽事，使用蒙地卡羅模擬比較隊伍、選手與賽前勝率。',
+    glyph: 'SPORT',
+    color: '#55e6ff',
+    category: 'data',
+    tags: ['即時比分', '世界盃', '蒙地卡羅', 'AI 分析'],
+    status: '免金鑰資料',
+    launchMode: 'overlay',
+    featured: true
+  },
+  {
     id: 'dev',
     title: '開發實驗室',
     subtitle: '資料結構與演算法',

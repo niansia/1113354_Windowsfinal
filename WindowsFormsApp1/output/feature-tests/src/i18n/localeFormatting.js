@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.formatFusionDateTime = exports.formatFusionFileDate = exports.formatFusionDate = exports.formatFusionTime = exports.normalizeTimezone = exports.localeForLanguage = exports.normalizeLanguage = void 0;
+exports.formatFusionEventDateTime = exports.fusionCalendarKey = exports.formatFusionDateTime = exports.formatFusionFileDate = exports.formatFusionDate = exports.formatFusionTime = exports.normalizeTimezone = exports.localeForLanguage = exports.normalizeLanguage = void 0;
 const SUPPORTED_LANGUAGES = new Set(['zh-TW', 'zh-CN', 'en', 'ja', 'ko']);
 const DEFAULT_TIMEZONE = 'Asia/Taipei';
 const LOCALES = {
@@ -57,3 +57,24 @@ const formatFusionDateTime = (date, lang, timezone, clock24) => new Intl.DateTim
     hour12: !clock24
 }).format(date);
 exports.formatFusionDateTime = formatFusionDateTime;
+const fusionCalendarKey = (date, timezone) => {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: (0, exports.normalizeTimezone)(timezone),
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+};
+exports.fusionCalendarKey = fusionCalendarKey;
+const formatFusionEventDateTime = (date, lang, timezone, clock24) => new Intl.DateTimeFormat((0, exports.localeForLanguage)(lang), {
+    timeZone: (0, exports.normalizeTimezone)(timezone),
+    month: 'short',
+    day: 'numeric',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: !clock24
+}).format(date);
+exports.formatFusionEventDateTime = formatFusionEventDateTime;
