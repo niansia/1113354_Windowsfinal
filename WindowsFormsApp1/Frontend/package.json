@@ -8,7 +8,7 @@
     "build": "node scripts/copy-mediapipe.js && tsc && vite build",
     "preview": "vite preview",
     "test:pet": "tsc -p tsconfig.pet-tests.json && node --test ../output/pet-tests/tests/desktopPetRegistry.test.js ../output/pet-tests/tests/settingsI18n.test.js",
-    "test:features": "tsc -p tsconfig.feature-tests.json && node --test ../output/feature-tests/tests/appCatalog.test.js ../output/feature-tests/tests/circuitSimulator.test.js ../output/feature-tests/tests/engineeringMath.test.js ../output/feature-tests/tests/localeFormatting.test.js ../output/feature-tests/tests/microphoneSelection.test.js ../output/feature-tests/tests/powerActions.test.js ../output/feature-tests/tests/styleEngine.test.js ../output/feature-tests/tests/wakeWords.test.js"
+    "test:features": "tsc -p tsconfig.feature-tests.json && node --test ../output/feature-tests/tests/appCatalog.test.js ../output/feature-tests/tests/circuitSimulator.test.js ../output/feature-tests/tests/developmentLab.test.js ../output/feature-tests/tests/engineeringMath.test.js ../output/feature-tests/tests/localeFormatting.test.js ../output/feature-tests/tests/microphoneSelection.test.js ../output/feature-tests/tests/powerActions.test.js ../output/feature-tests/tests/styleEngine.test.js ../output/feature-tests/tests/wakeWords.test.js"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +16,7 @@
   "dependencies": {
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/hands": "^0.4.1675469240",
+    "@mediapipe/tasks-vision": "^0.10.35",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@react-three/postprocessing": "^3.0.4",

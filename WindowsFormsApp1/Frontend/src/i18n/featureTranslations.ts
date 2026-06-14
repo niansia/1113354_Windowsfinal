@@ -43,6 +43,17 @@ export const FEATURE_TRANSLATIONS: Record<string, Entry> = {
   '探索整合式即時交通與城市移動應用程式。': entry('探索集成式实时交通与城市移动应用程序。', 'Explore the integrated real-time traffic and city movement application.', '統合されたリアルタイム交通・都市移動アプリを探索します。', '통합 실시간 교통 및 도시 이동 앱을 탐색합니다.'),
   '程式碼與語言工具': entry('代码与语言工具', 'Code and language tools', 'コードと言語ツール', '코드 및 언어 도구'),
   '開啟支援 C#、Python、JavaScript、SQL 與 C++ 的多語言開發工作區。': entry('打开支持 C#、Python、JavaScript、SQL 与 C++ 的多语言开发工作区。', 'Open the multi-language development workspace for C#, Python, JavaScript, SQL, and C++.', 'C#、Python、JavaScript、SQL、C++ に対応した多言語開発ワークスペースを開きます。', 'C#, Python, JavaScript, SQL 및 C++를 지원하는 다중 언어 개발 작업 공간을 엽니다.'),
+  '資料結構與演算法': entry('数据结构与算法', 'Data Structures and Algorithms', 'データ構造とアルゴリズム', '자료 구조와 알고리즘'),
+  '操作堆疊、佇列、鏈結串列與樹，逐步播放排序、搜尋與圖形遍歷演算法。': entry(
+    '操作栈、队列、链表与树，逐步播放排序、搜索与图遍历算法。',
+    'Manipulate stacks, queues, linked lists, and trees while stepping through sorting, search, and graph traversal algorithms.',
+    'スタック、キュー、連結リスト、木を操作し、ソート、検索、グラフ探索アルゴリズムを段階的に再生します。',
+    '스택, 큐, 연결 리스트, 트리를 조작하고 정렬, 검색, 그래프 순회 알고리즘을 단계별로 재생합니다.'
+  ),
+  '資料結構': entry('数据结构', 'data structures', 'データ構造', '자료 구조'),
+  '演算法': entry('算法', 'algorithms', 'アルゴリズム', '알고리즘'),
+  '視覺化': entry('可视化', 'visualization', '可視化', '시각화'),
+  '互動式實驗': entry('交互式实验', 'Interactive lab', 'インタラクティブラボ', '대화형 실험실'),
   'Fusion 資料庫': entry('Fusion 数据库', 'Fusion Database', 'Fusion データベース', 'Fusion 데이터베이스'),
   '資料表與 SQL': entry('数据表与 SQL', 'Tables and SQL', 'テーブルと SQL', '테이블 및 SQL'),
   '在系統殼層內建立本機資料表、編輯記錄並執行 SQL。': entry('在系统外壳内创建本机数据表、编辑记录并执行 SQL。', 'Create local tables, edit records, and execute SQL inside the shell.', 'シェル内でローカルテーブルを作成し、レコードを編集して SQL を実行します。', '셸에서 로컬 테이블을 만들고 레코드를 편집하며 SQL을 실행합니다.'),

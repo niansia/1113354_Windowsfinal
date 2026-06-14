@@ -135,7 +135,15 @@ export const createDefaultLook = (now = new Date()): StyleLook => ({
     lipstickIntensity: 0.72,
     lipstickFinish: 'satin',
     eyelinerEnabled: true,
-    eyelinerIntensity: 0.68
+    eyelinerIntensity: 0.68,
+    eyelinerStyle: 'natural',
+    foundationIntensity: 0.3,
+    contourIntensity: 0.28,
+    highlightIntensity: 0.42,
+    lashIntensity: 0.55,
+    aegyoIntensity: 0.32,
+    browColor: '#5A4636',
+    browIntensity: 0.4
   },
   wardrobe: {
     top: 'fitted',

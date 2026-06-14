@@ -297,5 +297,55 @@ export const STYLE_TRANSLATIONS: Record<string, Entry> = {
   '晶緻魚尾': entry('晶致鱼尾', 'Crystal mermaid', 'クリスタルマーメイド', '크리스탈 머메이드'),
   '流金晚宴': entry('流金晚宴', 'Golden gala', 'ゴールデンガラ', '골든 갈라'),
   '率性丹寧': entry('率性丹宁', 'Denim cool', 'デニムクール', '데님 쿨'),
-  '氣場西裝': entry('气场西装', 'Power suit', 'パワースーツ', '파워 슈트')
+  '氣場西裝': entry('气场西装', 'Power suit', 'パワースーツ', '파워 슈트'),
+
+  // ── Face detection + upload + detailed makeup ──
+  '臉部偵測中': entry('脸部检测中', 'Detecting face', '顔を検出中', '얼굴 감지 중'),
+  '未偵測到臉部': entry('未检测到脸部', 'No face detected', '顔を検出できません', '얼굴을 찾지 못했습니다'),
+  '請換一張正面、清晰、單人的照片。': entry(
+    '请换一张正面、清晰、单人的照片。',
+    'Try a clear, front-facing, single-person photo.',
+    '正面でくっきりした、一人だけの写真にしてください。',
+    '정면이 또렷한 1인 사진으로 바꿔 주세요.'
+  ),
+  '已載入你的照片。': entry('已载入你的照片。', 'Your photo is loaded.', '写真を読み込みました。', '사진을 불러왔습니다.'),
+  '上傳照片': entry('上传照片', 'Upload photo', '写真をアップロード', '사진 업로드'),
+  '用自己的臉': entry('用自己的脸', 'Use your own face', '自分の顔で試す', '내 얼굴로'),
+  '自訂照片': entry('自定义照片', 'Custom photo', 'カスタム写真', '커스텀 사진'),
+  '你的照片': entry('你的照片', 'Your photo', 'あなたの写真', '내 사진'),
+  '上傳': entry('上传', 'Upload', 'アップロード', '업로드'),
+  '沿真實眼型描繪': entry('沿真实眼型描绘', 'Drawn along the real eye shape', '実際の目の形に沿って描画', '실제 눈 모양을 따라 그림'),
+  '粉底': entry('粉底', 'Foundation', 'ファンデ', '파운데이션'),
+  '修容': entry('修容', 'Contour', 'シェーディング', '컨투어'),
+  '高光': entry('高光', 'Highlighter', 'ハイライト', '하이라이터'),
+  '睫毛': entry('睫毛', 'Lashes', 'まつ毛', '속눈썹'),
+  '臥蠶': entry('卧蚕', 'Aegyo-sal', '涙袋', '애교살'),
+  '眉毛': entry('眉毛', 'Brows', '眉', '눈썹'),
+
+  // ── Fitting room (garment try-on) ──
+  '服裝': entry('服装', 'Clothing', '服', '의상'),
+  '試衣間': entry('试衣间', 'Fitting room', '試着室', '피팅룸'),
+  '造型靈感': entry('造型灵感', 'Look ideas', 'ルック集', '룩 아이디어'),
+  '服裝試穿': entry('服装试穿', 'Clothing try-on', '服の試着', '의상 시착'),
+  '在同一個人身上換穿真實服裝(近似平面貼合,非真實垂墜)。': entry(
+    '在同一个人身上换穿真实服装（近似平面贴合，非真实垂坠）。',
+    'Swap real clothing on the same person (approximate flat overlay, not true draping).',
+    '同じ人物に実物の服を着せ替え（近似的な平面合成で、本物のドレープではありません）。',
+    '같은 사람에게 실제 옷을 갈아입힘 (근사 평면 합성, 실제 드레이프 아님).'
+  ),
+  '此類別尚無服裝': entry('此类别暂无服装', 'No clothing in this category yet', 'このカテゴリの服はまだありません', '이 카테고리에 의상이 아직 없습니다'),
+  '上傳全身照': entry('上传全身照', 'Upload full-body photo', '全身写真をアップロード', '전신 사진 업로드'),
+  '清除服裝': entry('清除服装', 'Clear clothing', '服をクリア', '의상 지우기'),
+  '偵測身體中': entry('检测身体中', 'Detecting body', '体を検出中', '신체 감지 중'),
+  '未偵測到人體': entry('未检测到人体', 'No body detected', '人体を検出できません', '신체를 찾지 못했습니다'),
+  '請換一張正面、站姿、完整全身的照片。': entry(
+    '请换一张正面、站姿、完整全身的照片。',
+    'Try a front-facing, standing, full-body photo.',
+    '正面・立ち姿・全身が写った写真にしてください。',
+    '정면, 서 있는 자세, 전신이 나온 사진으로 바꿔 주세요.'
+  ),
+  '已載入你的全身照。': entry('已载入你的全身照。', 'Your full-body photo is loaded.', '全身写真を読み込みました。', '전신 사진을 불러왔습니다.'),
+  '紅洋裝': entry('红连衣裙', 'Red dress', '赤いワンピース', '레드 드레스'),
+  '印花洋裝': entry('印花连衣裙', 'Patterned dress', '柄ワンピース', '패턴 드레스'),
+  '花卉上衣': entry('花卉上衣', 'Floral top', '花柄トップス', '플로럴 탑')
 };

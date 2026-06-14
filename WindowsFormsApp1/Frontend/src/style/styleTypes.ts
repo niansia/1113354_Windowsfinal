@@ -2,6 +2,7 @@ export type Undertone = 'warm' | 'cool' | 'neutral';
 export type BodyPreset = 'petite' | 'balanced' | 'tall';
 export type HairStyle = 'bob' | 'waves' | 'bun' | 'updo' | 'ponytail';
 export type MakeupFinish = 'matte' | 'satin' | 'glow';
+export type EyelinerStyle = 'natural' | 'wing' | 'bold' | 'tightline';
 export type StyleView = 'full' | 'face' | 'outfit';
 
 export type TopId = 'none' | 'fitted' | 'relaxed' | 'cropped' | 'blazer' | 'knit' | 'offshoulder';
@@ -39,6 +40,15 @@ export interface MakeupStyle {
   lipstickFinish: MakeupFinish;
   eyelinerEnabled: boolean;
   eyelinerIntensity: number;
+  eyelinerStyle: EyelinerStyle;
+  // ── detailed features (landmark-driven) ──
+  foundationIntensity: number;
+  contourIntensity: number;
+  highlightIntensity: number;
+  lashIntensity: number;
+  aegyoIntensity: number;
+  browColor: string;
+  browIntensity: number;
 }
 
 export interface WardrobeStyle {

@@ -242,14 +242,15 @@ export const FUSION_APPS: FusionApp[] = [
   {
     id: 'dev',
     title: '開發實驗室',
-    subtitle: '程式碼與語言工具',
-    description: '開啟支援 C#、Python、JavaScript、SQL 與 C++ 的多語言開發工作區。',
+    subtitle: '資料結構與演算法',
+    description: '操作堆疊、佇列、鏈結串列與樹，逐步播放排序、搜尋與圖形遍歷演算法。',
     glyph: 'DEV',
     color: '#22d3ee',
     category: 'development',
-    tags: ['程式碼', '開發者', '語言'],
-    status: '已就緒',
-    launchMode: 'host'
+    tags: ['資料結構', '演算法', '視覺化', '開發者'],
+    status: '互動式實驗',
+    launchMode: 'overlay',
+    featured: true
   },
   {
     id: 'db',

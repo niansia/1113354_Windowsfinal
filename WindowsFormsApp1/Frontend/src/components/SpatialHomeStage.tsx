@@ -47,6 +47,7 @@ import { FusionToolbox } from './FusionToolbox';
 import { FusionDatabase } from './FusionDatabase';
 import { FusionAppCenter } from './FusionAppCenter';
 import { FusionCircuitStudio } from './FusionCircuitStudio';
+import { FusionDevelopmentLab } from './FusionDevelopmentLab';
 import { FusionAssistant } from './FusionAssistant';
 import { DesktopPet } from './DesktopPet';
 import { WALLPAPERS } from '../hooks/useFusionSettings';
@@ -189,6 +190,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       app.id === 'tool' ||
       app.id === 'db' ||
       app.id === 'circuit' ||
+      app.id === 'dev' ||
       app.id === 'style' ||
       app.id === 'toolbox'
     ) {
@@ -829,6 +831,11 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
         open={overlayApp === 'circuit'}
         onClose={() => setOverlayApp('tool')}
         accent={settings.accent}
+      />
+      <FusionDevelopmentLab
+        open={overlayApp === 'dev'}
+        onClose={() => setOverlayApp('tool')}
+        accent="#4bdcff"
       />
       {overlayApp === 'style' && (
         <React.Suspense fallback={null}>

@@ -88,7 +88,15 @@ const normalizeLook = (value: unknown): StyleLook | null => {
       eyelinerEnabled: typeof makeup.eyelinerEnabled === 'boolean'
         ? makeup.eyelinerEnabled
         : fallback.makeup.eyelinerEnabled,
-      eyelinerIntensity: asNumber(makeup.eyelinerIntensity, fallback.makeup.eyelinerIntensity)
+      eyelinerIntensity: asNumber(makeup.eyelinerIntensity, fallback.makeup.eyelinerIntensity),
+      eyelinerStyle: asEnum(makeup.eyelinerStyle, ['natural', 'wing', 'bold', 'tightline'] as const, fallback.makeup.eyelinerStyle),
+      foundationIntensity: asNumber(makeup.foundationIntensity, fallback.makeup.foundationIntensity),
+      contourIntensity: asNumber(makeup.contourIntensity, fallback.makeup.contourIntensity),
+      highlightIntensity: asNumber(makeup.highlightIntensity, fallback.makeup.highlightIntensity),
+      lashIntensity: asNumber(makeup.lashIntensity, fallback.makeup.lashIntensity),
+      aegyoIntensity: asNumber(makeup.aegyoIntensity, fallback.makeup.aegyoIntensity),
+      browColor: isHex(makeup.browColor) ? makeup.browColor : fallback.makeup.browColor,
+      browIntensity: asNumber(makeup.browIntensity, fallback.makeup.browIntensity)
     },
     wardrobe: {
       top: normalizedDress !== 'none' ? 'none' : top,

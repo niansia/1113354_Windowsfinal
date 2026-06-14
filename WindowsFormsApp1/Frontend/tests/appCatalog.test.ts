@@ -61,6 +61,16 @@ test('registers Virtual Style Studio as a translated creative overlay', () => {
   assert.equal(APP_CENTER_APPS.some((app) => String(app.id) === 'style'), true);
 });
 
+test('registers Development Lab as a data structures and algorithms overlay', () => {
+  const developmentLab = getAppById('dev');
+
+  assert.equal(developmentLab?.subtitle, '資料結構與演算法');
+  assert.equal(developmentLab?.launchMode, 'overlay');
+  assert.equal(developmentLab?.category, 'development');
+  assert.equal(developmentLab?.tags.includes('視覺化'), true);
+  assert.equal(APP_CENTER_APPS.some((app) => app.id === 'dev'), true);
+});
+
 test('wires English Flashcards into the WinForms host build and launch route', () => {
   const repositoryRoot = resolve(process.cwd(), '..');
   const hostSource = readFileSync(resolve(repositoryRoot, 'Form1.cs'), 'utf8');

@@ -590,7 +590,7 @@
   min-height: 68px;
   padding: 8px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   border-bottom: 1px solid rgba(139, 185, 240, 0.1);
 }
@@ -637,8 +637,13 @@
   gap: 6px;
 }
 
-.style-target-grid.wardrobe {
+.style-target-grid.wardrobe,
+.style-target-grid.makeup {
   grid-template-columns: repeat(5, 1fr);
+}
+
+.style-target-grid.makeup button {
+  height: 46px;
 }
 
 .style-target-grid button {
@@ -1188,6 +1193,144 @@
   pointer-events: none;
 }
 
+.makeup-svg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.garment-tryon {
+  position: relative;
+  height: 100%;
+  max-height: 660px;
+  max-width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(150, 210, 255, 0.18);
+}
+
+.garment-base {
+  display: block;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+.garment-layer {
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.35));
+}
+
+/* ── Garment picker (fitting room) ───────────────────────────────────────── */
+.style-garment-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.style-garment-card {
+  padding: 7px;
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(140, 184, 235, 0.12);
+  border-radius: 12px;
+  color: rgba(216, 232, 250, 0.62);
+  background: rgba(255, 255, 255, 0.022);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.style-garment-card:hover,
+.style-garment-card.is-selected {
+  color: #f1f9ff;
+  border-color: rgba(112, 226, 255, 0.42);
+  background: linear-gradient(120deg, rgba(75, 207, 255, 0.1), rgba(255, 102, 186, 0.05));
+  transform: translateY(-1px);
+}
+
+.style-garment-thumb {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.style-garment-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.style-garment-thumb i {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #06131b;
+  background: linear-gradient(135deg, #aef1ff, #79dcff);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.style-garment-card small {
+  display: block;
+  font-size: 9px;
+  text-align: center;
+}
+
+.style-garment-empty {
+  grid-column: 1 / -1;
+  padding: 26px 8px;
+  color: rgba(174, 202, 232, 0.4);
+  font-size: 9px;
+  text-align: center;
+}
+
+.style-garment-upload,
+.style-garment-clear {
+  width: 100%;
+  height: 36px;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.style-garment-upload {
+  border: 1px dashed rgba(150, 200, 255, 0.34);
+  color: rgba(190, 225, 255, 0.78);
+  background: rgba(120, 200, 255, 0.06);
+}
+
+.style-garment-upload:hover {
+  border-color: rgba(120, 224, 255, 0.6);
+  background: rgba(120, 200, 255, 0.12);
+}
+
+.style-garment-clear {
+  margin-top: 6px;
+  border: 1px solid rgba(140, 184, 235, 0.16);
+  color: rgba(210, 228, 248, 0.6);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.style-garment-clear:hover {
+  color: #ff9cb8;
+  border-color: rgba(255, 104, 145, 0.28);
+}
+
 .mk-layer { will-change: opacity; }
 .mk-lip { filter: blur(4px); }
 .mk-eyeshadow { filter: blur(6px); }
@@ -1297,7 +1440,7 @@
 /* ── Model selector (left rail) ──────────────────────────────────────────── */
 .style-model-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 7px;
 }
 
@@ -1325,10 +1468,12 @@
 
 .style-model-thumb {
   position: relative;
-  display: block;
+  display: grid;
+  place-items: center;
   aspect-ratio: 3 / 4;
   overflow: hidden;
   border-radius: 9px;
+  color: rgba(160, 210, 255, 0.62);
   background: rgba(255, 255, 255, 0.05);
 }
 
@@ -1337,6 +1482,11 @@
   height: 100%;
   object-fit: cover;
   object-position: center 22%;
+}
+
+.style-upload-tile .style-model-thumb {
+  border: 1px dashed rgba(150, 200, 255, 0.32);
+  background: rgba(120, 200, 255, 0.06);
 }
 
 .style-model-thumb i {
@@ -1503,7 +1653,8 @@
   }
 
   .style-tabs {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 44px;
   }
 
   .style-model-tab {
