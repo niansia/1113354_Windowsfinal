@@ -62,6 +62,113 @@ export interface SportsEvent {
   sourceUpdatedAt: string;
 }
 
+export interface SportsHeadline {
+  title: string;
+  url?: string;
+  description?: string;
+  publishedAt?: string;
+}
+
+export type SquadGroup = 'GK' | 'DEF' | 'MID' | 'FWD' | 'OTHER';
+
+export interface RosterPlayer {
+  id: string;
+  name: string;
+  jersey?: string;
+  position?: string;
+  group: SquadGroup;
+  age?: number;
+  headshot?: string;
+  country?: string;
+  displayHeight?: string;
+  displayWeight?: string;
+  dateOfBirth?: string;
+  status?: string;
+  available: boolean;
+  injuries: string[];
+  profileUrl?: string;
+}
+
+export interface SquadSummary {
+  count: number;
+  avgAge: number | null;
+  byGroup: Record<SquadGroup, number>;
+  available: number;
+  unavailable: number;
+}
+
+export interface TeamRoster {
+  teamId: string;
+  players: RosterPlayer[];
+  summary: SquadSummary;
+}
+
+export type SportsGameResult = 'W' | 'D' | 'L' | 'N';
+
+export interface SportsRecentGame {
+  id: string;
+  teamId?: string;
+  date?: string;
+  opponentId?: string;
+  opponentName: string;
+  opponentLogo?: string;
+  score?: string;
+  result: SportsGameResult;
+  competition?: string;
+  round?: string;
+}
+
+export interface SportsDetailTeam {
+  teamId: string;
+  name: string;
+  abbreviation?: string;
+  logo?: string;
+  form?: string;
+  recentGames: SportsRecentGame[];
+}
+
+export interface SportsStandingRow {
+  teamId: string;
+  name: string;
+  logo?: string;
+  rank?: number;
+  played?: number;
+  wins?: number;
+  draws?: number;
+  losses?: number;
+  points?: number;
+  record?: string;
+}
+
+export interface SportsVenueDetail {
+  name: string;
+  city?: string;
+  country?: string;
+}
+
+export interface SportsDetailCoverage {
+  score: number;
+  available: string[];
+  missing: string[];
+}
+
+export interface SportsEventDetail {
+  eventId: string;
+  season?: string;
+  round?: string;
+  neutralSite?: boolean;
+  venue?: SportsVenueDetail;
+  broadcasts: string[];
+  teams: SportsDetailTeam[];
+  headToHeadGames: SportsRecentGame[];
+  standingsHeader?: string;
+  standings: SportsStandingRow[];
+  rosters: TeamRoster[];
+  coverage: SportsDetailCoverage;
+  source: string;
+  updatedAt: string;
+}
+
 export type SportsSnapshotMode = 'live' | 'cache' | 'fallback';
 
 export interface SportsDataSnapshot {
@@ -71,4 +178,3 @@ export interface SportsDataSnapshot {
   mode: SportsSnapshotMode;
   warning?: string;
 }
-

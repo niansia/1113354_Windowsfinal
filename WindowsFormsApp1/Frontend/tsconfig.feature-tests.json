@@ -35,6 +35,7 @@
     "tests/microphoneSelection.test.ts",
     "tests/powerActions.test.ts",
     "tests/sportsProviders.test.ts",
+    "tests/sportsIntelligence.test.ts",
     "tests/sportsSimulation.test.ts",
     "tests/styleEngine.test.ts",
     "tests/wakeWords.test.ts"

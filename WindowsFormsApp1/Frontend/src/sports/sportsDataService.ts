@@ -81,6 +81,7 @@ export async function loadSportsCenterData(options: {
   dateKey: string;
   fallbackEvents: readonly SportsEvent[];
   fetcher?: typeof fetch;
+  windowDays?: number;
 }): Promise<SportsDataSnapshot> {
   const nowMs = options.nowMs ?? Date.now();
   const ttlMs = options.ttlMs ?? 45_000;
@@ -93,7 +94,8 @@ export async function loadSportsCenterData(options: {
     dateKey: options.dateKey,
     fallbackEvents: options.fallbackEvents,
     fetcher: options.fetcher,
-    now: () => new Date(nowMs)
+    now: () => new Date(nowMs),
+    windowDays: options.windowDays
   });
 
   if (snapshot.mode === 'live') {

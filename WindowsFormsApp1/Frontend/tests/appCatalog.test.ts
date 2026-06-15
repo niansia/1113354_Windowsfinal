@@ -93,6 +93,67 @@ test('wires Global Sports Center into the React overlay shell', () => {
   assert.match(entrySource, /fusionSportsCenter\.css/);
 });
 
+test('wires event dossiers, prediction evidence, and player matchups into Sports Center', () => {
+  const repositoryRoot = resolve(process.cwd(), '..');
+  const sportsSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/FusionSportsCenter.tsx'), 'utf8');
+
+  assert.match(sportsSource, /SportsEventDetailDialog/);
+  assert.match(sportsSource, /SportsPredictionEvidence/);
+  assert.match(sportsSource, /SportsPositionMatchups/);
+  assert.match(sportsSource, /onDoubleClick/);
+  assert.match(sportsSource, /loadSportsEventDetail/);
+});
+
+test('translates every Sports Intelligence expansion label', () => {
+  const keys = [
+    '查看賽事詳情',
+    '賽事詳情',
+    '總覽',
+    '近期狀態與交手',
+    '陣容與球員',
+    '資料覆蓋率',
+    '轉播',
+    '場館地址',
+    '近五場',
+    '歷史交手',
+    '賽事排名',
+    '世界排名未由資料源提供',
+    '預測依據',
+    '影響方向',
+    '有利主隊',
+    '有利客隊',
+    '中性',
+    '模型評分',
+    '賽季戰績',
+    '陣容深度',
+    '可用球員',
+    '場地因素',
+    '位置對位',
+    '球員對位',
+    '比較分數',
+    '此分數為可用資料估計，並非官方球員評分。',
+    '球員簡介',
+    '身高',
+    '體重',
+    '出生日期',
+    '健康狀態',
+    '傷病資訊',
+    '完整資料',
+    '部分資料',
+    '暫無詳細資料',
+    '讀取賽事詳情中...',
+    '隊伍'
+  ];
+
+  for (const key of keys) {
+    const translation = SPORTS_TRANSLATIONS[key];
+    assert.ok(translation, `missing sports intelligence translation for "${key}"`);
+    for (const lang of ['zh-CN', 'en', 'ja', 'ko'] as const) {
+      assert.ok(translation[lang], `missing ${lang} sports intelligence translation for "${key}"`);
+    }
+  }
+});
+
 test('wires English Flashcards into the WinForms host build and launch route', () => {
   const repositoryRoot = resolve(process.cwd(), '..');
   const hostSource = readFileSync(resolve(repositoryRoot, 'Form1.cs'), 'utf8');

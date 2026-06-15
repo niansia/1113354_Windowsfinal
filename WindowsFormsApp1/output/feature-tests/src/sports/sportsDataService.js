@@ -59,7 +59,8 @@ async function loadSportsCenterData(options) {
         dateKey: options.dateKey,
         fallbackEvents: options.fallbackEvents,
         fetcher: options.fetcher,
-        now: () => new Date(nowMs)
+        now: () => new Date(nowMs),
+        windowDays: options.windowDays
     });
     if (snapshot.mode === 'live') {
         writeSportsCache(options.storage, options.cacheKey, snapshot, nowMs);

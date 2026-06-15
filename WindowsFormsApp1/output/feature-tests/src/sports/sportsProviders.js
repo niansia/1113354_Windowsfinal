@@ -4,7 +4,20 @@ exports.normalizeEspnScoreboard = normalizeEspnScoreboard;
 exports.normalizeTheSportsDbSchedule = normalizeTheSportsDbSchedule;
 exports.mergeSportsEvents = mergeSportsEvents;
 exports.loadSportsSnapshot = loadSportsSnapshot;
+exports.normalizeEspnNews = normalizeEspnNews;
+exports.loadSportsHeadlines = loadSportsHeadlines;
+const sportsStrength_js_1 = require("./sportsStrength.js");
 const asRecord = (value) => value !== null && typeof value === 'object' ? value : null;
+// Shift a `YYYY-MM-DD` calendar key by whole days using UTC math so it never drifts
+// across DST. Used to widen provider queries to a small window around the selected day.
+const addDaysToCalendarKey = (dateKey, delta) => {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const shifted = new Date(Date.UTC(year || 1970, (month || 1) - 1, day || 1) + delta * 86_400_000);
+    const yyyy = shifted.getUTCFullYear();
+    const mm = String(shifted.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(shifted.getUTCDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+};
 const toNumber = (value) => {
     if (value === '' || value === null || value === undefined)
         return null;
@@ -37,6 +50,10 @@ const normalizeEspnParticipant = (value, index) => {
     const sideValue = String(competitor.homeAway ?? '').toLowerCase();
     const side = sideValue === 'home' || sideValue === 'away' ? sideValue : 'neutral';
     const records = Array.isArray(competitor.records) ? competitor.records : [];
+    const record = String(asRecord(records[0])?.summary ?? '').trim() || undefined;
+    // Turn the win-loss record into real strength inputs so the model and comparison view
+    // are differentiated instead of a flat 1500 / 50 / 50 / 50 for every team.
+    const metrics = (0, sportsStrength_js_1.deriveSideMetrics)(record);
     return {
         id: String(team?.id ?? competitor.id ?? `${name}-${index}`),
         name,
@@ -44,14 +61,14 @@ const normalizeEspnParticipant = (value, index) => {
         abbreviation: String(team?.abbreviation ?? name.slice(0, 3)).toUpperCase(),
         side,
         score: toNumber(competitor.score),
-        record: String(asRecord(records[0])?.summary ?? '').trim() || undefined,
+        record,
         logo: String(team?.logo ?? '').trim() || undefined,
         color: String(team?.color ?? '').trim() || undefined,
         winner: Boolean(competitor.winner),
-        rating: 1500,
-        offense: 50,
-        defense: 50,
-        form: 50
+        rating: metrics?.rating ?? 1500,
+        offense: metrics?.offense ?? 50,
+        defense: metrics?.defense ?? 50,
+        form: metrics?.form ?? 50
     };
 };
 function normalizeEspnScoreboard(payload, competition, updatedAt = new Date().toISOString()) {
@@ -208,21 +225,36 @@ async function loadSportsSnapshot(options) {
     const fetcher = options.fetcher ?? fetch;
     const now = options.now?.() ?? new Date();
     const updatedAt = now.toISOString();
+    const windowDays = Math.max(0, Math.min(3, Math.trunc(options.windowDays ?? 1)));
+    const dayKeys = Array.from({ length: windowDays * 2 + 1 }, (_unused, index) => addDaysToCalendarKey(options.dateKey, index - windowDays));
     const groups = [];
     const errors = [];
     await Promise.all(options.competitions.map(async (competition) => {
         try {
             if (competition.provider === 'espn' && competition.providerPath) {
-                const date = options.dateKey.replaceAll('-', '');
-                const url = `https://site.api.espn.com/apis/site/v2/sports/${competition.providerPath}/scoreboard?dates=${date}`;
+                const start = dayKeys[0].replaceAll('-', '');
+                const end = dayKeys[dayKeys.length - 1].replaceAll('-', '');
+                const range = windowDays > 0 ? `${start}-${end}` : start;
+                const url = `https://site.api.espn.com/apis/site/v2/sports/${competition.providerPath}/scoreboard?dates=${range}&limit=300`;
                 const payload = await fetchJson(fetcher, url, 9000);
                 groups.push(normalizeEspnScoreboard(payload, competition, updatedAt).events);
             }
             else if (competition.provider === 'thesportsdb' && competition.secondarySportName) {
                 const sport = encodeURIComponent(competition.secondarySportName);
-                const url = `https://www.thesportsdb.com/api/v1/json/123/eventsday.php?d=${options.dateKey}&s=${sport}`;
-                const payload = await fetchJson(fetcher, url, 9000);
-                groups.push(normalizeTheSportsDbSchedule(payload, competition, updatedAt).events);
+                // TheSportsDB's free day endpoint accepts one date at a time, so fan the window
+                // out and let each day resolve independently.
+                const dayGroups = await Promise.all(dayKeys.map(async (day) => {
+                    try {
+                        const url = `https://www.thesportsdb.com/api/v1/json/123/eventsday.php?d=${day}&s=${sport}`;
+                        const payload = await fetchJson(fetcher, url, 9000);
+                        return normalizeTheSportsDbSchedule(payload, competition, updatedAt).events;
+                    }
+                    catch (reason) {
+                        errors.push(reason instanceof Error ? reason.message : 'Sports provider is offline.');
+                        return [];
+                    }
+                }));
+                groups.push(dayGroups.flat());
             }
         }
         catch (reason) {
@@ -246,4 +278,35 @@ async function loadSportsSnapshot(options) {
         mode: 'fallback',
         warning: '資料更新失敗，已顯示可用內容。'
     };
+}
+function normalizeEspnNews(payload, limit = 5) {
+    const root = asRecord(payload);
+    const articles = Array.isArray(root?.articles) ? root.articles : [];
+    const headlines = [];
+    for (const rawArticle of articles) {
+        const article = asRecord(rawArticle);
+        const title = String(article?.headline ?? article?.title ?? '').trim();
+        if (!title)
+            continue;
+        const web = asRecord(asRecord(article?.links)?.web);
+        const url = String(web?.href ?? '').trim();
+        const published = String(article?.published ?? article?.lastModified ?? '').trim();
+        headlines.push({
+            title,
+            url: /^https?:\/\//.test(url) ? url : undefined,
+            description: String(article?.description ?? '').trim() || undefined,
+            publishedAt: published || undefined
+        });
+        if (headlines.length >= limit)
+            break;
+    }
+    return headlines;
+}
+// ESPN exposes a public, key-free news feed per league. Used to surface a few recent
+// headlines in the inspector; failures are swallowed so the panel simply stays empty.
+async function loadSportsHeadlines(options) {
+    const fetcher = options.fetcher ?? fetch;
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${options.providerPath}/news`;
+    const payload = await fetchJson(fetcher, url, options.timeoutMs ?? 8000);
+    return normalizeEspnNews(payload, options.limit ?? 5);
 }

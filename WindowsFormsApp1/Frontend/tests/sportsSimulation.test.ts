@@ -6,6 +6,7 @@ import {
   simulateMatch
 } from '../src/sports/sportsSimulation.js';
 import { generateSportsReport } from '../src/sports/sportsAi.js';
+import type { SportsPredictionEvidence } from '../src/sports/sportsEvidence.js';
 
 test('produces deterministic football probabilities that sum to one', () => {
   const input = createPredictionInput({
@@ -138,4 +139,56 @@ test('accepts a length-limited report from local Ollama', async () => {
 
   assert.equal(report.source, 'ollama');
   assert.equal(report.text, '本機模型分析完成。');
+});
+
+test('explains the strongest evidence in the local prediction report', async () => {
+  const input = createPredictionInput({
+    model: 'goals',
+    homeName: 'Spain',
+    awayName: 'Cape Verde',
+    homeRating: 1800,
+    awayRating: 1580,
+    iterations: 2000,
+    seed: 22
+  });
+  const result = simulateMatch(input);
+  const evidence: SportsPredictionEvidence = {
+    factors: [
+      {
+        id: 'recent-form',
+        label: '近五場狀態',
+        homeValue: '80%',
+        awayValue: '40%',
+        impact: 32,
+        confidence: 0.9,
+        source: 'ESPN last five games'
+      },
+      {
+        id: 'venue',
+        label: '場地因素',
+        homeValue: '中立場',
+        awayValue: '中立場',
+        impact: 0,
+        confidence: 0.7,
+        source: 'event venue'
+      }
+    ],
+    homeRatingAdjustment: 16,
+    awayRatingAdjustment: -16,
+    homeFormAdjustment: 6,
+    awayFormAdjustment: -6,
+    coverage: 0.8
+  };
+  const report = await generateSportsReport({
+    input,
+    result,
+    evidence,
+    lang: 'en',
+    useAI: false,
+    model: 'unused'
+  });
+
+  assert.match(report.text, /Key factors/);
+  assert.match(report.text, /Recent form/);
+  assert.match(report.text, /80%/);
 });

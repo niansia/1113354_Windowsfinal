@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   loadSportsSnapshot,
   mergeSportsEvents,
+  normalizeEspnNews,
   normalizeEspnScoreboard,
   normalizeTheSportsDbSchedule
 } from '../src/sports/sportsProviders.js';
@@ -12,6 +13,9 @@ import {
   readSportsCache,
   writeSportsCache
 } from '../src/sports/sportsDataService.js';
+import { deriveSideMetrics, parseTeamRecord } from '../src/sports/sportsStrength.js';
+import { localizeTeamName } from '../src/sports/sportsTeamNames.js';
+import { normalizeEspnRoster, summarizeSquad } from '../src/sports/sportsRoster.js';
 
 const competition: SportsCompetition = {
   id: 'fifa-world-cup',
@@ -100,6 +104,85 @@ test('merges duplicate events and keeps the freshest provider copy', () => {
 
   assert.equal(merged.length, 1);
   assert.equal(merged[0].status, 'live');
+});
+
+test('widens the ESPN query to a day window so timezone-shifted games are fetched', async () => {
+  const requested: string[] = [];
+  const snapshot = await loadSportsSnapshot({
+    competitions: [competition],
+    dateKey: '2026-06-15',
+    fallbackEvents: [],
+    windowDays: 1,
+    now: () => new Date('2026-06-15T00:00:00Z'),
+    fetcher: async (url) => {
+      requested.push(String(url));
+      return { ok: true, json: async () => payload } as unknown as Response;
+    }
+  });
+
+  assert.equal(requested.length, 1);
+  assert.match(requested[0], /dates=20260614-20260616/);
+  assert.ok(requested[0].includes('limit='));
+  assert.equal(snapshot.mode, 'live');
+  assert.ok(snapshot.events.length >= 1);
+});
+
+test('derives differentiated strength from a win-loss record', () => {
+  assert.equal(parseTeamRecord('')?.winPct, undefined);
+  const strong = deriveSideMetrics('60-12');
+  const weak = deriveSideMetrics('12-60');
+  assert.ok(strong && weak);
+  assert.ok(strong!.rating > 1500, 'a winning record should rate above the mean');
+  assert.ok(weak!.rating < 1500, 'a losing record should rate below the mean');
+  assert.ok(strong!.rating > weak!.rating);
+  // 3-part records (W-D-L / W-L-OTL) still parse.
+  assert.ok(deriveSideMetrics('53-22-7'));
+  assert.equal(deriveSideMetrics('not-a-record'), null);
+});
+
+test('localizes known team and country names, falling back to English', () => {
+  assert.equal(localizeTeamName('Sweden', 'zh-TW'), '瑞典');
+  assert.equal(localizeTeamName('Sweden', 'ja'), 'スウェーデン');
+  assert.equal(localizeTeamName('Sweden', 'en'), 'Sweden');
+  assert.equal(localizeTeamName('Türkiye', 'zh-TW'), '土耳其');
+  assert.equal(localizeTeamName('United States', 'zh-TW'), '美國'); // alias
+  assert.equal(localizeTeamName('Nowhere United', 'zh-TW'), 'Nowhere United'); // fallback
+});
+
+test('normalizes an ESPN roster into players and a squad summary', () => {
+  const roster = normalizeEspnRoster({
+    athletes: [
+      { id: '1', displayName: 'Keeper One', jersey: '1', position: { abbreviation: 'G' }, age: 30, headshot: { href: 'https://espn.test/1.png' } },
+      { id: '2', displayName: 'Back Two', jersey: '4', position: { abbreviation: 'D' }, age: 24 },
+      { id: '3', displayName: 'Mid Three', jersey: '8', position: { abbreviation: 'M' }, age: 26 },
+      { id: '4', displayName: 'Striker Four', jersey: '9', position: { abbreviation: 'F' }, age: 28 },
+      { displayName: '' }
+    ]
+  }, '628');
+
+  assert.equal(roster.teamId, '628');
+  assert.equal(roster.players.length, 4);
+  assert.equal(roster.players[0].group, 'GK');
+  assert.equal(roster.players[1].group, 'DEF');
+  assert.equal(roster.summary.count, 4);
+  assert.equal(roster.summary.byGroup.FWD, 1);
+  assert.equal(roster.summary.avgAge, 27);
+  assert.equal(summarizeSquad([]).avgAge, null);
+});
+
+test('normalizes ESPN news into headline links and skips entries without a title', () => {
+  const headlines = normalizeEspnNews({
+    articles: [
+      { headline: 'Walk-off in extra innings', description: 'recap', links: { web: { href: 'https://espn.test/a' } } },
+      { description: 'missing headline' },
+      { headline: 'Relative link is dropped', links: { web: { href: '/mlb/story' } } }
+    ]
+  }, 5);
+
+  assert.equal(headlines.length, 2);
+  assert.equal(headlines[0].title, 'Walk-off in extra innings');
+  assert.equal(headlines[0].url, 'https://espn.test/a');
+  assert.equal(headlines[1].url, undefined);
 });
 
 test('falls back to bundled events when every remote provider fails', async () => {

@@ -8,17 +8,22 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  CalendarClock,
   Clock3,
   Database,
+  ExternalLink,
   Flag,
   Gauge,
   Heart,
+  Newspaper,
+  Radio,
   RefreshCw,
   Search,
   Shield,
   Sparkles,
   Star,
   Trophy,
+  Users,
   Wifi,
   WifiOff,
   X
@@ -38,7 +43,22 @@ import {
   SPORTS_COMPETITIONS
 } from '../sports/sportsCatalog';
 import { loadSportsCenterData } from '../sports/sportsDataService';
+import { loadSportsHeadlines } from '../sports/sportsProviders';
+import { loadTeamRoster, ROSTER_SPORTS } from '../sports/sportsRoster';
+import { loadSportsEventDetail } from '../sports/sportsDetail';
+import {
+  applyPredictionEvidence,
+  buildPredictionEvidence
+} from '../sports/sportsEvidence';
+import { buildPositionMatchups } from '../sports/sportsMatchups';
+import { localizeTeamName } from '../sports/sportsTeamNames';
+import { winPctLabel } from '../sports/sportsStrength';
+import { buildSquadInsight } from '../sports/sportsAnalysis';
 import { generateSportsReport, type SportsReport } from '../sports/sportsAi';
+import { SportsEventDetailDialog } from './sports/SportsEventDetailDialog';
+import { SportsPlayerProfile } from './sports/SportsPlayerProfile';
+import { SportsPositionMatchups } from './sports/SportsPositionMatchups';
+import { SportsPredictionEvidence } from './sports/SportsPredictionEvidence';
 import {
   buildLocalSportsReport,
   createPredictionInput,
@@ -52,8 +72,13 @@ import type {
   SportsCompetition,
   SportsDataSnapshot,
   SportsEvent,
+  SportsEventDetail,
   SportsEventStatus,
-  SportsParticipant
+  SportsHeadline,
+  SportsParticipant,
+  RosterPlayer,
+  SquadGroup,
+  TeamRoster
 } from '../sports/sportsTypes';
 
 interface FusionSportsCenterProps {
@@ -65,6 +90,7 @@ interface FusionSportsCenterProps {
 type WorkspaceTab = 'events' | 'prediction' | 'compare';
 type SideKey = 'home' | 'away';
 type MetricKey = 'rating' | 'offense' | 'defense' | 'form';
+type StatusFilter = 'all' | 'live' | 'upcoming' | 'final';
 
 interface SideTuning {
   rating: number;
@@ -74,23 +100,37 @@ interface SideTuning {
 }
 
 const FAVORITES_KEY = 'fusion-sports-favorites-v1';
-const DEFAULT_REQUEST_IDS = new Set([
-  'fifa-world-cup',
-  'nba',
-  'mlb',
-  'nhl',
-  'f1',
-  'atp',
-  'wta',
-  'pga',
-  'ufc'
-]);
+const LIVE_REFRESH_MS = 30_000;
+// How events sort within a day: anything in progress first, then upcoming, then
+// finished, with delayed/cancelled fixtures sinking to the bottom.
+const STATUS_SORT_ORDER: Record<SportsEventStatus, number> = {
+  live: 0,
+  scheduled: 1,
+  final: 2,
+  postponed: 3,
+  cancelled: 4
+};
+const STATUS_FILTERS: Array<{ id: StatusFilter; label: string; match?: SportsEventStatus }> = [
+  { id: 'all', label: '全部' },
+  { id: 'live', label: '即時', match: 'live' },
+  { id: 'upcoming', label: '即將開始', match: 'scheduled' },
+  { id: 'final', label: '已結束', match: 'final' }
+];
 
 const TABS: Array<{ id: WorkspaceTab; label: string; icon: typeof Trophy }> = [
   { id: 'events', label: '賽事中心', icon: CalendarDays },
   { id: 'prediction', label: '預測實驗室', icon: BarChart3 },
   { id: 'compare', label: '比較與 AI', icon: BrainCircuit }
 ];
+
+const SQUAD_GROUP_LABELS: Record<SquadGroup, string> = {
+  GK: '門將',
+  DEF: '後衛',
+  MID: '中場',
+  FWD: '前鋒',
+  OTHER: '其他'
+};
+const SQUAD_GROUP_ORDER: SquadGroup[] = ['GK', 'DEF', 'MID', 'FWD', 'OTHER'];
 
 const STATUS_LABELS: Record<SportsEventStatus, string> = {
   scheduled: '即將開始',
@@ -160,8 +200,19 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [sportFilter, setSportFilter] = useState<'all' | SportId>('all');
   const [competitionFilter, setCompetitionFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [favoriteOnly, setFavoriteOnly] = useState(false);
   const [query, setQuery] = useState('');
+  const [headlines, setHeadlines] = useState<SportsHeadline[]>([]);
+  const [headlinesLoading, setHeadlinesLoading] = useState(false);
+  const [homeRoster, setHomeRoster] = useState<TeamRoster | null>(null);
+  const [awayRoster, setAwayRoster] = useState<TeamRoster | null>(null);
+  const [rostersLoading, setRostersLoading] = useState(false);
+  const [eventDetail, setEventDetail] = useState<SportsEventDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<RosterPlayer | null>(null);
   const [favorites, setFavorites] = useState<Set<string>>(loadFavorites);
   const [snapshot, setSnapshot] = useState<SportsDataSnapshot>(emptySnapshot);
   const [loading, setLoading] = useState(false);
@@ -200,7 +251,10 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
       return SPORTS_COMPETITIONS.filter((item) => item.id === competitionFilter);
     }
     if (sportFilter !== 'all') return availableCompetitions;
-    return SPORTS_COMPETITIONS.filter((item) => item.featured || DEFAULT_REQUEST_IDS.has(item.id));
+    // Default view: pull every ESPN-backed league in parallel so whatever is in season
+    // shows up. Off-season leagues just return empty, and the flaky no-key TheSportsDB
+    // feeds are only queried when their sport is explicitly selected.
+    return SPORTS_COMPETITIONS.filter((item) => item.provider === 'espn');
   }, [availableCompetitions, competitionFilter, sportFilter]);
 
   const fallbackEvents = useMemo(
@@ -225,7 +279,8 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
       dateKey,
       fallbackEvents,
       force: refreshNonce > 0,
-      ttlMs: 45_000
+      ttlMs: 45_000,
+      windowDays: 1
     }).then((next) => {
       if (!cancelled) setSnapshot(next);
     }).catch(() => {
@@ -254,11 +309,20 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key !== 'Escape') return;
+      if (selectedPlayer) {
+        setSelectedPlayer(null);
+        return;
+      }
+      if (detailOpen) {
+        setDetailOpen(false);
+        return;
+      }
+      onClose();
     };
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [onClose, open]);
+  }, [detailOpen, onClose, open, selectedPlayer]);
 
   useEffect(() => {
     if (!open || typeof Worker === 'undefined') return;
@@ -280,10 +344,21 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
     };
   }, [open]);
 
-  const visibleEvents = useMemo(() => {
+  // Events whose start time lands on the selected calendar day *in the viewer's
+  // timezone*. The provider window already fetched neighbouring days, so this is what
+  // makes a US night game appear on the correct Taipei date instead of vanishing.
+  const dayEvents = useMemo(
+    () => snapshot.events.filter(
+      (event) => fusionCalendarKey(new Date(event.startTime), settings.timezone) === dateKey
+    ),
+    [dateKey, settings.timezone, snapshot.events]
+  );
+
+  // Day events narrowed by sport / competition / favourites / search — but NOT by the
+  // live-state chip, so the chip counts stay accurate.
+  const facetEvents = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return snapshot.events.filter((event) => {
-      const localDateMatches = fusionCalendarKey(new Date(event.startTime), settings.timezone) === dateKey;
+    return dayEvents.filter((event) => {
       const sportMatches = sportFilter === 'all' || event.sport === sportFilter;
       const competitionMatches = competitionFilter === 'all' || event.competitionId === competitionFilter;
       const favoriteMatches = !favoriteOnly || favorites.has(event.id);
@@ -292,9 +367,33 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
         event.competitionName,
         ...event.participants.map((item) => item.name)
       ].join(' ').toLowerCase().includes(normalizedQuery);
-      return localDateMatches && sportMatches && competitionMatches && favoriteMatches && queryMatches;
+      return sportMatches && competitionMatches && favoriteMatches && queryMatches;
     });
-  }, [competitionFilter, dateKey, favoriteOnly, favorites, query, settings.timezone, snapshot.events, sportFilter]);
+  }, [competitionFilter, dayEvents, favoriteOnly, favorites, query, sportFilter]);
+
+  const statusCounts = useMemo(() => ({
+    all: facetEvents.length,
+    live: facetEvents.filter((event) => event.status === 'live').length,
+    upcoming: facetEvents.filter((event) => event.status === 'scheduled').length,
+    final: facetEvents.filter((event) => event.status === 'final').length
+  }), [facetEvents]);
+
+  const visibleEvents = useMemo(() => {
+    const matcher = STATUS_FILTERS.find((item) => item.id === statusFilter)?.match;
+    const filtered = matcher ? facetEvents.filter((event) => event.status === matcher) : facetEvents;
+    return [...filtered].sort((a, b) => {
+      const orderDelta = STATUS_SORT_ORDER[a.status] - STATUS_SORT_ORDER[b.status];
+      if (orderDelta !== 0) return orderDelta;
+      const timeDelta = Date.parse(a.startTime) - Date.parse(b.startTime);
+      // Finished games read best most-recent-first; everything else earliest-first.
+      return a.status === 'final' ? -timeDelta : timeDelta;
+    });
+  }, [facetEvents, statusFilter]);
+
+  const liveCount = useMemo(
+    () => dayEvents.filter((event) => event.status === 'live').length,
+    [dayEvents]
+  );
 
   useEffect(() => {
     if (!visibleEvents.length) {
@@ -311,6 +410,104 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
   const away = selectedEvent?.participants.find((item) => item.side === 'away') ?? selectedEvent?.participants[1];
   const competition = selectedEvent ? getCompetition(selectedEvent.competitionId) : undefined;
 
+  // While any game on the selected day is live, quietly re-pull scores on an interval so
+  // the board stays current without the user hitting refresh.
+  useEffect(() => {
+    if (!open || liveCount === 0) return;
+    const timer = window.setInterval(() => setRefreshNonce((value) => value + 1), LIVE_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, [liveCount, open]);
+
+  // Recent league headlines for the selected competition (ESPN public news feed, no key).
+  const headlineProviderPath = competition?.provider === 'espn' ? competition.providerPath : undefined;
+  useEffect(() => {
+    if (!open || !headlineProviderPath) {
+      setHeadlines([]);
+      setHeadlinesLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setHeadlinesLoading(true);
+    loadSportsHeadlines({ providerPath: headlineProviderPath, limit: 4 })
+      .then((items) => {
+        if (!cancelled) setHeadlines(items);
+      })
+      .catch(() => {
+        if (!cancelled) setHeadlines([]);
+      })
+      .finally(() => {
+        if (!cancelled) setHeadlinesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [headlineProviderPath, open]);
+
+  // Localize an ESPN team / national-team name into the active language (falls back to
+  // the original English when we have no translation).
+  const tName = useCallback((name: string | undefined | null) => localizeTeamName(name, lang), [lang]);
+
+  // Event summary data drives the dossier, explainable prediction evidence, recent form,
+  // head-to-head history and standings. It loads independently from the score feed.
+  const detailProviderPath = competition?.provider === 'espn' ? competition.providerPath : undefined;
+  useEffect(() => {
+    if (!open || !selectedEvent || !detailProviderPath) {
+      setEventDetail(null);
+      setDetailLoading(false);
+      setDetailError(null);
+      return;
+    }
+    let cancelled = false;
+    setDetailLoading(true);
+    setDetailError(null);
+    loadSportsEventDetail({
+      providerPath: detailProviderPath,
+      event: selectedEvent
+    }).then((detail) => {
+      if (!cancelled) setEventDetail(detail);
+    }).catch(() => {
+      if (!cancelled) {
+        setEventDetail(null);
+        setDetailError('暫無詳細資料');
+      }
+    }).finally(() => {
+      if (!cancelled) setDetailLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [detailProviderPath, open, selectedEvent?.id]);
+
+  // Player rosters for the two teams — loaded lazily when the Compare tab is open, since
+  // prediction evidence and the dossier also use them. Failures degrade to summary data.
+  const rosterProviderPath = competition?.provider === 'espn' ? competition.providerPath : undefined;
+  const rosterSupported = Boolean(selectedEvent && ROSTER_SPORTS.has(selectedEvent.sport) && rosterProviderPath);
+  useEffect(() => {
+    const needsRoster = tab === 'compare' || tab === 'prediction' || detailOpen;
+    if (!open || !needsRoster || !rosterSupported || !home?.id || !away?.id || !rosterProviderPath) {
+      setHomeRoster(null);
+      setAwayRoster(null);
+      setRostersLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setRostersLoading(true);
+    Promise.all([
+      loadTeamRoster({ providerPath: rosterProviderPath, teamId: home.id }).catch(() => null),
+      loadTeamRoster({ providerPath: rosterProviderPath, teamId: away.id }).catch(() => null)
+    ]).then(([homeData, awayData]) => {
+      if (cancelled) return;
+      setHomeRoster(homeData);
+      setAwayRoster(awayData);
+    }).finally(() => {
+      if (!cancelled) setRostersLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailOpen, open, tab, selectedEvent?.id, rosterProviderPath, rosterSupported]);
+
   useEffect(() => {
     if (!selectedEvent || !home || !away) {
       setPrediction(null);
@@ -323,8 +520,8 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
     setAwayTuning(nextAway);
     const input = createPredictionInput({
       model: competition?.model ?? 'generic',
-      homeName: home.name,
-      awayName: away.name,
+      homeName: tName(home.name),
+      awayName: tName(away.name),
       homeRating: nextHome.rating,
       awayRating: nextAway.rating,
       homeOffense: nextHome.offense,
@@ -342,12 +539,38 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
     setReport({ text: buildLocalSportsReport(input, result, lang), source: 'local' });
   }, [away, competition?.model, home, lang, preset, selectedEvent]);
 
+  const effectiveHomeRoster = homeRoster
+    ?? eventDetail?.rosters.find((roster) => roster.teamId === home?.id)
+    ?? null;
+  const effectiveAwayRoster = awayRoster
+    ?? eventDetail?.rosters.find((roster) => roster.teamId === away?.id)
+    ?? null;
+
+  const predictionEvidence = useMemo(
+    () => selectedEvent
+      ? buildPredictionEvidence({
+          event: selectedEvent,
+          detail: eventDetail,
+          homeRoster: effectiveHomeRoster,
+          awayRoster: effectiveAwayRoster
+        })
+      : {
+          factors: [],
+          homeRatingAdjustment: 0,
+          awayRatingAdjustment: 0,
+          homeFormAdjustment: 0,
+          awayFormAdjustment: 0,
+          coverage: 0
+        },
+    [effectiveAwayRoster, effectiveHomeRoster, eventDetail, selectedEvent]
+  );
+
   const predictionInput = useMemo<SportsPredictionInput | null>(() => {
     if (!selectedEvent || !home || !away) return null;
-    return createPredictionInput({
+    const base = createPredictionInput({
       model: competition?.model ?? 'generic',
-      homeName: home.name,
-      awayName: away.name,
+      homeName: tName(home.name),
+      awayName: tName(away.name),
       homeRating: homeTuning.rating,
       awayRating: awayTuning.rating,
       homeOffense: homeTuning.offense,
@@ -360,7 +583,52 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
       seed: hashString(`${selectedEvent.id}:${preset}:${iterations}`),
       preset
     });
-  }, [away, awayTuning, competition?.model, home, homeTuning, iterations, preset, selectedEvent]);
+    return applyPredictionEvidence(base, predictionEvidence);
+  }, [away, awayTuning, competition?.model, home, homeTuning, iterations, predictionEvidence, preset, selectedEvent, tName]);
+
+  const positionMatchups = useMemo(
+    () => selectedEvent && home && away
+      ? buildPositionMatchups({
+          sport: selectedEvent.sport,
+          homeName: tName(home.name),
+          awayName: tName(away.name),
+          homeRoster: effectiveHomeRoster,
+          awayRoster: effectiveAwayRoster,
+          homeTeamRating: predictionInput?.home.rating ?? homeTuning.rating,
+          awayTeamRating: predictionInput?.away.rating ?? awayTuning.rating
+        })
+      : null,
+    [
+      away,
+      awayTuning.rating,
+      effectiveAwayRoster,
+      effectiveHomeRoster,
+      home,
+      homeTuning.rating,
+      predictionInput?.away.rating,
+      predictionInput?.home.rating,
+      selectedEvent,
+      tName
+    ]
+  );
+
+  // Refresh the preview once provider evidence arrives. Manual changes still require the
+  // explicit Run Prediction action, avoiding expensive simulations on every slider tick.
+  useEffect(() => {
+    if (!predictionInput || !eventDetail) return;
+    const previewInput = { ...predictionInput, iterations: Math.min(6000, predictionInput.iterations) };
+    const result = simulateMatch(previewInput);
+    setPrediction(result);
+    setReport({ text: buildLocalSportsReport(previewInput, result, lang), source: 'local' });
+    // predictionInput is intentionally omitted: slider changes are user-controlled.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    eventDetail?.updatedAt,
+    effectiveAwayRoster?.summary.available,
+    effectiveHomeRoster?.summary.available,
+    lang,
+    selectedEvent?.id
+  ]);
 
   const runPrediction = useCallback(() => {
     if (!predictionInput) return;
@@ -393,13 +661,27 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
     const next = await generateSportsReport({
       input: predictionInput,
       result: prediction,
+      evidence: predictionEvidence,
       lang,
       useAI: settings.assistantUseAI,
       model: settings.assistantModel
     });
     setReport(next);
     setReportLoading(false);
-  }, [lang, prediction, predictionInput, settings.assistantModel, settings.assistantUseAI]);
+  }, [lang, prediction, predictionEvidence, predictionInput, settings.assistantModel, settings.assistantUseAI]);
+
+  const openEventDetail = useCallback((event: SportsEvent) => {
+    setSelectedEventId(event.id);
+    setDetailOpen(true);
+  }, []);
+
+  const resetFacets = () => {
+    setSportFilter('all');
+    setCompetitionFilter('all');
+    setStatusFilter('all');
+    setFavoriteOnly(false);
+    setQuery('');
+  };
 
   const toggleFavorite = (eventId: string) => {
     setFavorites((current) => {
@@ -446,10 +728,22 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
   );
 
   const probabilityRows = prediction && home && away ? [
-    { label: home.name, value: prediction.homeWin, kind: 'home' },
+    { label: tName(home.name), value: prediction.homeWin, kind: 'home' },
     ...(prediction.draw > 0 ? [{ label: t('和局'), value: prediction.draw, kind: 'draw' }] : []),
-    { label: away.name, value: prediction.awayWin, kind: 'away' }
+    { label: tName(away.name), value: prediction.awayWin, kind: 'away' }
   ] : [];
+
+  const squadInsight = useMemo(
+    () => (home && away
+      ? buildSquadInsight(lang, {
+          homeName: tName(home.name),
+          awayName: tName(away.name),
+          home: effectiveHomeRoster?.summary ?? null,
+          away: effectiveAwayRoster?.summary ?? null
+        })
+      : null),
+    [away, effectiveAwayRoster, effectiveHomeRoster, home, lang, tName]
+  );
 
   const renderParticipant = (participant: SportsParticipant | undefined, label: string) => (
     <div className="sports-participant">
@@ -458,7 +752,7 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
       </span>
       <div>
         <small>{t(label)}</small>
-        <strong>{participantName(participant, t(label))}</strong>
+        <strong>{tName(participantName(participant, t(label)))}</strong>
         <span>{participant?.record || participant?.abbreviation || '—'}</span>
       </div>
       <b>{participant?.score ?? '—'}</b>
@@ -473,7 +767,7 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
         </span>
         <div>
           <small>{t(side === 'home' ? '主隊' : '客隊')}</small>
-          <strong>{participantName(participant, t(side === 'home' ? '主隊' : '客隊'))}</strong>
+          <strong>{tName(participantName(participant, t(side === 'home' ? '主隊' : '客隊')))}</strong>
         </div>
       </header>
       {([
@@ -496,6 +790,62 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
       ))}
     </section>
   );
+
+  const renderSquad = (
+    participant: SportsParticipant | undefined,
+    roster: TeamRoster | null,
+    side: SideKey
+  ) => {
+    const summary = roster?.summary;
+    return (
+      <section className="sports-squad-card">
+        <header>
+          <span className="sports-team-mark small">
+            {participant?.logo ? <img src={participant.logo} alt="" /> : <Shield size={18} />}
+          </span>
+          <div>
+            <small>{t(side === 'home' ? '主隊' : '客隊')}</small>
+            <strong>{tName(participantName(participant, t(side === 'home' ? '主隊' : '客隊')))}</strong>
+          </div>
+          {summary && <b>{tf('{0} 人', summary.count)}</b>}
+        </header>
+        {summary && (summary.avgAge != null || summary.count > 0) && (
+          <div className="sports-squad-metrics">
+            {summary.avgAge != null && <span>{t('平均年齡')} <b>{summary.avgAge}</b></span>}
+            {SQUAD_GROUP_ORDER.filter((group) => summary.byGroup[group] > 0).map((group) => (
+              <span key={group}>{t(SQUAD_GROUP_LABELS[group])} <b>{summary.byGroup[group]}</b></span>
+            ))}
+          </div>
+        )}
+        {roster?.players.length ? (
+          <ul className="sports-squad-list">
+            {roster.players.slice(0, 30).map((player) => (
+              <li
+                key={player.id}
+                role="button"
+                tabIndex={0}
+                onDoubleClick={() => setSelectedPlayer(player)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') setSelectedPlayer(player);
+                }}
+              >
+                <span className="sports-squad-mark">
+                  {player.headshot
+                    ? <img src={player.headshot} alt="" loading="lazy" />
+                    : <b>{player.jersey || '·'}</b>}
+                </span>
+                <span className="sports-squad-name">{player.name}</span>
+                {player.position && <span className="sports-squad-pos">{player.position}</span>}
+                {player.age != null && <span className="sports-squad-age">{player.age}</span>}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="sports-squad-empty">{t('暫無球員名單')}</p>
+        )}
+      </section>
+    );
+  };
 
   const compareMetrics = predictionInput ? [
     { label: '評分', home: predictionInput.home.rating, away: predictionInput.away.rating, maximum: 2600 },
@@ -565,6 +915,11 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
               })}
             </div>
             <button type="button" onClick={() => setSelectedDate((date) => addDays(date, 1))} title={t('下一天')}><ChevronRight size={18} /></button>
+            {dateKey !== todayKey && (
+              <button type="button" className="sports-today" onClick={() => setSelectedDate(new Date())} title={t('回到今天')}>
+                <CalendarClock size={16} /> {t('今天')}
+              </button>
+            )}
             <label className="sports-search">
               <Search size={17} />
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('搜尋賽事或隊伍')} />
@@ -578,10 +933,10 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
             <aside className="sports-navigator">
               <div className="sports-side-title"><Flag size={15} /> {t('賽事篩選')}</div>
               <button type="button" className={sportFilter === 'all' ? 'active' : ''} onClick={() => setSportFilter('all')}>
-                <Trophy size={17} /><span>{t('所有運動')}</span><small>{snapshot.events.length}</small>
+                <Trophy size={17} /><span>{t('所有運動')}</span><small>{dayEvents.length}</small>
               </button>
               {(Object.keys(SPORT_LABELS) as SportId[]).map((sport) => {
-                const count = snapshot.events.filter((event) => event.sport === sport).length;
+                const count = dayEvents.filter((event) => event.sport === sport).length;
                 return (
                   <button key={sport} type="button" className={sportFilter === sport ? 'active' : ''} onClick={() => setSportFilter(sport)}>
                     <Activity size={17} /><span>{t(SPORT_LABELS[sport])}</span><small>{count}</small>
@@ -606,8 +961,32 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                 <section className="sports-events-view">
                   <header className="sports-workspace-head">
                     <div><small>{t('焦點賽事')}</small><h2>{dateFormatter.format(selectedDate)}</h2></div>
-                    <span>{tf('共 {0} 場', visibleEvents.length)}</span>
+                    <div className="sports-head-tags">
+                      {liveCount > 0 && (
+                        <span className="sports-live-badge"><Radio size={12} /> {tf('{0} 場進行中', liveCount)}</span>
+                      )}
+                      <span className="sports-count-tag">{tf('共 {0} 場', visibleEvents.length)}</span>
+                    </div>
                   </header>
+                  <div className="sports-status-chips" role="tablist" aria-label={t('賽事狀態')}>
+                    {STATUS_FILTERS.map((item) => {
+                      const count = statusCounts[item.id];
+                      const isLive = item.id === 'live' && count > 0;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          role="tab"
+                          aria-selected={statusFilter === item.id}
+                          className={`${statusFilter === item.id ? 'active' : ''} ${isLive ? 'live' : ''}`}
+                          onClick={() => setStatusFilter(item.id)}
+                        >
+                          {isLive && <i className="sports-chip-pulse" />}
+                          {t(item.label)} <b>{count}</b>
+                        </button>
+                      );
+                    })}
+                  </div>
                   {loading && !visibleEvents.length ? (
                     <div className="sports-empty"><RefreshCw className="spin" size={31} /><strong>{t('正在同步賽事資料...')}</strong></div>
                   ) : visibleEvents.length ? (
@@ -624,7 +1003,18 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: animate ? Math.min(index * 0.025, 0.2) : 0 }}
                           >
-                            <button type="button" className="sports-event-main" onClick={() => setSelectedEventId(event.id)}>
+                            <button
+                              type="button"
+                              className="sports-event-main"
+                              onClick={() => setSelectedEventId(event.id)}
+                              onDoubleClick={() => openEventDetail(event)}
+                              onKeyDown={(keyboardEvent) => {
+                                if (keyboardEvent.key === 'Enter') {
+                                  keyboardEvent.preventDefault();
+                                  openEventDetail(event);
+                                }
+                              }}
+                            >
                               <div className="sports-event-meta">
                                 <span className={`sports-status ${event.status}`}>{t(STATUS_LABELS[event.status])}</span>
                                 <strong>{t(event.competitionName)}</strong>
@@ -650,11 +1040,34 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                         );
                       })}
                     </div>
+                  ) : statusFilter !== 'all' && facetEvents.length > 0 ? (
+                    <div className="sports-empty">
+                      <CalendarDays size={34} />
+                      <strong>{t('此狀態目前沒有賽事')}</strong>
+                      <span>{tf('其他狀態仍有 {0} 場賽事。', facetEvents.length)}</span>
+                      <button type="button" className="sports-empty-action" onClick={() => setStatusFilter('all')}>
+                        {t('顯示全部賽事')}
+                      </button>
+                    </div>
+                  ) : facetEvents.length === 0 && dayEvents.length > 0 ? (
+                    <div className="sports-empty">
+                      <CalendarDays size={34} />
+                      <strong>{t('此分類今日無賽事')}</strong>
+                      <span>{tf('本日其他運動仍有 {0} 場賽事。', dayEvents.length)}</span>
+                      <button type="button" className="sports-empty-action" onClick={resetFacets}>
+                        {t('查看所有運動')}
+                      </button>
+                    </div>
                   ) : (
                     <div className="sports-empty">
                       <CalendarDays size={34} />
                       <strong>{t('目前沒有符合條件的賽事')}</strong>
                       <span>{t('切換日期或賽事分類以查看其他內容。')}</span>
+                      {dateKey !== todayKey && (
+                        <button type="button" className="sports-empty-action" onClick={() => setSelectedDate(new Date())}>
+                          {t('回到今天')}
+                        </button>
+                      )}
                     </div>
                   )}
                 </section>
@@ -665,9 +1078,16 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                   {selectedEvent && home && away && predictionInput ? (
                     <>
                       <header className="sports-workspace-head">
-                        <div><small>{t('蒙地卡羅模擬')}</small><h2>{home.name} vs {away.name}</h2></div>
+                        <div><small>{t('蒙地卡羅模擬')}</small><h2>{tName(home.name)} vs {tName(away.name)}</h2></div>
                         <span>{competition?.model.toUpperCase() ?? 'GENERIC'}</span>
                       </header>
+                      {selectedEvent.status === 'final' && (
+                        <div className="sports-result-banner">
+                          <span className="sports-result-flag">{t('已結束')}</span>
+                          <strong>{tName(home.name)} {home.score ?? 0} : {away.score ?? 0} {tName(away.name)}</strong>
+                          <small>{t('以下為賽前模型回溯，非即時預測。')}</small>
+                        </div>
+                      )}
                       <div className="sports-model-toolbar">
                         <div className="sports-segmented">
                           {(['conservative', 'balanced', 'upset'] as PredictionPreset[]).map((item) => (
@@ -719,6 +1139,7 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                           </section>
                         </div>
                       )}
+                      <SportsPredictionEvidence evidence={predictionEvidence} />
                       <p className="sports-disclaimer">{t('僅供學習與賽事分析，不構成投注建議。')}</p>
                     </>
                   ) : (
@@ -732,21 +1153,56 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                   {selectedEvent && home && away && predictionInput ? (
                     <>
                       <header className="sports-workspace-head">
-                        <div><small>{t('隊伍／選手比較')}</small><h2>{home.name} vs {away.name}</h2></div>
+                        <div><small>{t('隊伍／選手比較')}</small><h2>{tName(home.name)} vs {tName(away.name)}</h2></div>
                         <span>{t(selectedEvent.competitionName)}</span>
                       </header>
                       <div className="sports-comparison">
                         <div className="sports-comparison-head">
-                          <strong>{home.name}</strong><span>{t('指標')}</span><strong>{away.name}</strong>
-                        </div>
-                        {compareMetrics.map((metric) => (
-                          <div className="sports-comparison-row" key={metric.label}>
-                            <div className="left"><b>{metric.home}</b><span><i style={{ width: `${metric.home / metric.maximum * 100}%` }} /></span></div>
-                            <strong>{t(metric.label)}</strong>
-                            <div className="right"><span><i style={{ width: `${metric.away / metric.maximum * 100}%` }} /></span><b>{metric.away}</b></div>
+                          <div className="sports-comparison-team">
+                            <strong>{tName(home.name)}</strong>
+                            {winPctLabel(home.record) && <small>{t('勝率')} {winPctLabel(home.record)}</small>}
                           </div>
-                        ))}
+                          <span>{t('指標')}</span>
+                          <div className="sports-comparison-team">
+                            <strong>{tName(away.name)}</strong>
+                            {winPctLabel(away.record) && <small>{t('勝率')} {winPctLabel(away.record)}</small>}
+                          </div>
+                        </div>
+                        {compareMetrics.map((metric) => {
+                          const lead = metric.home === metric.away ? '' : metric.home > metric.away ? 'home' : 'away';
+                          return (
+                            <div className="sports-comparison-row" key={metric.label}>
+                              <div className={`left ${lead === 'home' ? 'lead' : ''}`}><b>{metric.home}</b><span><i style={{ width: `${metric.home / metric.maximum * 100}%` }} /></span></div>
+                              <strong>{t(metric.label)}</strong>
+                              <div className={`right ${lead === 'away' ? 'lead' : ''}`}><span><i style={{ width: `${metric.away / metric.maximum * 100}%` }} /></span><b>{metric.away}</b></div>
+                            </div>
+                          );
+                        })}
                       </div>
+
+                      {positionMatchups?.groups.length ? (
+                        <SportsPositionMatchups
+                          report={positionMatchups}
+                          onSelectPlayer={setSelectedPlayer}
+                        />
+                      ) : null}
+
+                      <section className="sports-rosters">
+                        <header className="sports-subhead"><Users size={16} /> {t('球員名單')} <small>ESPN</small></header>
+                        {rostersLoading ? (
+                          <div className="sports-headlines-state"><RefreshCw size={14} className="spin" /> {t('讀取球員名單中...')}</div>
+                        ) : (effectiveHomeRoster?.players.length || effectiveAwayRoster?.players.length) ? (
+                          <div className="sports-squad-grid">
+                            {renderSquad(home, effectiveHomeRoster, 'home')}
+                            {renderSquad(away, effectiveAwayRoster, 'away')}
+                          </div>
+                        ) : rosterSupported ? (
+                          <p className="sports-headlines-state">{t('此賽事暫無球員名單')}</p>
+                        ) : (
+                          <p className="sports-headlines-state">{t('此運動為個人賽，無隊伍名單')}</p>
+                        )}
+                      </section>
+
                       <section className="sports-ai-card">
                         <header>
                           <span><BrainCircuit size={20} /></span>
@@ -757,6 +1213,7 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                           </button>
                         </header>
                         <p>{report?.text || t('選擇賽事後即可執行模型')}</p>
+                        {squadInsight && <p className="sports-squad-insight">{squadInsight}</p>}
                       </section>
                     </>
                   ) : (
@@ -772,7 +1229,7 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                 {selectedEvent ? (
                   <>
                     <small>{t(selectedEvent.competitionName)}</small>
-                    <h3>{participantName(home, t('主隊'))} vs {participantName(away, t('客隊'))}</h3>
+                    <h3>{tName(participantName(home, t('主隊')))} vs {tName(participantName(away, t('客隊')))}</h3>
                     <div className="sports-inspector-score">
                       <span>{home?.abbreviation ?? 'A'}</span>
                       <strong>{selectedEvent.status === 'scheduled' ? 'VS' : `${home?.score ?? 0}:${away?.score ?? 0}`}</strong>
@@ -782,13 +1239,47 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                       <div><dt>{t('開賽時間')}</dt><dd>{formatFusionEventDateTime(new Date(selectedEvent.startTime), lang, settings.timezone, settings.clock24)}</dd></div>
                       <div><dt>{t('場地')}</dt><dd>{selectedEvent.venue || t('未提供場地')}</dd></div>
                       <div><dt>{t('賽事狀態')}</dt><dd>{t(STATUS_LABELS[selectedEvent.status])}</dd></div>
+                      {(home?.record || away?.record) && (
+                        <div><dt>{t('戰績')}</dt><dd>{`${home?.record || '—'} · ${away?.record || '—'}`}</dd></div>
+                      )}
                     </dl>
-                    <button type="button" onClick={() => setTab('prediction')}><BarChart3 size={16} /> {t('預測實驗室')}</button>
+                    <div className="sports-inspector-actions">
+                      <button type="button" onClick={() => openEventDetail(selectedEvent)}>
+                        <Trophy size={16} /> {t('查看賽事詳情')}
+                      </button>
+                      <button type="button" onClick={() => setTab('prediction')}>
+                        <BarChart3 size={16} /> {t('預測實驗室')}
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <p>{t('未選擇賽事')}</p>
                 )}
               </section>
+              {headlineProviderPath && (
+                <section className="sports-headlines-panel">
+                  <header><Newspaper size={18} /><strong>{t('賽事頭條')}</strong><small>ESPN</small></header>
+                  {headlinesLoading ? (
+                    <div className="sports-headlines-state"><RefreshCw size={14} className="spin" /> {t('讀取頭條中...')}</div>
+                  ) : headlines.length ? (
+                    <ul>
+                      {headlines.map((item, index) => (
+                        <li key={item.url ?? index}>
+                          {item.url ? (
+                            <a href={item.url} target="_blank" rel="noreferrer noopener">
+                              <span>{item.title}</span><ExternalLink size={12} />
+                            </a>
+                          ) : (
+                            <span>{item.title}</span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="sports-headlines-state">{t('暫無相關頭條')}</p>
+                  )}
+                </section>
+              )}
               <section className="sports-source-panel">
                 <header>{snapshot.mode === 'live' ? <Wifi size={18} /> : <WifiOff size={18} />}<strong>{t('資料模式')}</strong></header>
                 <div><span>{t(modeLabel(snapshot.mode))}</span><b>{t(snapshot.source)}</b></div>
@@ -802,6 +1293,24 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
               </section>
             </aside>
           </div>
+          {detailOpen && selectedEvent && (
+            <SportsEventDetailDialog
+              event={selectedEvent}
+              detail={eventDetail}
+              loading={detailLoading}
+              error={detailError}
+              rosters={[effectiveHomeRoster, effectiveAwayRoster].filter((roster): roster is TeamRoster => Boolean(roster))}
+              localizeName={(name) => tName(name)}
+              onSelectPlayer={setSelectedPlayer}
+              onClose={() => setDetailOpen(false)}
+            />
+          )}
+          {selectedPlayer && (
+            <SportsPlayerProfile
+              player={selectedPlayer}
+              onClose={() => setSelectedPlayer(null)}
+            />
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>

@@ -127,3 +127,53 @@ const sportsAi_js_1 = require("../src/sports/sportsAi.js");
     strict_1.default.equal(report.source, 'ollama');
     strict_1.default.equal(report.text, '本機模型分析完成。');
 });
+(0, node_test_1.default)('explains the strongest evidence in the local prediction report', async () => {
+    const input = (0, sportsSimulation_js_1.createPredictionInput)({
+        model: 'goals',
+        homeName: 'Spain',
+        awayName: 'Cape Verde',
+        homeRating: 1800,
+        awayRating: 1580,
+        iterations: 2000,
+        seed: 22
+    });
+    const result = (0, sportsSimulation_js_1.simulateMatch)(input);
+    const evidence = {
+        factors: [
+            {
+                id: 'recent-form',
+                label: '近五場狀態',
+                homeValue: '80%',
+                awayValue: '40%',
+                impact: 32,
+                confidence: 0.9,
+                source: 'ESPN last five games'
+            },
+            {
+                id: 'venue',
+                label: '場地因素',
+                homeValue: '中立場',
+                awayValue: '中立場',
+                impact: 0,
+                confidence: 0.7,
+                source: 'event venue'
+            }
+        ],
+        homeRatingAdjustment: 16,
+        awayRatingAdjustment: -16,
+        homeFormAdjustment: 6,
+        awayFormAdjustment: -6,
+        coverage: 0.8
+    };
+    const report = await (0, sportsAi_js_1.generateSportsReport)({
+        input,
+        result,
+        evidence,
+        lang: 'en',
+        useAI: false,
+        model: 'unused'
+    });
+    strict_1.default.match(report.text, /Key factors/);
+    strict_1.default.match(report.text, /Recent form/);
+    strict_1.default.match(report.text, /80%/);
+});
