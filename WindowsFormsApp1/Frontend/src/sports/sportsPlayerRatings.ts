@@ -85,3 +85,14 @@ export function starPlayerTier(name: string | undefined | null): number | null {
 export function isStarPlayer(name: string | undefined | null): boolean {
   return starPlayerTier(name) !== null;
 }
+
+// Maps a real Transfermarkt market value (in euros) onto the same 0-100 strength tier the
+// star table uses, on a log scale (~€100m -> 98, €10m -> 73, €1m -> 54). This is the
+// "Layer 3" signal — preferred over the curated star table when the local proxy supplies
+// it, because it is real data for the whole squad, not just marquee names.
+export function marketValueTier(euros: number | undefined | null): number | null {
+  if (euros == null || !(euros > 0)) return null;
+  const millions = euros / 1_000_000;
+  const tier = 46 + 26 * Math.log10(millions + 1);
+  return Math.round(Math.min(99, Math.max(42, tier)));
+}

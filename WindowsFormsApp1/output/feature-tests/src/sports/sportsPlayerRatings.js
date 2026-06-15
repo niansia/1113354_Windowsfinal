@@ -8,6 +8,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.starPlayerTier = starPlayerTier;
 exports.isStarPlayer = isStarPlayer;
+exports.marketValueTier = marketValueTier;
 const RAW_STAR_VALUE = {
     // ~96-99 — generational
     'Kylian Mbappe': 98, 'Erling Haaland': 97, 'Jude Bellingham': 95, 'Vinicius Junior': 95,
@@ -85,4 +86,15 @@ function starPlayerTier(name) {
 // Convenience: is this a notable / marquee player worth flagging in the UI?
 function isStarPlayer(name) {
     return starPlayerTier(name) !== null;
+}
+// Maps a real Transfermarkt market value (in euros) onto the same 0-100 strength tier the
+// star table uses, on a log scale (~€100m -> 98, €10m -> 73, €1m -> 54). This is the
+// "Layer 3" signal — preferred over the curated star table when the local proxy supplies
+// it, because it is real data for the whole squad, not just marquee names.
+function marketValueTier(euros) {
+    if (euros == null || !(euros > 0))
+        return null;
+    const millions = euros / 1_000_000;
+    const tier = 46 + 26 * Math.log10(millions + 1);
+    return Math.round(Math.min(99, Math.max(42, tier)));
 }

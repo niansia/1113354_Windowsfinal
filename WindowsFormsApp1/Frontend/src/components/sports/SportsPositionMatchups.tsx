@@ -18,6 +18,8 @@ const GROUP_LABELS: Record<SquadGroup, string> = {
 
 interface SportsPositionMatchupsProps {
   report: PositionMatchupReport;
+  valuesActive?: boolean;
+  valuesLoading?: boolean;
   onSelectPlayer: (player: RosterPlayer) => void;
 }
 
@@ -39,6 +41,8 @@ const sideSummary = (
 
 export function SportsPositionMatchups({
   report,
+  valuesActive,
+  valuesLoading,
   onSelectPlayer
 }: SportsPositionMatchupsProps) {
   const { t } = useI18n();
@@ -60,7 +64,9 @@ export function SportsPositionMatchups({
       <header className="sports-subhead">
         <Users size={16} />
         {t('位置對位')}
-        <small>{t('比較分數')}</small>
+        {valuesActive
+          ? <small className="value-source">{t('身價來源')} · Transfermarkt</small>
+          : <small>{valuesLoading ? t('讀取身價中...') : t('比較分數')}</small>}
       </header>
       <div className="sports-matchup-tabs" role="tablist" aria-label={t('位置對位')}>
         {report.groups.map((item) => (
@@ -101,7 +107,7 @@ export function SportsPositionMatchups({
               <span>{pair.home?.headshot ? <img src={pair.home.headshot} alt="" /> : pair.home?.jersey || '—'}</span>
               <div>
                 <strong>{isStarPlayer(pair.home?.name) && <Star size={11} className="sports-star-icon" />}{pair.home?.name ?? '—'}</strong>
-                <small>{pair.home?.position || t('未提供')}</small>
+                <small>{pair.home?.valueLabel || pair.home?.position || t('未提供')}</small>
               </div>
               <b>{pair.homeScore}</b>
             </button>
@@ -114,7 +120,7 @@ export function SportsPositionMatchups({
               <b>{pair.awayScore}</b>
               <div>
                 <strong>{isStarPlayer(pair.away?.name) && <Star size={11} className="sports-star-icon" />}{pair.away?.name ?? '—'}</strong>
-                <small>{pair.away?.position || t('未提供')}</small>
+                <small>{pair.away?.valueLabel || pair.away?.position || t('未提供')}</small>
               </div>
               <span>{pair.away?.headshot ? <img src={pair.away.headshot} alt="" /> : pair.away?.jersey || '—'}</span>
             </button>

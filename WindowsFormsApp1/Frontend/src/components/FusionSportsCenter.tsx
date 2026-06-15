@@ -52,6 +52,12 @@ import {
 } from '../sports/sportsEvidence';
 import { buildPositionMatchups } from '../sports/sportsMatchups';
 import { localizeTeamName } from '../sports/sportsTeamNames';
+import {
+  annotateRosterValues,
+  isScoutAvailable,
+  loadMatchValues,
+  type MatchValues
+} from '../sports/sportsMarketValues';
 import { winPctLabel } from '../sports/sportsStrength';
 import { buildSquadInsight } from '../sports/sportsAnalysis';
 import { generateSportsReport, type SportsReport } from '../sports/sportsAi';
@@ -208,6 +214,8 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
   const [homeRoster, setHomeRoster] = useState<TeamRoster | null>(null);
   const [awayRoster, setAwayRoster] = useState<TeamRoster | null>(null);
   const [rostersLoading, setRostersLoading] = useState(false);
+  const [matchValues, setMatchValues] = useState<MatchValues | null>(null);
+  const [valuesLoading, setValuesLoading] = useState(false);
   const [eventDetail, setEventDetail] = useState<SportsEventDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
@@ -546,6 +554,42 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
     ?? eventDetail?.rosters.find((roster) => roster.teamId === away?.id)
     ?? null;
 
+  // Layer 3: real Transfermarkt market values via the optional local SportsScout proxy.
+  // Fetched only when the Compare tab is open and rosters exist; silently does nothing if
+  // the proxy is not running.
+  useEffect(() => {
+    if (!open || tab !== 'compare' || selectedEvent?.sport !== 'football' || !home || !away
+        || !(effectiveHomeRoster?.players.length || effectiveAwayRoster?.players.length)) {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      if (!(await isScoutAvailable())) {
+        if (!cancelled) setMatchValues(null);
+        return;
+      }
+      if (cancelled) return;
+      setValuesLoading(true);
+      const values = await loadMatchValues(home.name, away.name);
+      if (!cancelled) setMatchValues(values);
+      if (!cancelled) setValuesLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, tab, selectedEvent?.id, effectiveHomeRoster, effectiveAwayRoster]);
+
+  const valuedHomeRoster = useMemo(
+    () => annotateRosterValues(effectiveHomeRoster, matchValues?.home ?? null).roster,
+    [effectiveHomeRoster, matchValues]
+  );
+  const valuedAwayRoster = useMemo(
+    () => annotateRosterValues(effectiveAwayRoster, matchValues?.away ?? null).roster,
+    [effectiveAwayRoster, matchValues]
+  );
+  const marketValuesActive = Boolean(matchValues?.home?.found || matchValues?.away?.found);
+
   const predictionEvidence = useMemo(
     () => selectedEvent
       ? buildPredictionEvidence({
@@ -592,8 +636,8 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
           sport: selectedEvent.sport,
           homeName: tName(home.name),
           awayName: tName(away.name),
-          homeRoster: effectiveHomeRoster,
-          awayRoster: effectiveAwayRoster,
+          homeRoster: valuedHomeRoster,
+          awayRoster: valuedAwayRoster,
           homeTeamRating: predictionInput?.home.rating ?? homeTuning.rating,
           awayTeamRating: predictionInput?.away.rating ?? awayTuning.rating
         })
@@ -601,8 +645,8 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
     [
       away,
       awayTuning.rating,
-      effectiveAwayRoster,
-      effectiveHomeRoster,
+      valuedAwayRoster,
+      valuedHomeRoster,
       home,
       homeTuning.rating,
       predictionInput?.away.rating,
@@ -835,6 +879,7 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                     : <b>{player.jersey || '·'}</b>}
                 </span>
                 <span className="sports-squad-name">{player.name}</span>
+                {player.valueLabel && <span className="sports-squad-value">{player.valueLabel}</span>}
                 {player.position && <span className="sports-squad-pos">{player.position}</span>}
                 {player.age != null && <span className="sports-squad-age">{player.age}</span>}
               </li>
@@ -1183,6 +1228,8 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                       {positionMatchups?.groups.length ? (
                         <SportsPositionMatchups
                           report={positionMatchups}
+                          valuesActive={marketValuesActive}
+                          valuesLoading={valuesLoading}
                           onSelectPlayer={setSelectedPlayer}
                         />
                       ) : null}
@@ -1193,8 +1240,8 @@ export function FusionSportsCenter({ open, onClose, accent }: FusionSportsCenter
                           <div className="sports-headlines-state"><RefreshCw size={14} className="spin" /> {t('讀取球員名單中...')}</div>
                         ) : (effectiveHomeRoster?.players.length || effectiveAwayRoster?.players.length) ? (
                           <div className="sports-squad-grid">
-                            {renderSquad(home, effectiveHomeRoster, 'home')}
-                            {renderSquad(away, effectiveAwayRoster, 'away')}
+                            {renderSquad(home, valuedHomeRoster, 'home')}
+                            {renderSquad(away, valuedAwayRoster, 'away')}
                           </div>
                         ) : rosterSupported ? (
                           <p className="sports-headlines-state">{t('此賽事暫無球員名單')}</p>

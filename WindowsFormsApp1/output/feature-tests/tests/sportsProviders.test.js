@@ -165,6 +165,35 @@ const payload = {
     const anon = forwards.pairings.find((pair) => pair.home?.id === 'u')?.homeScore ?? 0;
     strict_1.default.ok(star > anon + 8, 'a star should clearly out-rate an anonymous squad player');
 });
+(0, node_test_1.default)('real market value drives the player tier and out-ranks a cheap team-mate', () => {
+    strict_1.default.equal((0, sportsPlayerRatings_js_1.marketValueTier)(0), null);
+    strict_1.default.equal((0, sportsPlayerRatings_js_1.marketValueTier)(undefined), null);
+    const elite = (0, sportsPlayerRatings_js_1.marketValueTier)(120_000_000);
+    const mid = (0, sportsPlayerRatings_js_1.marketValueTier)(10_000_000);
+    const cheap = (0, sportsPlayerRatings_js_1.marketValueTier)(800_000);
+    strict_1.default.ok(elite > mid && mid > cheap, 'market value tier should be monotonic');
+    strict_1.default.ok(elite <= 99 && cheap >= 42);
+    const base = (0, sportsRoster_js_1.normalizeEspnRoster)({
+        athletes: [
+            { id: 'rich', displayName: 'Rich Unknown', position: { abbreviation: 'F' }, age: 27 },
+            { id: 'poor', displayName: 'Poor Unknown', position: { abbreviation: 'F' }, age: 27 }
+        ]
+    }, 'home');
+    const roster = {
+        ...base,
+        players: base.players.map((player) => player.id === 'rich'
+            ? { ...player, marketValue: 120_000_000 }
+            : { ...player, marketValue: 700_000 })
+    };
+    const report = (0, sportsMatchups_js_1.buildPositionMatchups)({
+        sport: 'football', homeName: 'H', awayName: 'A',
+        homeRoster: roster, awayRoster: roster, homeTeamRating: 1800, awayTeamRating: 1800
+    });
+    const forwards = report.groups.find((group) => group.group === 'FWD');
+    const rich = forwards.pairings.find((pair) => pair.home?.id === 'rich')?.homeScore ?? 0;
+    const poor = forwards.pairings.find((pair) => pair.home?.id === 'poor')?.homeScore ?? 0;
+    strict_1.default.ok(rich > poor + 10, 'a €120m player should clearly out-rate a €0.7m team-mate');
+});
 (0, node_test_1.default)('player matchup scores vary within a squad instead of repeating one number', () => {
     const roster = (0, sportsRoster_js_1.normalizeEspnRoster)({
         athletes: [

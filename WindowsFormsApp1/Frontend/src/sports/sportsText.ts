@@ -168,6 +168,8 @@ export const SPORTS_TRANSLATIONS: Record<string, Entry> = {
   '前鋒': entry('前锋', 'FWD', 'FW', 'FW'),
   '其他': entry('其他', 'Other', 'その他', '기타'),
   '{0} 人': entry('{0} 人', '{0} players', '{0}名', '{0}명'),
+  '身價來源': entry('身价来源', 'Values', '市場価値', '시장 가치'),
+  '讀取身價中...': entry('正在读取身价...', 'Loading values...', '市場価値を読み込み中...', '시장 가치 불러오는 중...'),
   '查看賽事詳情': entry('查看赛事详情', 'View event details', '試合詳細を見る', '경기 상세 보기'),
   '賽事詳情': entry('赛事详情', 'Event dossier', '試合詳細', '경기 상세'),
   '總覽': entry('总览', 'Overview', '概要', '개요'),

@@ -18,7 +18,7 @@ import { localizeTeamName } from '../src/sports/sportsTeamNames.js';
 import { normalizeEspnRoster, summarizeSquad } from '../src/sports/sportsRoster.js';
 import { providerEventId } from '../src/sports/sportsDetail.js';
 import { buildPositionMatchups } from '../src/sports/sportsMatchups.js';
-import { starPlayerTier } from '../src/sports/sportsPlayerRatings.js';
+import { marketValueTier, starPlayerTier } from '../src/sports/sportsPlayerRatings.js';
 
 const competition: SportsCompetition = {
   id: 'fifa-world-cup',
@@ -184,6 +184,38 @@ test('star-power table matches accent- and order-insensitively and lifts marquee
   const star = forwards.pairings.find((pair) => pair.home?.id === 's')?.homeScore ?? 0;
   const anon = forwards.pairings.find((pair) => pair.home?.id === 'u')?.homeScore ?? 0;
   assert.ok(star > anon + 8, 'a star should clearly out-rate an anonymous squad player');
+});
+
+test('real market value drives the player tier and out-ranks a cheap team-mate', () => {
+  assert.equal(marketValueTier(0), null);
+  assert.equal(marketValueTier(undefined), null);
+  const elite = marketValueTier(120_000_000)!;
+  const mid = marketValueTier(10_000_000)!;
+  const cheap = marketValueTier(800_000)!;
+  assert.ok(elite > mid && mid > cheap, 'market value tier should be monotonic');
+  assert.ok(elite <= 99 && cheap >= 42);
+
+  const base = normalizeEspnRoster({
+    athletes: [
+      { id: 'rich', displayName: 'Rich Unknown', position: { abbreviation: 'F' }, age: 27 },
+      { id: 'poor', displayName: 'Poor Unknown', position: { abbreviation: 'F' }, age: 27 }
+    ]
+  }, 'home');
+  const roster = {
+    ...base,
+    players: base.players.map((player) =>
+      player.id === 'rich'
+        ? { ...player, marketValue: 120_000_000 }
+        : { ...player, marketValue: 700_000 })
+  };
+  const report = buildPositionMatchups({
+    sport: 'football', homeName: 'H', awayName: 'A',
+    homeRoster: roster, awayRoster: roster, homeTeamRating: 1800, awayTeamRating: 1800
+  });
+  const forwards = report.groups.find((group) => group.group === 'FWD')!;
+  const rich = forwards.pairings.find((pair) => pair.home?.id === 'rich')?.homeScore ?? 0;
+  const poor = forwards.pairings.find((pair) => pair.home?.id === 'poor')?.homeScore ?? 0;
+  assert.ok(rich > poor + 10, 'a €120m player should clearly out-rate a €0.7m team-mate');
 });
 
 test('player matchup scores vary within a squad instead of repeating one number', () => {

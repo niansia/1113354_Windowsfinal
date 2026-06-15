@@ -42,18 +42,18 @@ const microVariance = (id) => {
 const playerScore = (player, teamRating) => {
     if (!player)
         return 0;
-    // Composite, no-key estimate: team strength sets a modest floor; a curated star-power
-    // tier does most of the lifting so marquee names clear the squad even on a weaker side,
-    // and an ordinary player on a great team does NOT get pinned to the ceiling. Age/role/
-    // availability fine-tune. For a known star, age weighs less (a 36-year-old great is still
-    // elite).
+    // Composite estimate: team strength sets a modest floor; an individual quality tier does
+    // most of the lifting so marquee names clear the squad even on a weaker side, while an
+    // ordinary player on a great team is NOT pinned to the ceiling. The tier prefers a REAL
+    // Transfermarkt market value (Layer 3, whole squad) and falls back to the curated star
+    // table. Age/role/availability fine-tune; for a rated player age weighs less.
     const base = 38 + (teamRating - 1500) / 26;
-    const star = (0, sportsPlayerRatings_js_1.starPlayerTier)(player.name);
-    const starBump = star != null ? clamp((star - 66) * 1.05, 0, 34) : 0;
-    const ageWeight = star != null ? 0.4 : 1;
+    const tier = (0, sportsPlayerRatings_js_1.marketValueTier)(player.marketValue) ?? (0, sportsPlayerRatings_js_1.starPlayerTier)(player.name);
+    const tierBump = tier != null ? clamp((tier - 62) * 0.95, 0, 38) : 0;
+    const ageWeight = tier != null ? 0.45 : 1;
     const availability = player.available ? 3 : -20;
     return Math.round(clamp(base
-        + starBump
+        + tierBump
         + ageCurve(player.age) * ageWeight
         + jerseyAdjustment(player.jersey)
         + availability

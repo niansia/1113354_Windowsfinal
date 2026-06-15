@@ -906,11 +906,19 @@
 }
 .sports-squad-list li {
   display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto auto;
+  grid-template-columns: 28px minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 8px;
   padding: 5px 2px;
   border-top: 1px solid rgba(135, 182, 228, 0.06);
+}
+.sports-squad-value {
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: #8df3c0;
+  background: rgba(54, 219, 167, 0.12);
+  font: 750 7.5px/1 "Consolas", monospace;
+  white-space: nowrap;
 }
 .sports-squad-list li:first-child { border-top: 0; }
 .sports-squad-mark {
@@ -1175,6 +1183,7 @@
 .sports-player-pairings button small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sports-player-pairings button strong { color: #e7f4ff; font-size: 8.5px; }
 .sports-star-icon { vertical-align: -1px; margin-right: 3px; color: #ffce5b; fill: #ffce5b; }
+.sports-subhead small.value-source { color: #8df3c0; background: rgba(54, 219, 167, 0.12); }
 .sports-player-pairings button:last-child .sports-star-icon { margin-right: 0; margin-left: 3px; }
 .sports-player-pairings button small { margin-top: 3px; color: rgba(145, 177, 209, 0.46); font-size: 7px; }
 .sports-player-pairings button > b { color: #bdf5ff; font: 800 10px/1 "Consolas", monospace; text-align: center; }

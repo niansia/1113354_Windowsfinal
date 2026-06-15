@@ -49,6 +49,13 @@
       "runtimeArgs": ["server.py", "--port", "8795"],
       "cwd": "IntegratedApps/CulturaGlobe",
       "port": 8795
+    },
+    {
+      "name": "sports-scout",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["server.py", "--port", "8796"],
+      "cwd": "IntegratedApps/SportsScout",
+      "port": 8796
     }
   ]
 }

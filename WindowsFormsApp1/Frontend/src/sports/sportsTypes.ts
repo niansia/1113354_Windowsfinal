@@ -87,6 +87,8 @@ export interface RosterPlayer {
   available: boolean;
   injuries: string[];
   profileUrl?: string;
+  marketValue?: number;
+  valueLabel?: string;
 }
 
 export interface SquadSummary {
