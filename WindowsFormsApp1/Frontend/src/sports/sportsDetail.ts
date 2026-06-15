@@ -200,6 +200,14 @@ export function normalizeEspnEventSummary(
   };
 }
 
+// The app stores events under a composite id of `${competitionId}:${espnEventId}` (see
+// normalizeEspnScoreboard). ESPN's summary endpoint needs the raw numeric event id, so
+// strip everything up to and including the first colon.
+export const providerEventId = (eventId: string): string => {
+  const colon = eventId.indexOf(':');
+  return colon >= 0 ? eventId.slice(colon + 1) : eventId;
+};
+
 export async function loadSportsEventDetail(options: {
   providerPath: string;
   event: SportsEvent;
@@ -210,7 +218,8 @@ export async function loadSportsEventDetail(options: {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), options.timeoutMs ?? 10_000);
   try {
-    const url = `https://site.api.espn.com/apis/site/v2/sports/${options.providerPath}/summary?event=${encodeURIComponent(options.event.id)}`;
+    const rawId = providerEventId(options.event.id);
+    const url = `https://site.api.espn.com/apis/site/v2/sports/${options.providerPath}/summary?event=${encodeURIComponent(rawId)}`;
     const response = await fetcher(url, { signal: controller.signal });
     if (!response.ok) throw new Error(`Event detail provider returned HTTP ${response.status}.`);
     return normalizeEspnEventSummary(await response.json(), options.event);

@@ -10,6 +10,9 @@ const sportsDataService_js_1 = require("../src/sports/sportsDataService.js");
 const sportsStrength_js_1 = require("../src/sports/sportsStrength.js");
 const sportsTeamNames_js_1 = require("../src/sports/sportsTeamNames.js");
 const sportsRoster_js_1 = require("../src/sports/sportsRoster.js");
+const sportsDetail_js_1 = require("../src/sports/sportsDetail.js");
+const sportsMatchups_js_1 = require("../src/sports/sportsMatchups.js");
+const sportsPlayerRatings_js_1 = require("../src/sports/sportsPlayerRatings.js");
 const competition = {
     id: 'fifa-world-cup',
     sport: 'football',
@@ -122,6 +125,67 @@ const payload = {
     // 3-part records (W-D-L / W-L-OTL) still parse.
     strict_1.default.ok((0, sportsStrength_js_1.deriveSideMetrics)('53-22-7'));
     strict_1.default.equal((0, sportsStrength_js_1.deriveSideMetrics)('not-a-record'), null);
+});
+(0, node_test_1.default)('strips the competition prefix to the raw provider event id', () => {
+    strict_1.default.equal((0, sportsDetail_js_1.providerEventId)('fifa-world-cup:760421'), '760421');
+    strict_1.default.equal((0, sportsDetail_js_1.providerEventId)('760421'), '760421');
+});
+(0, node_test_1.default)('national-team table gives large, ordered strength gaps that beat a 1-game record', () => {
+    const argentina = (0, sportsStrength_js_1.nationalTeamRating)('Argentina');
+    const curacao = (0, sportsStrength_js_1.nationalTeamRating)('Curaçao');
+    strict_1.default.ok(argentina && curacao && argentina - curacao > 400, 'a giant should outrate a minnow by a lot');
+    strict_1.default.equal((0, sportsStrength_js_1.nationalTeamRating)('United States'), (0, sportsStrength_js_1.nationalTeamRating)('USA')); // alias folds in
+    strict_1.default.equal((0, sportsStrength_js_1.nationalTeamRating)('Some Club FC'), null); // clubs/unknown fall through
+    // A national team that has only played one group game must still anchor on the table.
+    const strong = (0, sportsStrength_js_1.deriveSideMetrics)('1-0-0', 'Argentina');
+    const weak = (0, sportsStrength_js_1.deriveSideMetrics)('0-0-1', 'Curaçao');
+    strict_1.default.ok(strong && weak);
+    strict_1.default.ok(strong.rating > 2000);
+    strict_1.default.ok(strong.rating - weak.rating > 400, 'mismatched WC sides should not collapse toward 1500');
+});
+(0, node_test_1.default)('star-power table matches accent- and order-insensitively and lifts marquee names', () => {
+    const accentForm = (0, sportsPlayerRatings_js_1.starPlayerTier)('Vinícius Júnior');
+    const asciiForm = (0, sportsPlayerRatings_js_1.starPlayerTier)('Vinicius Junior');
+    strict_1.default.ok(accentForm && asciiForm && accentForm === asciiForm, 'accents should not block a match');
+    strict_1.default.ok(((0, sportsPlayerRatings_js_1.starPlayerTier)('Kylian Mbappe') ?? 0) > ((0, sportsPlayerRatings_js_1.starPlayerTier)('Harry Kane') ?? 0));
+    strict_1.default.equal((0, sportsPlayerRatings_js_1.starPlayerTier)('Some Unknown Reserve'), null);
+    // A listed star should out-score an unknown team-mate on the same team.
+    const roster = (0, sportsRoster_js_1.normalizeEspnRoster)({
+        athletes: [
+            { id: 's', displayName: 'Kylian Mbappe', jersey: '10', position: { abbreviation: 'F' }, age: 27 },
+            { id: 'u', displayName: 'Anon Reserve', jersey: '24', position: { abbreviation: 'F' }, age: 27 }
+        ]
+    }, 'home');
+    const report = (0, sportsMatchups_js_1.buildPositionMatchups)({
+        sport: 'football', homeName: 'H', awayName: 'A',
+        homeRoster: roster, awayRoster: roster, homeTeamRating: 1900, awayTeamRating: 1900
+    });
+    const forwards = report.groups.find((group) => group.group === 'FWD');
+    const star = forwards.pairings.find((pair) => pair.home?.id === 's')?.homeScore ?? 0;
+    const anon = forwards.pairings.find((pair) => pair.home?.id === 'u')?.homeScore ?? 0;
+    strict_1.default.ok(star > anon + 8, 'a star should clearly out-rate an anonymous squad player');
+});
+(0, node_test_1.default)('player matchup scores vary within a squad instead of repeating one number', () => {
+    const roster = (0, sportsRoster_js_1.normalizeEspnRoster)({
+        athletes: [
+            { id: 'a', displayName: 'Teen Forward', jersey: '19', position: { abbreviation: 'F' }, age: 18 },
+            { id: 'b', displayName: 'Prime Forward', jersey: '9', position: { abbreviation: 'F' }, age: 27 },
+            { id: 'c', displayName: 'Veteran Forward', jersey: '7', position: { abbreviation: 'F' }, age: 35 }
+        ]
+    }, 'home');
+    const report = (0, sportsMatchups_js_1.buildPositionMatchups)({
+        sport: 'football',
+        homeName: 'Home',
+        awayName: 'Away',
+        homeRoster: roster,
+        awayRoster: roster,
+        homeTeamRating: 1800,
+        awayTeamRating: 1800
+    });
+    const forwards = report.groups.find((group) => group.group === 'FWD');
+    strict_1.default.ok(forwards);
+    const scores = forwards.pairings.map((pair) => pair.homeScore);
+    strict_1.default.ok(new Set(scores).size > 1, 'players in a group should not all share one score');
 });
 (0, node_test_1.default)('localizes known team and country names, falling back to English', () => {
     strict_1.default.equal((0, sportsTeamNames_js_1.localizeTeamName)('Sweden', 'zh-TW'), '瑞典');

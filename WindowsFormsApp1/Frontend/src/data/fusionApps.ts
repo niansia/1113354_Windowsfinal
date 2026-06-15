@@ -61,7 +61,7 @@ export const FUSION_APPS: FusionApp[] = [
     color: '#ff6a9e',
     category: 'system',
     tags: ['啟動器', '應用程式', '入口'],
-    status: '23 個應用程式',
+    status: '24 個應用程式',
     launchMode: 'overlay',
     featured: true
   },
@@ -249,6 +249,19 @@ export const FUSION_APPS: FusionApp[] = [
     category: 'data',
     tags: ['即時比分', '世界盃', '蒙地卡羅', 'AI 分析'],
     status: '免金鑰資料',
+    launchMode: 'overlay',
+    featured: true
+  },
+  {
+    id: 'poetry',
+    title: '詩雲',
+    subtitle: '古典詩詞關係宇宙',
+    description: '在星雲圖譜中搜尋詩人、詩作、意象與歷史關係。',
+    glyph: '詩',
+    color: '#ffc857',
+    category: 'creative',
+    tags: ['古典詩詞', '星圖', '搜尋', '朗讀'],
+    status: '互動星圖',
     launchMode: 'overlay',
     featured: true
   },

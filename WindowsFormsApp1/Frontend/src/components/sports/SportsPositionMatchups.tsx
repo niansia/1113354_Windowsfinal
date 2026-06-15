@@ -1,10 +1,11 @@
-import { Shield, UserRoundSearch, Users } from 'lucide-react';
+import { Shield, Star, UserRoundSearch, Users } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useI18n } from '../../i18n/I18nContext';
 import type {
   PositionMatchupReport,
   PositionGroupMatchup
 } from '../../sports/sportsMatchups';
+import { isStarPlayer } from '../../sports/sportsPlayerRatings';
 import type { RosterPlayer, SquadGroup } from '../../sports/sportsTypes';
 
 const GROUP_LABELS: Record<SquadGroup, string> = {
@@ -98,7 +99,10 @@ export function SportsPositionMatchups({
               onClick={() => pair.home && onSelectPlayer(pair.home)}
             >
               <span>{pair.home?.headshot ? <img src={pair.home.headshot} alt="" /> : pair.home?.jersey || '—'}</span>
-              <div><strong>{pair.home?.name ?? '—'}</strong><small>{pair.home?.position || t('未提供')}</small></div>
+              <div>
+                <strong>{isStarPlayer(pair.home?.name) && <Star size={11} className="sports-star-icon" />}{pair.home?.name ?? '—'}</strong>
+                <small>{pair.home?.position || t('未提供')}</small>
+              </div>
               <b>{pair.homeScore}</b>
             </button>
             <i>VS</i>
@@ -108,7 +112,10 @@ export function SportsPositionMatchups({
               onClick={() => pair.away && onSelectPlayer(pair.away)}
             >
               <b>{pair.awayScore}</b>
-              <div><strong>{pair.away?.name ?? '—'}</strong><small>{pair.away?.position || t('未提供')}</small></div>
+              <div>
+                <strong>{isStarPlayer(pair.away?.name) && <Star size={11} className="sports-star-icon" />}{pair.away?.name ?? '—'}</strong>
+                <small>{pair.away?.position || t('未提供')}</small>
+              </div>
               <span>{pair.away?.headshot ? <img src={pair.away.headshot} alt="" /> : pair.away?.jersey || '—'}</span>
             </button>
           </article>

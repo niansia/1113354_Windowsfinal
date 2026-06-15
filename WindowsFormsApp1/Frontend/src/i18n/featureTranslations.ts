@@ -11,6 +11,20 @@ const entry = (zhCN: string, en: string, ja: string, ko: string): Entry => ({
 
 export const FEATURE_TRANSLATIONS: Record<string, Entry> = {
   // App catalog and App Center
+  '詩雲': entry('诗云', 'Poetry Cloud', '詩雲', '시운'),
+  '古典詩詞關係宇宙': entry('古典诗词关系宇宙', 'Classical poetry universe', '古典詩歌の関係宇宙', '고전 시 관계 우주'),
+  '在星雲圖譜中搜尋詩人、詩作、意象與歷史關係。': entry(
+    '在星云图谱中搜索诗人、诗作、意象与历史关系。',
+    'Explore poets, poems, imagery, and historical connections in a living star map.',
+    '星雲マップで詩人、作品、イメージ、歴史的なつながりを探索します。',
+    '살아 있는 성운 지도에서 시인, 작품, 이미지와 역사적 관계를 탐색합니다.'
+  ),
+  '古典詩詞': entry('古典诗词', 'Classical poetry', '古典詩歌', '고전 시'),
+  '星圖': entry('星图', 'Star map', '星図', '별 지도'),
+  '搜尋': entry('搜索', 'Search', '検索', '검색'),
+  '朗讀': entry('朗读', 'Narration', '朗読', '낭독'),
+  '互動星圖': entry('互动星图', 'Interactive star map', 'インタラクティブ星図', '인터랙티브 별 지도'),
+  '24 個應用程式': entry('24 个应用程序', '24 applications', '24 個のアプリ', '앱 24개'),
   'Fusion 工作區': entry('Fusion 工作区', 'Fusion workspace', 'Fusion ワークスペース', 'Fusion 작업 공간'),
   '查看 Fusion OS 工作區、已連接的儲存空間與系統總覽。': entry('查看 Fusion OS 工作区、已连接的存储空间与系统总览。', 'Review the Fusion OS workspace, connected storage, and system overview.', 'Fusion OS のワークスペース、接続済みストレージ、システム概要を確認します。', 'Fusion OS 작업 공간, 연결된 저장소 및 시스템 개요를 확인합니다.'),
   '本機檔案空間': entry('本机文件空间', 'Local file space', 'ローカルファイル領域', '로컬 파일 공간'),

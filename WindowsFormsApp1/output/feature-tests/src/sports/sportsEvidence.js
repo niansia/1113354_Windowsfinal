@@ -206,13 +206,13 @@ function applyPredictionEvidence(input, evidence) {
         ...input,
         home: {
             ...input.home,
-            rating: clamp(input.home.rating + evidence.homeRatingAdjustment, 800, 2600),
-            form: clamp(input.home.form + evidence.homeFormAdjustment, 0, 100)
+            rating: Math.round(clamp(input.home.rating + evidence.homeRatingAdjustment, 800, 2600)),
+            form: Math.round(clamp(input.home.form + evidence.homeFormAdjustment, 0, 100))
         },
         away: {
             ...input.away,
-            rating: clamp(input.away.rating + evidence.awayRatingAdjustment, 800, 2600),
-            form: clamp(input.away.form + evidence.awayFormAdjustment, 0, 100)
+            rating: Math.round(clamp(input.away.rating + evidence.awayRatingAdjustment, 800, 2600)),
+            form: Math.round(clamp(input.away.form + evidence.awayFormAdjustment, 0, 100))
         }
     };
 }

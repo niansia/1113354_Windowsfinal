@@ -69,6 +69,10 @@ const LazyFusionSportsCenter = React.lazy(() =>
   import('./FusionSportsCenter').then((module) => ({ default: module.FusionSportsCenter }))
 );
 
+const LazyFusionPoetryCloud = React.lazy(() =>
+  import('./FusionPoetryCloud').then((module) => ({ default: module.FusionPoetryCloud }))
+);
+
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
 const CARD_W = 208;
 const CARD_GAP = 16;
@@ -108,6 +112,7 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   circuit: CircuitBoard,
   style: Shirt,
   sports: Trophy,
+  poetry: BookOpenText,
   db: Database,
   web: Globe2,
   game: Gamepad2,
@@ -199,6 +204,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       app.id === 'dev' ||
       app.id === 'style' ||
       app.id === 'sports' ||
+      app.id === 'poetry' ||
       app.id === 'toolbox'
     ) {
       setOverlayApp(app.id);
@@ -859,6 +865,15 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
             open
             onClose={() => setOverlayApp('tool')}
             accent="#55e6ff"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'poetry' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionPoetryCloud
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#ffc857"
           />
         </React.Suspense>
       )}

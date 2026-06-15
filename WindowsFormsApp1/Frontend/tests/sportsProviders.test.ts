@@ -13,9 +13,12 @@ import {
   readSportsCache,
   writeSportsCache
 } from '../src/sports/sportsDataService.js';
-import { deriveSideMetrics, parseTeamRecord } from '../src/sports/sportsStrength.js';
+import { deriveSideMetrics, nationalTeamRating, parseTeamRecord } from '../src/sports/sportsStrength.js';
 import { localizeTeamName } from '../src/sports/sportsTeamNames.js';
 import { normalizeEspnRoster, summarizeSquad } from '../src/sports/sportsRoster.js';
+import { providerEventId } from '../src/sports/sportsDetail.js';
+import { buildPositionMatchups } from '../src/sports/sportsMatchups.js';
+import { starPlayerTier } from '../src/sports/sportsPlayerRatings.js';
 
 const competition: SportsCompetition = {
   id: 'fifa-world-cup',
@@ -138,6 +141,72 @@ test('derives differentiated strength from a win-loss record', () => {
   // 3-part records (W-D-L / W-L-OTL) still parse.
   assert.ok(deriveSideMetrics('53-22-7'));
   assert.equal(deriveSideMetrics('not-a-record'), null);
+});
+
+test('strips the competition prefix to the raw provider event id', () => {
+  assert.equal(providerEventId('fifa-world-cup:760421'), '760421');
+  assert.equal(providerEventId('760421'), '760421');
+});
+
+test('national-team table gives large, ordered strength gaps that beat a 1-game record', () => {
+  const argentina = nationalTeamRating('Argentina');
+  const curacao = nationalTeamRating('Curaçao');
+  assert.ok(argentina && curacao && argentina - curacao > 400, 'a giant should outrate a minnow by a lot');
+  assert.equal(nationalTeamRating('United States'), nationalTeamRating('USA')); // alias folds in
+  assert.equal(nationalTeamRating('Some Club FC'), null); // clubs/unknown fall through
+  // A national team that has only played one group game must still anchor on the table.
+  const strong = deriveSideMetrics('1-0-0', 'Argentina');
+  const weak = deriveSideMetrics('0-0-1', 'Curaçao');
+  assert.ok(strong && weak);
+  assert.ok(strong!.rating > 2000);
+  assert.ok(strong!.rating - weak!.rating > 400, 'mismatched WC sides should not collapse toward 1500');
+});
+
+test('star-power table matches accent- and order-insensitively and lifts marquee names', () => {
+  const accentForm = starPlayerTier('Vinícius Júnior');
+  const asciiForm = starPlayerTier('Vinicius Junior');
+  assert.ok(accentForm && asciiForm && accentForm === asciiForm, 'accents should not block a match');
+  assert.ok((starPlayerTier('Kylian Mbappe') ?? 0) > (starPlayerTier('Harry Kane') ?? 0));
+  assert.equal(starPlayerTier('Some Unknown Reserve'), null);
+
+  // A listed star should out-score an unknown team-mate on the same team.
+  const roster = normalizeEspnRoster({
+    athletes: [
+      { id: 's', displayName: 'Kylian Mbappe', jersey: '10', position: { abbreviation: 'F' }, age: 27 },
+      { id: 'u', displayName: 'Anon Reserve', jersey: '24', position: { abbreviation: 'F' }, age: 27 }
+    ]
+  }, 'home');
+  const report = buildPositionMatchups({
+    sport: 'football', homeName: 'H', awayName: 'A',
+    homeRoster: roster, awayRoster: roster, homeTeamRating: 1900, awayTeamRating: 1900
+  });
+  const forwards = report.groups.find((group) => group.group === 'FWD')!;
+  const star = forwards.pairings.find((pair) => pair.home?.id === 's')?.homeScore ?? 0;
+  const anon = forwards.pairings.find((pair) => pair.home?.id === 'u')?.homeScore ?? 0;
+  assert.ok(star > anon + 8, 'a star should clearly out-rate an anonymous squad player');
+});
+
+test('player matchup scores vary within a squad instead of repeating one number', () => {
+  const roster = normalizeEspnRoster({
+    athletes: [
+      { id: 'a', displayName: 'Teen Forward', jersey: '19', position: { abbreviation: 'F' }, age: 18 },
+      { id: 'b', displayName: 'Prime Forward', jersey: '9', position: { abbreviation: 'F' }, age: 27 },
+      { id: 'c', displayName: 'Veteran Forward', jersey: '7', position: { abbreviation: 'F' }, age: 35 }
+    ]
+  }, 'home');
+  const report = buildPositionMatchups({
+    sport: 'football',
+    homeName: 'Home',
+    awayName: 'Away',
+    homeRoster: roster,
+    awayRoster: roster,
+    homeTeamRating: 1800,
+    awayTeamRating: 1800
+  });
+  const forwards = report.groups.find((group) => group.group === 'FWD');
+  assert.ok(forwards);
+  const scores = forwards!.pairings.map((pair) => pair.homeScore);
+  assert.ok(new Set(scores).size > 1, 'players in a group should not all share one score');
 });
 
 test('localizes known team and country names, falling back to English', () => {

@@ -1,91 +1,58 @@
-# Development Lab Design QA
+# Poetry Cloud Design QA
 
 ## Evidence
 
-- Source visual truth:
-  - `C:\Users\User\AppData\Local\Temp\codex-clipboard-57a0654a-a55e-4609-9323-e4b516640a93.png`
-  - `C:\Users\User\AppData\Local\Temp\codex-clipboard-15d75552-b4e4-4fe9-a121-38aecee9651f.png`
-- Implementation screenshot:
-  - `C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\output\playwright\fusion-development-lab-quicksort.png`
-- Responsive screenshots:
-  - `C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\output\playwright\fusion-development-lab-tablet.png`
-  - `C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\output\playwright\fusion-development-lab-mobile-final.png`
-- Combined comparison:
-  - `C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\output\playwright\fusion-development-lab-design-comparison.png`
-- Primary viewport: 1280 x 720.
-- Primary state: Development Lab, Merge Sort, frame 37 of 78.
+- Source visual:
+  - `C:\Users\User\AppData\Local\Temp\codex-clipboard-7f62015d-6544-41b9-a761-4691fb96a887.png`
+  - `C:\Users\User\AppData\Local\Temp\codex-clipboard-06d4e3fc-a7f6-4977-b1d5-528e0ae8608d.png`
+  - `C:\Users\User\AppData\Local\Temp\codex-clipboard-5172180e-fbb8-4cf6-b2e6-59da737d904f.png`
+- Desktop implementation: `docs/qa/poetry-cloud-implementation.png`
+- Narrow implementation: `docs/qa/poetry-cloud-mobile.png`
+- Side-by-side comparison: `docs/qa/poetry-cloud-comparison.png`
+- Desktop viewport: 1743 x 1164.
+- Narrow viewport: 760 x 900.
 
-The references define the Development Lab launcher identity and the two course
-subjects, not a full-screen application mock. The QA comparison therefore checks
-whether the implementation preserves that visual language and turns the supplied
-subjects into a coherent Fusion OS workspace.
+## Visual Comparison
 
-## Full-View Comparison
-
-- Information architecture: passed. The implementation turns Data Structures and
-  Algorithms into two clear navigation groups inside one focused OS workspace.
-- Layout rhythm: passed. The header, navigator, visual canvas, inspector, and
-  timeline have stable alignment and readable density at 1280 x 720.
-- Visual direction: passed. Deep navy glass, cyan outlines, ice-blue highlights,
-  indigo depth, and restrained magenta accents match the supplied Fusion OS card.
-- Product fit: passed. The result reads as an operating-system development tool,
-  not an admin dashboard or monitor mockup.
-
-## Focused Region Comparison
-
-- Typography: passed. Traditional Chinese is the default source language; the
-  complete workspace switches to English through the shared system setting.
-  Compact labels retain strong hierarchy, with monospace limited to data and
-  pseudocode.
-- Spacing: passed. Controls retain usable hit areas, the canvas has clear visual
-  breathing room, and inspector cards align consistently.
-- Colors and tokens: passed. Cyan remains the primary action and selection color;
-  warm color appears only for the active algorithm comparison.
-- Image and icon fidelity: passed. The supplied launcher contains a code icon and
-  no photographic assets. The implementation uses the existing Lucide icon set
-  and does not introduce placeholder imagery.
-- Copy and content: passed. Stack, queue, linked list, BST, six sorting methods,
-  searching, BFS, and DFS directly represent the two supplied subjects.
+- Composition: passed. The implementation preserves a large central poetry
+  universe, compact navigation above it, a relationship panel on the left, and
+  poet and poem details on the right.
+- Visual direction: passed. Burgundy-black glass, warm gold actions, rose
+  highlights, and a luminous nebula reproduce the supplied Poetry Cloud
+  atmosphere while remaining consistent with Fusion OS.
+- Graph legibility: passed. Poet nodes, relation lines, active routes, labels,
+  drag navigation, and wheel zoom remain readable without turning the view into
+  a generic dashboard.
+- Content hierarchy: passed. Poet biography, representative works, poem text,
+  imagery, mood, and craft analysis remain visible in a single workspace.
+- Copy quality: passed. The application interior uses intentional Traditional
+  Chinese; no mojibake, placeholder copy, or debug text is visible.
 
 ## Interaction QA
 
-- Stack push operation: passed.
-- Merge Sort trace generation, animated buffer, and timed playback: passed.
-- Heap Sort trace generation: passed by feature test.
-- Random, nearly sorted, reversed, and duplicate-heavy dataset generation:
+- App Center entry and translated catalog metadata: passed.
+- Poet, poem, line, theme, and imagery search: passed.
+- Dynasty and form filters: passed.
+- Structural filter regression: passed. Selecting `樂府` shows exactly one
+  relevant poet and one work instead of retaining unrelated graph nodes.
+- Poet-to-poet shortest relationship route: passed.
+- Canvas selection, dragging, wheel zoom, and reset: passed.
+- Favorites persistence and favorites-only view: passed.
+- Poem selection, local appreciation, speech, copy, and Web Share fallback:
   passed.
-- Six-algorithm performance comparison: passed with six rendered result rows.
-- Shared language, timezone, date, and 12/24-hour settings: passed. The lab
-  switched between Traditional Chinese and English without reopening the app.
-- Previous, next, pause, scrub, and speed controls: passed by implementation and
-  browser interaction checks.
-- App Center launch route: passed.
 - Desktop layout: passed.
-- 900 px tablet layout: passed.
-- 720 px narrow layout: passed after moving the inspector below the canvas and
-  keeping Run trace visible.
-- Browser console: no errors. Existing Three.js `Clock` and MediaPipe WebGL
-  informational warnings remain outside Development Lab.
+- Narrow layout: passed. The graph and detail inspector stack vertically with
+  usable controls and normal document scrolling.
+- Browser console: no application errors. Existing Three.js Clock deprecation
+  and MediaPipe WebGL informational warnings are outside Poetry Cloud.
 
-## Patches Made During QA
+## Data Integrity
 
-- Prevented invalid edited graph input from crashing an existing graph trace.
-- Corrected narrow-layout canvas and inspector overlap.
-- Preserved the Run trace primary action on narrow screens.
-- Added a minimum mobile inspector height so its content participates in normal
-  document scrolling.
-- Added live system time and locale formatting to the command bar.
-- Added phase-aware lighting for compare, write, pivot, visit, and completion.
-- Corrected activity entries so module and preset names re-render after a
-  language change.
-
-## Findings
-
-No actionable P0, P1, or P2 findings remain.
-
-## Follow-Up Polish
-
-- P3: A future iteration could code-split Development Lab from the main shell
-  bundle, although the current production build is functional.
+- The bundled offline experience identifies its actual local count: 20 poets
+  and 28 public-domain works.
+- The UI labels the larger `337,000+` collection as expandable public corpus,
+  not as locally loaded data.
+- Public corpus attribution links to
+  `https://github.com/chinese-poetry/chinese-poetry`.
 
 final result: passed

@@ -83,6 +83,25 @@ test('registers Global Sports Center as a translated data overlay', () => {
   assert.equal(APP_CENTER_APPS.some((app) => app.id === 'sports'), true);
 });
 
+test('registers Poetry Cloud as a translated creative overlay', () => {
+  const poetry = getAppById('poetry');
+
+  assert.equal(poetry?.title, '詩雲');
+  assert.equal(poetry?.subtitle, '古典詩詞關係宇宙');
+  assert.equal(poetry?.category, 'creative');
+  assert.equal(poetry?.launchMode, 'overlay');
+  assert.equal(poetry?.featured, true);
+  assert.equal(APP_CENTER_APPS.some((app) => String(app.id) === 'poetry'), true);
+
+  for (const key of ['詩雲', '古典詩詞關係宇宙', '在星雲圖譜中搜尋詩人、詩作、意象與歷史關係。']) {
+    const translation = FEATURE_TRANSLATIONS[key];
+    assert.ok(translation, `missing Poetry Cloud translation for "${key}"`);
+    for (const lang of ['zh-CN', 'en', 'ja', 'ko'] as const) {
+      assert.ok(translation[lang], `missing ${lang} Poetry Cloud translation for "${key}"`);
+    }
+  }
+});
+
 test('wires Global Sports Center into the React overlay shell', () => {
   const repositoryRoot = resolve(process.cwd(), '..');
   const shellSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
@@ -91,6 +110,16 @@ test('wires Global Sports Center into the React overlay shell', () => {
   assert.match(shellSource, /FusionSportsCenter/);
   assert.match(shellSource, /overlayApp === 'sports'/);
   assert.match(entrySource, /fusionSportsCenter\.css/);
+});
+
+test('wires Poetry Cloud into the React overlay shell', () => {
+  const repositoryRoot = resolve(process.cwd(), '..');
+  const shellSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
+  const entrySource = readFileSync(resolve(repositoryRoot, 'Frontend/src/main.tsx'), 'utf8');
+
+  assert.match(shellSource, /FusionPoetryCloud/);
+  assert.match(shellSource, /overlayApp === 'poetry'/);
+  assert.match(entrySource, /fusionPoetryCloud\.css/);
 });
 
 test('wires event dossiers, prediction evidence, and player matchups into Sports Center', () => {

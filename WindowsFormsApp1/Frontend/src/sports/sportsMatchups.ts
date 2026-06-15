@@ -1,3 +1,4 @@
+import { starPlayerTier } from './sportsPlayerRatings.js';
 import type {
   SportId,
   SquadGroup,
@@ -45,24 +46,56 @@ const GROUPS_BY_SPORT: Partial<Record<SportId, SquadGroup[]>> = {
   'ice-hockey': ['OTHER']
 };
 
-const ageAdjustment = (age: number | undefined) => {
+// Continuous "peak at 27" curve so each age maps to a distinct value instead of a bucket.
+const ageCurve = (age: number | undefined) => {
   if (age === undefined) return 0;
-  if (age >= 23 && age <= 29) return 5;
-  if (age >= 20 && age <= 32) return 2;
-  if (age < 19 || age > 35) return -4;
-  return -1;
+  const delta = age - 27;
+  return clamp(7 - delta * delta * 0.16, -16, 7);
 };
 
-const playerScore = (
-  player: RosterPlayer | null,
-  teamRating: number,
-  groupDepth: number
-) => {
+// Squad numbers carry a (weak, but real) signal: 1-11 tend to be first choice, high
+// numbers tend to be fringe/youth. Used only as a light nudge.
+const jerseyAdjustment = (jersey: string | undefined) => {
+  const number = Number(jersey);
+  if (!Number.isFinite(number) || number <= 0) return 0;
+  if (number <= 11) return 4.5 - (number - 1) * 0.25;
+  if (number <= 23) return -1.5;
+  return -3.5;
+};
+
+// Deterministic ±1.5 jitter keyed on the player id, so two players with identical age /
+// jersey / availability still read as distinct rather than a copy-pasted column.
+const microVariance = (id: string) => {
+  let hash = 2166136261;
+  for (let index = 0; index < id.length; index += 1) {
+    hash ^= id.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return ((hash >>> 0) % 1000) / 1000 * 3 - 1.5;
+};
+
+const playerScore = (player: RosterPlayer | null, teamRating: number) => {
   if (!player) return 0;
-  const baseline = 50 + (teamRating - 1500) / 20;
-  const availability = player.available ? 4 : -18;
-  const depth = clamp(groupDepth - 1, 0, 5) * 1.2;
-  return Math.round(clamp(baseline + ageAdjustment(player.age) + availability + depth, 0, 100));
+  // Composite, no-key estimate: team strength sets a modest floor; a curated star-power
+  // tier does most of the lifting so marquee names clear the squad even on a weaker side,
+  // and an ordinary player on a great team does NOT get pinned to the ceiling. Age/role/
+  // availability fine-tune. For a known star, age weighs less (a 36-year-old great is still
+  // elite).
+  const base = 38 + (teamRating - 1500) / 26;
+  const star = starPlayerTier(player.name);
+  const starBump = star != null ? clamp((star - 66) * 1.05, 0, 34) : 0;
+  const ageWeight = star != null ? 0.4 : 1;
+  const availability = player.available ? 3 : -20;
+  return Math.round(clamp(
+    base
+      + starBump
+      + ageCurve(player.age) * ageWeight
+      + jerseyAdjustment(player.jersey)
+      + availability
+      + microVariance(player.id),
+    1,
+    99
+  ));
 };
 
 const summarize = (
@@ -71,7 +104,7 @@ const summarize = (
 ): MatchupSideSummary => {
   const available = players.filter((player) => player.available).length;
   const ages = players.flatMap((player) => typeof player.age === 'number' ? [player.age] : []);
-  const scores = players.map((player) => playerScore(player, teamRating, players.length));
+  const scores = players.map((player) => playerScore(player, teamRating));
   return {
     score: scores.length
       ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
@@ -92,12 +125,10 @@ const pairPlayers = (
   awayTeamRating: number
 ): PlayerMatchupPair[] => {
   const home = [...homePlayers].sort((left, right) =>
-    playerScore(right, homeTeamRating, homePlayers.length) -
-    playerScore(left, homeTeamRating, homePlayers.length)
+    playerScore(right, homeTeamRating) - playerScore(left, homeTeamRating)
   );
   const away = [...awayPlayers].sort((left, right) =>
-    playerScore(right, awayTeamRating, awayPlayers.length) -
-    playerScore(left, awayTeamRating, awayPlayers.length)
+    playerScore(right, awayTeamRating) - playerScore(left, awayTeamRating)
   );
   const count = Math.max(home.length, away.length);
   return Array.from({ length: count }, (_unused, index) => {
@@ -106,8 +137,8 @@ const pairPlayers = (
     return {
       home: homePlayer,
       away: awayPlayer,
-      homeScore: playerScore(homePlayer, homeTeamRating, homePlayers.length),
-      awayScore: playerScore(awayPlayer, awayTeamRating, awayPlayers.length)
+      homeScore: playerScore(homePlayer, homeTeamRating),
+      awayScore: playerScore(awayPlayer, awayTeamRating)
     };
   });
 };

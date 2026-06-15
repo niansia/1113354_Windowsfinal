@@ -65,6 +65,22 @@ const sportsText_js_1 = require("../src/sports/sportsText.js");
     strict_1.default.equal(sports?.featured, true);
     strict_1.default.equal(fusionApps_js_1.APP_CENTER_APPS.some((app) => app.id === 'sports'), true);
 });
+(0, node_test_1.default)('registers Poetry Cloud as a translated creative overlay', () => {
+    const poetry = (0, fusionApps_js_1.getAppById)('poetry');
+    strict_1.default.equal(poetry?.title, '詩雲');
+    strict_1.default.equal(poetry?.subtitle, '古典詩詞關係宇宙');
+    strict_1.default.equal(poetry?.category, 'creative');
+    strict_1.default.equal(poetry?.launchMode, 'overlay');
+    strict_1.default.equal(poetry?.featured, true);
+    strict_1.default.equal(fusionApps_js_1.APP_CENTER_APPS.some((app) => String(app.id) === 'poetry'), true);
+    for (const key of ['詩雲', '古典詩詞關係宇宙', '在星雲圖譜中搜尋詩人、詩作、意象與歷史關係。']) {
+        const translation = featureTranslations_js_1.FEATURE_TRANSLATIONS[key];
+        strict_1.default.ok(translation, `missing Poetry Cloud translation for "${key}"`);
+        for (const lang of ['zh-CN', 'en', 'ja', 'ko']) {
+            strict_1.default.ok(translation[lang], `missing ${lang} Poetry Cloud translation for "${key}"`);
+        }
+    }
+});
 (0, node_test_1.default)('wires Global Sports Center into the React overlay shell', () => {
     const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
     const shellSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
@@ -72,6 +88,14 @@ const sportsText_js_1 = require("../src/sports/sportsText.js");
     strict_1.default.match(shellSource, /FusionSportsCenter/);
     strict_1.default.match(shellSource, /overlayApp === 'sports'/);
     strict_1.default.match(entrySource, /fusionSportsCenter\.css/);
+});
+(0, node_test_1.default)('wires Poetry Cloud into the React overlay shell', () => {
+    const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
+    const shellSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
+    const entrySource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/main.tsx'), 'utf8');
+    strict_1.default.match(shellSource, /FusionPoetryCloud/);
+    strict_1.default.match(shellSource, /overlayApp === 'poetry'/);
+    strict_1.default.match(entrySource, /fusionPoetryCloud\.css/);
 });
 (0, node_test_1.default)('wires event dossiers, prediction evidence, and player matchups into Sports Center', () => {
     const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');

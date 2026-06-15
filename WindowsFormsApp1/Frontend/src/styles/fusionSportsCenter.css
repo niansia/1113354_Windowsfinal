@@ -1174,6 +1174,8 @@
 .sports-player-pairings button strong,
 .sports-player-pairings button small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sports-player-pairings button strong { color: #e7f4ff; font-size: 8.5px; }
+.sports-star-icon { vertical-align: -1px; margin-right: 3px; color: #ffce5b; fill: #ffce5b; }
+.sports-player-pairings button:last-child .sports-star-icon { margin-right: 0; margin-left: 3px; }
 .sports-player-pairings button small { margin-top: 3px; color: rgba(145, 177, 209, 0.46); font-size: 7px; }
 .sports-player-pairings button > b { color: #bdf5ff; font: 800 10px/1 "Consolas", monospace; text-align: center; }
 

@@ -1,0 +1,922 @@
+.poetry-cloud-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 136;
+  display: grid;
+  place-items: center;
+  color: #fff6e7;
+  background: rgba(3, 2, 9, 0.88);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  backdrop-filter: blur(18px) saturate(130%);
+}
+
+.poetry-cloud-shell {
+  position: relative;
+  width: min(1880px, 98vw);
+  height: min(1040px, 96vh);
+  overflow: hidden;
+  border: 1px solid rgba(255, 208, 112, 0.24);
+  border-radius: 27px;
+  background: #09050d;
+  box-shadow: 0 40px 120px rgba(0, 0, 0, 0.72), 0 0 70px rgba(255, 68, 125, 0.12);
+  font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+}
+
+.poetry-nebula-backdrop {
+  position: absolute;
+  inset: 0;
+  background-image: url('/poetry/poetry-cloud-nebula.png');
+  background-size: cover;
+  background-position: center;
+  opacity: 0.78;
+  transform: scale(1.02);
+}
+
+.poetry-nebula-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 2, 10, 0.28);
+}
+
+.poetry-topbar,
+.poetry-command-deck,
+.poetry-workspace {
+  position: relative;
+  z-index: 2;
+}
+
+.poetry-topbar {
+  height: 70px;
+  display: grid;
+  grid-template-columns: 220px minmax(480px, 1fr) auto 42px;
+  align-items: center;
+  gap: 16px;
+  padding: 0 18px 0 22px;
+  border-bottom: 1px solid rgba(255, 218, 159, 0.14);
+  background: rgba(10, 5, 16, 0.76);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+.poetry-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.poetry-brand-mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 211, 103, 0.48);
+  border-radius: 13px;
+  color: #ffd875;
+  background: rgba(255, 199, 79, 0.1);
+  box-shadow: 0 0 28px rgba(255, 102, 132, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.poetry-brand strong,
+.poetry-brand small {
+  display: block;
+}
+
+.poetry-brand strong {
+  color: #ffd56e;
+  font: 800 20px/1 "Noto Serif TC", "Microsoft JhengHei", serif;
+  letter-spacing: 0.16em;
+}
+
+.poetry-brand small {
+  margin-top: 5px;
+  color: rgba(255, 239, 216, 0.54);
+  font: 600 9px/1.1 "Consolas", monospace;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.poetry-form-tabs,
+.poetry-mode-tabs,
+.poetry-tag-row,
+.poetry-reader-actions,
+.poetry-hotspots {
+  display: flex;
+  align-items: center;
+}
+
+.poetry-form-tabs {
+  min-width: 0;
+  gap: 5px;
+}
+
+.poetry-form-tabs button,
+.poetry-mode-tabs button,
+.poetry-hotspots button {
+  border: 1px solid transparent;
+  color: rgba(255, 237, 219, 0.67);
+  background: rgba(255, 255, 255, 0.035);
+  font: inherit;
+  cursor: pointer;
+  transition: 150ms ease;
+}
+
+.poetry-form-tabs button {
+  height: 34px;
+  padding: 0 13px;
+  border-radius: 9px;
+  font: 650 12px/1 "Noto Serif TC", "Microsoft JhengHei", serif;
+}
+
+.poetry-form-tabs button:hover,
+.poetry-form-tabs button.active,
+.poetry-mode-tabs button:hover,
+.poetry-mode-tabs button.active {
+  color: #1c0e07;
+  border-color: rgba(255, 238, 168, 0.68);
+  background: #ffd264;
+  box-shadow: 0 0 24px rgba(255, 177, 76, 0.18);
+}
+
+.poetry-corpus-status {
+  text-align: right;
+}
+
+.poetry-corpus-status span,
+.poetry-corpus-status b {
+  display: block;
+  white-space: nowrap;
+}
+
+.poetry-corpus-status span {
+  color: rgba(255, 239, 220, 0.62);
+  font-size: 10px;
+}
+
+.poetry-corpus-status b {
+  margin-top: 4px;
+  color: #ffcf70;
+  font-size: 10px;
+}
+
+.poetry-close,
+.poetry-reset-view,
+.poetry-primary-action,
+.poetry-reader-actions button,
+.poetry-search-box button {
+  border: 1px solid rgba(255, 220, 167, 0.18);
+  color: rgba(255, 243, 230, 0.8);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: 150ms ease;
+}
+
+.poetry-close {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+}
+
+.poetry-close:hover,
+.poetry-reset-view:hover,
+.poetry-reader-actions button:hover {
+  color: #fff8e7;
+  border-color: rgba(255, 202, 101, 0.48);
+  background: rgba(255, 183, 77, 0.12);
+}
+
+.poetry-command-deck {
+  min-height: 66px;
+  display: grid;
+  grid-template-columns: auto minmax(260px, 1fr) 132px 132px auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-bottom: 1px solid rgba(255, 220, 167, 0.11);
+  background: rgba(9, 4, 15, 0.62);
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
+}
+
+.poetry-mode-tabs {
+  gap: 4px;
+}
+
+.poetry-mode-tabs button {
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.poetry-mode-tabs button.favorite {
+  color: #ff8bac;
+}
+
+.poetry-search-box {
+  height: 40px;
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 10px 0 13px;
+  border: 1px solid rgba(255, 218, 159, 0.16);
+  border-radius: 11px;
+  background: rgba(9, 5, 17, 0.7);
+}
+
+.poetry-search-box svg {
+  color: #ffc968;
+}
+
+.poetry-search-box input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #fff7ea;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+}
+
+.poetry-search-box input::placeholder {
+  color: rgba(255, 234, 213, 0.42);
+}
+
+.poetry-search-box button {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+}
+
+.poetry-select {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 218, 159, 0.15);
+  border-radius: 10px;
+  background: rgba(9, 5, 17, 0.68);
+}
+
+.poetry-select span {
+  color: rgba(255, 233, 207, 0.45);
+  font-size: 9px;
+}
+
+.poetry-select select,
+.route-builder select {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #fff3dc;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+}
+
+.poetry-select option,
+.route-builder option {
+  color: #fff3dc;
+  background: #160b18;
+}
+
+.poetry-reset-view {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 13px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.poetry-workspace {
+  height: calc(100% - 136px);
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr) 350px;
+  min-height: 0;
+}
+
+.poetry-route-panel,
+.poetry-library-panel {
+  min-height: 0;
+  overflow: auto;
+  background: rgba(8, 5, 15, 0.72);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  scrollbar-color: rgba(255, 194, 100, 0.34) transparent;
+  scrollbar-width: thin;
+}
+
+.poetry-route-panel {
+  padding: 15px 13px;
+  border-right: 1px solid rgba(255, 218, 159, 0.12);
+}
+
+.poetry-library-panel {
+  padding: 18px 16px 24px;
+  border-left: 1px solid rgba(255, 218, 159, 0.12);
+}
+
+.poetry-panel-block {
+  padding: 13px;
+  border: 1px solid rgba(255, 218, 159, 0.13);
+  border-radius: 14px;
+  background: rgba(14, 8, 22, 0.66);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.poetry-panel-block + .poetry-panel-block {
+  margin-top: 11px;
+}
+
+.poetry-panel-block > header,
+.poetry-section-heading,
+.poetry-analysis > header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #ffd06d;
+}
+
+.poetry-panel-block > header strong,
+.poetry-section-heading strong,
+.poetry-analysis > header strong {
+  font: 750 12px/1 "Noto Serif TC", "Microsoft JhengHei", serif;
+}
+
+.poetry-hotspots {
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.poetry-hotspots button {
+  padding: 6px 9px;
+  border-color: rgba(255, 205, 109, 0.15);
+  border-radius: 999px;
+  font-size: 10px;
+}
+
+.poetry-hotspots button:hover {
+  color: #261007;
+  background: #ffc75f;
+}
+
+.route-builder p,
+.route-result p {
+  margin: 9px 0 12px;
+  color: rgba(255, 235, 218, 0.52);
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.route-builder label {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  align-items: center;
+  gap: 7px;
+  height: 35px;
+  margin-top: 7px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 218, 159, 0.12);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.route-builder label span {
+  color: rgba(255, 235, 218, 0.46);
+  font-size: 9px;
+}
+
+.poetry-primary-action {
+  width: 100%;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 9px;
+  border-color: rgba(255, 230, 152, 0.68);
+  border-radius: 9px;
+  color: #251104;
+  background: #ffd166;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.poetry-primary-action:hover {
+  background: #ffe49d;
+}
+
+.poetry-route-steps {
+  margin-top: 11px;
+}
+
+.poetry-route-steps > div > button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 9px;
+  border: 1px solid rgba(255, 216, 143, 0.12);
+  border-radius: 9px;
+  color: #fff0da;
+  background: rgba(255, 255, 255, 0.035);
+  font: inherit;
+  cursor: pointer;
+}
+
+.poetry-route-steps > div > button:hover {
+  border-color: rgba(255, 201, 103, 0.38);
+  background: rgba(255, 195, 90, 0.08);
+}
+
+.poetry-route-steps b {
+  font-size: 11px;
+}
+
+.poetry-route-steps small {
+  color: rgba(255, 229, 205, 0.45);
+  font-size: 9px;
+}
+
+.poetry-route-steps > div > span {
+  display: grid;
+  grid-template-columns: 15px 1fr;
+  gap: 4px;
+  padding: 7px 4px;
+  color: rgba(255, 226, 193, 0.44);
+  font-size: 8.5px;
+  line-height: 1.45;
+}
+
+.poetry-route-panel footer {
+  padding: 13px 3px 3px;
+}
+
+.poetry-route-panel footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(255, 222, 181, 0.42);
+  font-size: 9px;
+  text-decoration: none;
+}
+
+.poetry-route-panel footer a:hover {
+  color: #ffd16c;
+}
+
+.poetry-universe-stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: rgba(10, 2, 11, 0.08);
+}
+
+.poetry-universe-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+.poetry-universe-canvas:active {
+  cursor: grabbing;
+}
+
+.poetry-stage-caption {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 223, 174, 0.13);
+  border-radius: 11px;
+  color: rgba(255, 237, 218, 0.47);
+  background: rgba(7, 3, 12, 0.66);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  font-size: 9px;
+  pointer-events: none;
+}
+
+.poetry-stage-caption b {
+  color: #ffd36c;
+}
+
+.poetry-stage-caption span:last-child {
+  margin-left: auto;
+}
+
+.poetry-empty-state {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.poetry-empty-state svg {
+  color: #ffca68;
+}
+
+.poetry-empty-state strong {
+  margin-top: 12px;
+  font: 750 18px/1.2 "Noto Serif TC", serif;
+}
+
+.poetry-empty-state p {
+  color: rgba(255, 236, 216, 0.5);
+  font-size: 11px;
+}
+
+.poetry-empty-state button {
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 210, 115, 0.4);
+  border-radius: 9px;
+  color: #261103;
+  background: #ffd166;
+  font: inherit;
+  cursor: pointer;
+}
+
+.poetry-poet-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.poetry-poet-header small {
+  color: rgba(255, 225, 195, 0.52);
+  font-size: 9px;
+}
+
+.poetry-poet-header h2 {
+  margin: 6px 0 3px;
+  color: #ff759d;
+  font: 800 27px/1 "Noto Serif TC", "Microsoft JhengHei", serif;
+  letter-spacing: 0.08em;
+}
+
+.poetry-poet-header p {
+  margin: 0;
+  color: rgba(255, 239, 219, 0.55);
+  font-size: 10px;
+}
+
+.poetry-poet-header > span {
+  align-self: flex-start;
+  min-width: 83px;
+  padding: 8px 9px;
+  border: 1px solid rgba(255, 210, 115, 0.2);
+  border-radius: 10px;
+  color: rgba(255, 234, 211, 0.48);
+  background: rgba(255, 199, 79, 0.06);
+  font-size: 8px;
+  text-align: right;
+}
+
+.poetry-poet-header > span b {
+  display: block;
+  margin-bottom: 3px;
+  color: #ffd16e;
+  font: 800 14px/1 "Consolas", monospace;
+}
+
+.poetry-poet-bio {
+  margin: 13px 0 10px;
+  color: rgba(255, 239, 220, 0.64);
+  font-size: 10px;
+  line-height: 1.72;
+}
+
+.poetry-tag-row {
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.poetry-tag-row span {
+  padding: 4px 7px;
+  border: 1px solid rgba(255, 214, 137, 0.14);
+  border-radius: 999px;
+  color: #e9cda7;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 8px;
+}
+
+.poetry-section-heading {
+  margin: 17px 0 8px;
+}
+
+.poetry-section-heading span {
+  margin-left: auto;
+  color: rgba(255, 235, 211, 0.42);
+  font-size: 9px;
+}
+
+.poetry-poem-list {
+  max-height: 194px;
+  overflow: auto;
+  padding-right: 3px;
+  scrollbar-color: rgba(255, 194, 100, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.poetry-poem-list > button {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255, 220, 167, 0.1);
+  border-radius: 10px;
+  color: rgba(255, 241, 224, 0.72);
+  background: rgba(255, 255, 255, 0.025);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.poetry-poem-list > button:hover,
+.poetry-poem-list > button.active {
+  color: #fff7e8;
+  border-color: rgba(255, 201, 99, 0.37);
+  background: rgba(255, 184, 77, 0.08);
+}
+
+.poetry-poem-list strong,
+.poetry-poem-list small {
+  display: block;
+}
+
+.poetry-poem-list strong {
+  font: 700 11px/1.2 "Noto Serif TC", serif;
+}
+
+.poetry-poem-list small {
+  margin-top: 4px;
+  color: rgba(255, 228, 199, 0.42);
+  font-size: 8px;
+}
+
+.poetry-poem-list svg {
+  flex: 0 0 auto;
+  color: #ff8eae;
+}
+
+.poetry-poem-reader {
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 221, 165, 0.16);
+  border-radius: 16px;
+  background: rgba(12, 7, 20, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.poetry-poem-reader > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.poetry-poem-reader > header small {
+  color: rgba(255, 228, 199, 0.48);
+  font-size: 8px;
+}
+
+.poetry-poem-reader h3 {
+  margin: 4px 0 0;
+  color: #ffd36f;
+  font: 750 16px/1.15 "Noto Serif TC", serif;
+}
+
+.poetry-reader-actions {
+  gap: 4px;
+}
+
+.poetry-reader-actions button {
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+}
+
+.poetry-reader-actions button:first-child {
+  color: #ff86aa;
+}
+
+.poetry-verses {
+  padding: 15px 3px 12px;
+  text-align: center;
+}
+
+.poetry-verses p {
+  margin: 8px 0;
+  color: #fff4df;
+  font: 600 14px/1.7 "Noto Serif TC", "STKaiti", "KaiTi", serif;
+  letter-spacing: 0.055em;
+}
+
+.poetry-analysis {
+  padding-top: 11px;
+  border-top: 1px solid rgba(255, 221, 165, 0.1);
+}
+
+.poetry-analysis p {
+  margin: 9px 0 5px;
+  color: rgba(255, 238, 219, 0.66);
+  font-size: 9px;
+  line-height: 1.65;
+}
+
+.poetry-analysis > small {
+  color: #f4b4c9;
+  font-size: 8.5px;
+}
+
+.poetry-analysis > div {
+  display: grid;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.poetry-analysis > div span {
+  display: grid;
+  grid-template-columns: 13px 1fr;
+  gap: 4px;
+  align-items: start;
+  color: rgba(255, 231, 207, 0.48);
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.poetry-analysis > div svg {
+  color: #ffd166;
+}
+
+.poetry-notice {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: 21px;
+  transform: translateX(-50%);
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 220, 149, 0.3);
+  border-radius: 12px;
+  color: #fff4df;
+  background: rgba(22, 10, 23, 0.92);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+@media (max-width: 1280px) {
+  .poetry-topbar {
+    grid-template-columns: 190px minmax(390px, 1fr) auto 40px;
+  }
+
+  .poetry-form-tabs button {
+    padding: 0 9px;
+  }
+
+  .poetry-workspace {
+    grid-template-columns: 220px minmax(0, 1fr) 315px;
+  }
+
+  .poetry-command-deck {
+    grid-template-columns: auto minmax(210px, 1fr) 112px 112px auto;
+  }
+}
+
+@media (max-width: 1020px) {
+  .poetry-cloud-shell {
+    width: 100vw;
+    height: 100vh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .poetry-topbar {
+    grid-template-columns: 180px 1fr auto 40px;
+  }
+
+  .poetry-form-tabs {
+    overflow-x: auto;
+  }
+
+  .poetry-corpus-status span {
+    display: none;
+  }
+
+  .poetry-command-deck {
+    grid-template-columns: auto minmax(190px, 1fr) 110px auto;
+  }
+
+  .poetry-command-deck .poetry-select:nth-of-type(3) {
+    display: none;
+  }
+
+  .poetry-workspace {
+    grid-template-columns: 205px minmax(0, 1fr) 300px;
+  }
+}
+
+@media (max-width: 760px) {
+  .poetry-topbar {
+    height: 62px;
+    grid-template-columns: 1fr auto auto;
+    padding: 0 11px;
+  }
+
+  .poetry-form-tabs {
+    display: none;
+  }
+
+  .poetry-corpus-status b {
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .poetry-command-deck {
+    min-height: 112px;
+    grid-template-columns: 1fr auto;
+    padding: 8px 10px;
+  }
+
+  .poetry-mode-tabs {
+    overflow-x: auto;
+  }
+
+  .poetry-search-box {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .poetry-select {
+    display: none;
+  }
+
+  .poetry-workspace {
+    height: calc(100% - 174px);
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(360px, 1fr) auto;
+  }
+
+  .poetry-route-panel {
+    display: none;
+  }
+
+  .poetry-library-panel {
+    max-height: 42vh;
+    border-top: 1px solid rgba(255, 218, 159, 0.12);
+    border-left: 0;
+  }
+
+  .poetry-stage-caption span:last-child {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poetry-cloud-shell *,
+  .poetry-cloud-shell *::before,
+  .poetry-cloud-shell *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

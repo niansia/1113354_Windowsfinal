@@ -59,9 +59,10 @@ const normalizeEspnParticipant = (
   const side = sideValue === 'home' || sideValue === 'away' ? sideValue : 'neutral';
   const records = Array.isArray(competitor.records) ? competitor.records : [];
   const record = String(asRecord(records[0])?.summary ?? '').trim() || undefined;
-  // Turn the win-loss record into real strength inputs so the model and comparison view
-  // are differentiated instead of a flat 1500 / 50 / 50 / 50 for every team.
-  const metrics = deriveSideMetrics(record);
+  // Turn the team (real national-team strength table when available, otherwise the
+  // win-loss record) into model inputs so the prediction and comparison are differentiated
+  // instead of a flat 1500 / 50 / 50 / 50 for every team.
+  const metrics = deriveSideMetrics(record, name);
   return {
     id: String(team?.id ?? competitor.id ?? `${name}-${index}`),
     name,
