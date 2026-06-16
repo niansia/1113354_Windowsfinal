@@ -22,23 +22,6 @@
   font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
 }
 
-.poetry-nebula-backdrop {
-  position: absolute;
-  inset: 0;
-  background-image: url('/poetry/poetry-cloud-nebula.png');
-  background-size: cover;
-  background-position: center;
-  opacity: 0.78;
-  transform: scale(1.02);
-}
-
-.poetry-nebula-backdrop::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(5, 2, 10, 0.28);
-}
-
 .poetry-topbar,
 .poetry-command-deck,
 .poetry-workspace {
@@ -275,14 +258,20 @@
 }
 
 .poetry-select select,
-.route-builder select {
+.route-builder select,
+.route-builder input {
   min-width: 0;
+  width: 100%;
   border: 0;
   outline: 0;
   color: #fff3dc;
   background: transparent;
   font: inherit;
   font-size: 11px;
+}
+
+.route-builder input::placeholder {
+  color: rgba(255, 235, 218, 0.3);
 }
 
 .poetry-select option,
@@ -487,7 +476,13 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: rgba(10, 2, 11, 0.08);
+  background:
+    radial-gradient(120% 90% at 50% 42%, #100a1c 0%, #08050f 55%, #04030a 100%);
+}
+
+.poetry-universe-3d {
+  position: absolute;
+  inset: 0;
 }
 
 .poetry-universe-canvas {
@@ -500,6 +495,152 @@
 
 .poetry-universe-canvas:active {
   cursor: grabbing;
+}
+
+.poetry-3d-label {
+  display: inline-block;
+  transform: translateY(-16px);
+  color: rgba(255, 244, 226, 0.86);
+  font: 650 13px/1 "Noto Serif TC", "Microsoft JhengHei", serif;
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.95), 0 0 4px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.poetry-3d-label.is-selected {
+  color: #fff3cf;
+  font-weight: 800;
+  font-size: 16px;
+  text-shadow: 0 0 12px rgba(255, 190, 90, 0.7), 0 0 6px rgba(0, 0, 0, 0.95);
+}
+
+.poetry-zoom {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  z-index: 4;
+}
+
+.poetry-zoom-left {
+  left: 16px;
+}
+
+.poetry-zoom-right {
+  right: 16px;
+}
+
+.poetry-zoom button {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  color: #ffe6b0;
+  border: 1px solid rgba(255, 211, 103, 0.3);
+  border-radius: 11px;
+  background: rgba(12, 7, 18, 0.62);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.poetry-zoom button:hover {
+  background: rgba(255, 199, 79, 0.16);
+  border-color: rgba(255, 211, 103, 0.6);
+}
+
+.poetry-zoom button:active {
+  transform: scale(0.92);
+}
+
+.poetry-flight-hud {
+  position: absolute;
+  left: 50%;
+  bottom: 58px;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border: 1px solid rgba(255, 211, 103, 0.18);
+  border-radius: 9px;
+  background: rgba(8, 4, 14, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: rgba(255, 224, 170, 0.66);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.poetry-fish-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 230px;
+  max-width: 360px;
+  padding: 22px 26px 18px;
+  border: 1px solid rgba(255, 211, 103, 0.34);
+  border-radius: 16px;
+  background: linear-gradient(160deg, rgba(20, 12, 26, 0.95), rgba(8, 4, 14, 0.95));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7), 0 0 50px rgba(255, 120, 150, 0.14);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  text-align: center;
+  z-index: 30;
+  animation: poetry-fish-in 0.4s ease;
+}
+
+@keyframes poetry-fish-in {
+  from { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.poetry-fish-card > small {
+  display: block;
+  margin-bottom: 12px;
+  color: rgba(255, 196, 92, 0.78);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+}
+
+.poetry-fish-verses p {
+  margin: 7px 0;
+  color: #fff4dc;
+  font: 600 19px/1.6 "Noto Serif TC", "Microsoft JhengHei", serif;
+  letter-spacing: 0.14em;
+}
+
+.poetry-fish-card code {
+  display: block;
+  margin-top: 14px;
+  color: rgba(255, 224, 170, 0.4);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  word-break: break-all;
+}
+
+.poetry-fish-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  color: rgba(255, 224, 170, 0.66);
+  border: 1px solid rgba(255, 211, 103, 0.22);
+  border-radius: 8px;
+  background: rgba(12, 7, 18, 0.5);
+  cursor: pointer;
+}
+
+.poetry-fish-close:hover {
+  color: #ffe6b0;
+  border-color: rgba(255, 211, 103, 0.5);
 }
 
 .poetry-stage-caption {

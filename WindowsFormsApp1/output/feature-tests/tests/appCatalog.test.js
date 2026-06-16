@@ -81,6 +81,22 @@ const sportsText_js_1 = require("../src/sports/sportsText.js");
         }
     }
 });
+(0, node_test_1.default)('registers MediSphere as a translated medical overlay', () => {
+    const medical = (0, fusionApps_js_1.getAppById)('medical');
+    strict_1.default.equal(medical?.title, 'MediSphere');
+    strict_1.default.equal(medical?.subtitle, '醫療學習與健康導航');
+    strict_1.default.equal(medical?.category, 'data');
+    strict_1.default.equal(medical?.launchMode, 'overlay');
+    strict_1.default.equal(medical?.featured, true);
+    strict_1.default.equal(fusionApps_js_1.APP_CENTER_APPS.some((app) => String(app.id) === 'medical'), true);
+    for (const key of ['MediSphere', '醫療學習與健康導航', '生命徵象、醫學影像與就醫準備整合工作區。']) {
+        const translation = featureTranslations_js_1.FEATURE_TRANSLATIONS[key];
+        strict_1.default.ok(translation, `missing MediSphere translation for "${key}"`);
+        for (const lang of ['zh-CN', 'en', 'ja', 'ko']) {
+            strict_1.default.ok(translation[lang], `missing ${lang} MediSphere translation for "${key}"`);
+        }
+    }
+});
 (0, node_test_1.default)('wires Global Sports Center into the React overlay shell', () => {
     const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
     const shellSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
@@ -96,6 +112,14 @@ const sportsText_js_1 = require("../src/sports/sportsText.js");
     strict_1.default.match(shellSource, /FusionPoetryCloud/);
     strict_1.default.match(shellSource, /overlayApp === 'poetry'/);
     strict_1.default.match(entrySource, /fusionPoetryCloud\.css/);
+});
+(0, node_test_1.default)('wires MediSphere into the React overlay shell', () => {
+    const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
+    const shellSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
+    const entrySource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/main.tsx'), 'utf8');
+    strict_1.default.match(shellSource, /FusionMedicalHub/);
+    strict_1.default.match(shellSource, /overlayApp === 'medical'/);
+    strict_1.default.match(entrySource, /fusionMedicalHub\.css/);
 });
 (0, node_test_1.default)('wires event dossiers, prediction evidence, and player matchups into Sports Center', () => {
     const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');

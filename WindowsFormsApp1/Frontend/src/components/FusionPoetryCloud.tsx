@@ -31,7 +31,9 @@ import {
   serializeFavoritePoems,
   toggleFavoritePoem
 } from '../poetry/poetryFavorites';
-import { buildPoetryGraph, findPoetPath } from '../poetry/poetryGraph';
+import { findPoetPath } from '../poetry/poetryGraph';
+import { fetchPoetryBundle, mergeCorpus } from '../poetry/poetryRemoteCorpus';
+import type { PoetryBundle } from '../poetry/poetryRemoteCorpus';
 import { searchPoetry } from '../poetry/poetrySearch';
 import type {
   Poet,
@@ -81,11 +83,30 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
     if (typeof window === 'undefined') return new Set();
     return parseFavoritePoems(window.localStorage.getItem(POETRY_FAVORITES_KEY));
   });
+  const [bundle, setBundle] = useState<PoetryBundle | null>(null);
 
-  const graph = useMemo(() => buildPoetryGraph(POETS, POEMS), []);
+  // lazily pull the generated public-domain corpus and weave it into the curated
+  // set; until it arrives the curated 20 poets render instantly.
+  useEffect(() => {
+    if (!open || bundle) return;
+    const controller = new AbortController();
+    let cancelled = false;
+    fetchPoetryBundle(controller.signal).then((data) => {
+      if (!cancelled && data) setBundle(data);
+    });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [open, bundle]);
+
+  const corpus = useMemo(() => mergeCorpus(POETS, POEMS, bundle), [bundle]);
+  const allPoets = corpus.poets;
+  const allPoems = corpus.poems;
+  const graph = corpus.graph;
   const searchResult = useMemo(
-    () => searchPoetry(POETS, POEMS, { query, dynasty, form, mode }),
-    [dynasty, form, mode, query]
+    () => searchPoetry(allPoets, allPoems, { query, dynasty, form, mode }),
+    [allPoems, allPoets, dynasty, form, mode, query]
   );
   const visiblePoems = useMemo(
     () => showFavorites
@@ -101,16 +122,21 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
     if (!showFavorites) return searchResult.poets;
     return searchResult.poets.filter((poet) => visiblePoetIds.has(poet.id));
   }, [searchResult.poets, showFavorites, visiblePoetIds]);
-  const selectedPoet = POETS.find((poet) => poet.id === selectedPoetId) ?? POETS[0];
+  const selectedPoet = allPoets.find((poet) => poet.id === selectedPoetId) ?? allPoets[0];
   const selectedPoetPoems = useMemo(() => {
     const matched = visiblePoems.filter((poem) => poem.poetId === selectedPoet.id);
-    return matched.length ? matched : POEMS.filter((poem) => poem.poetId === selectedPoet.id);
-  }, [selectedPoet.id, visiblePoems]);
-  const selectedPoem = POEMS.find((poem) => poem.id === selectedPoemId)
+    return matched.length ? matched : allPoems.filter((poem) => poem.poetId === selectedPoet.id);
+  }, [allPoems, selectedPoet.id, visiblePoems]);
+  const selectedPoem = allPoems.find((poem) => poem.id === selectedPoemId)
     ?? selectedPoetPoems[0]
-    ?? POEMS[0];
+    ?? allPoems[0];
   const analysis = useMemo(() => analyzePoem(selectedPoem), [selectedPoem]);
-  const poetById = useMemo(() => new Map(POETS.map((poet) => [poet.id, poet])), []);
+  const poetById = useMemo(() => new Map(allPoets.map((poet) => [poet.id, poet])), [allPoets]);
+  const routeNameOptions = useMemo(
+    () => [...allPoets].sort((a, b) => b.poemCount - a.poemCount).slice(0, 800),
+    [allPoets]
+  );
+  const poetIdByName = useMemo(() => new Map(allPoets.map((poet) => [poet.name, poet.id])), [allPoets]);
 
   useEffect(() => {
     if (!open) return;
@@ -125,8 +151,8 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
     if (!visiblePoets.length || visiblePoets.some((poet) => poet.id === selectedPoetId)) return;
     const nextPoet = visiblePoets[0];
     setSelectedPoetId(nextPoet.id);
-    setSelectedPoemId(nextPoet.featuredPoemIds[0] ?? POEMS.find((poem) => poem.poetId === nextPoet.id)?.id ?? '');
-  }, [selectedPoetId, visiblePoets]);
+    setSelectedPoemId(nextPoet.featuredPoemIds[0] ?? allPoems.find((poem) => poem.poetId === nextPoet.id)?.id ?? '');
+  }, [allPoems, selectedPoetId, visiblePoets]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -143,8 +169,13 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
   const selectPoet = (poetId: string) => {
     const poet = poetById.get(poetId);
     setSelectedPoetId(poetId);
-    const nextPoem = poet?.featuredPoemIds[0] ?? POEMS.find((poem) => poem.poetId === poetId)?.id;
+    const nextPoem = poet?.featuredPoemIds[0] ?? allPoems.find((poem) => poem.poetId === poetId)?.id;
     if (nextPoem) setSelectedPoemId(nextPoem);
+  };
+
+  const selectPoem = (poetId: string, poemId: string) => {
+    setSelectedPoetId(poetId);
+    setSelectedPoemId(poemId);
   };
 
   const runRoute = () => {
@@ -240,7 +271,6 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
       style={{ ['--poetry-accent' as string]: accent }}
     >
       <section className="poetry-cloud-shell" aria-label="詩雲古典詩詞關係宇宙">
-        <div className="poetry-nebula-backdrop" aria-hidden="true" />
         <header className="poetry-topbar">
           <div className="poetry-brand">
             <span className="poetry-brand-mark"><BookOpenText size={22} /></span>
@@ -261,8 +291,13 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
           </div>
 
           <div className="poetry-corpus-status">
-            <span>本機 {POETRY_CORPUS_META.bundledPoets} 位詩人・{POETRY_CORPUS_META.bundledPoems} 首</span>
-            <b>{POETRY_CORPUS_META.expandablePoemCount.toLocaleString('zh-TW')}+ 公開語料可擴充</b>
+            <span>
+              已載入 {allPoets.length.toLocaleString('zh-TW')} 位詩人・{allPoems.length.toLocaleString('zh-TW')} 首
+              {!bundle && '（載入中…）'}
+            </span>
+            <b>
+              {(corpus.meta.totalAvailablePoems ?? POETRY_CORPUS_META.expandablePoemCount).toLocaleString('zh-TW')}+ 公開語料
+            </b>
           </div>
           <button type="button" className="poetry-close" onClick={onClose} title="關閉詩雲"><X size={20} /></button>
         </header>
@@ -320,15 +355,33 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
               <p>選擇兩位詩人，尋找交遊、唱和、時代與意象的最短路徑。</p>
               <label>
                 <span>起點詩人</span>
-                <select value={routeStart} onChange={(event) => setRouteStart(event.target.value)}>
-                  {POETS.map((poet) => <option key={poet.id} value={poet.id}>{poet.name}</option>)}
-                </select>
+                <input
+                  list="poetry-route-start"
+                  value={poetById.get(routeStart)?.name ?? ''}
+                  placeholder="輸入詩人，如 李白"
+                  onChange={(event) => {
+                    const id = poetIdByName.get(event.target.value.trim());
+                    if (id) setRouteStart(id);
+                  }}
+                />
+                <datalist id="poetry-route-start">
+                  {routeNameOptions.map((poet) => <option key={poet.id} value={poet.name} />)}
+                </datalist>
               </label>
               <label>
                 <span>終點詩人</span>
-                <select value={routeEnd} onChange={(event) => setRouteEnd(event.target.value)}>
-                  {POETS.map((poet) => <option key={poet.id} value={poet.id}>{poet.name}</option>)}
-                </select>
+                <input
+                  list="poetry-route-end"
+                  value={poetById.get(routeEnd)?.name ?? ''}
+                  placeholder="輸入詩人，如 蘇軾"
+                  onChange={(event) => {
+                    const id = poetIdByName.get(event.target.value.trim());
+                    if (id) setRouteEnd(id);
+                  }}
+                />
+                <datalist id="poetry-route-end">
+                  {routeNameOptions.map((poet) => <option key={poet.id} value={poet.name} />)}
+                </datalist>
               </label>
               <button type="button" className="poetry-primary-action" onClick={runRoute}>
                 <Network size={15} /> 尋找關係
@@ -355,7 +408,7 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
             </section>
 
             <footer>
-              <a href={POETRY_CORPUS_META.publicSourceUrl} target="_blank" rel="noreferrer">
+              <a href={corpus.meta.sourceUrl ?? POETRY_CORPUS_META.publicSourceUrl} target="_blank" rel="noreferrer">
                 公開語料來源 <ExternalLink size={12} />
               </a>
             </footer>
@@ -365,11 +418,14 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
             {visiblePoets.length ? (
               <PoetryUniverseCanvas
                 poets={visiblePoets}
+                poems={visiblePoems}
                 graph={graph}
                 selectedPoetId={selectedPoet.id}
-                highlightedPoetIds={routePoetIds}
+                selectedPoemId={selectedPoem.id}
+                form={form}
                 resetToken={resetToken}
                 onSelectPoet={selectPoet}
+                onSelectPoem={selectPoem}
               />
             ) : (
               <div className="poetry-empty-state">
@@ -380,9 +436,9 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
               </div>
             )}
             <div className="poetry-stage-caption">
-              <span><b>{visiblePoets.length}</b> 位詩人</span>
-              <span><b>{visiblePoems.length}</b> 首作品</span>
-              <span>拖曳移動・滾輪縮放・點選節點</span>
+              <span><b>{visiblePoets.length.toLocaleString('zh-TW')}</b> 位詩人</span>
+              <span><b>{visiblePoems.length.toLocaleString('zh-TW')}</b> 首作品</span>
+              <span>WASD 飛行・拖曳轉向・滾輪調速・點詩星看真作・點虛空撈詩</span>
             </div>
           </main>
 
@@ -422,13 +478,11 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
               ))}
             </div>
 
-            <AnimatePresence mode="wait">
-              <motion.article
+            <motion.article
                 key={selectedPoem.id}
                 className="poetry-poem-reader"
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
               >
                 <header>
                   <div><small>{selectedPoem.dynasty}・{selectedPoem.form}</small><h3>{selectedPoem.title}</h3></div>
@@ -453,7 +507,6 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
                   <div>{analysis.craft.map((item) => <span key={item}><Check size={11} />{item}</span>)}</div>
                 </section>
               </motion.article>
-            </AnimatePresence>
           </aside>
         </div>
 

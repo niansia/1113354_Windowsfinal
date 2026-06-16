@@ -10,6 +10,21 @@ const entry = (zhCN: string, en: string, ja: string, ko: string): Entry => ({
 });
 
 export const FEATURE_TRANSLATIONS: Record<string, Entry> = {
+  MediSphere: entry('MediSphere', 'MediSphere', 'MediSphere', 'MediSphere'),
+  '醫療學習與健康導航': entry('医疗学习与健康导航', 'Medical learning and health navigator', '医療学習と健康ナビゲーター', '의료 학습 및 건강 내비게이터'),
+  '生命徵象、醫學影像與就醫準備整合工作區。': entry(
+    '生命体征、医学影像与就医准备整合工作区。',
+    'An integrated workspace for vital signs, medical imaging, and visit preparation.',
+    'バイタルサイン、医用画像、受診準備を統合したワークスペース。',
+    '활력 징후, 의료 영상, 진료 준비를 통합한 작업 공간.'
+  ),
+  '醫療': entry('医疗', 'Medical', '医療', '의료'),
+  '醫學影像': entry('医学影像', 'Medical imaging', '医用画像', '의료 영상'),
+  '生命徵象': entry('生命体征', 'Vital signs', 'バイタルサイン', '활력 징후'),
+  '就醫準備': entry('就医准备', 'Visit prep', '受診準備', '진료 준비'),
+  '健康導航': entry('健康导航', 'Health navigator', '健康ナビゲーター', '건강 내비게이터'),
+  '20 個應用程式': entry('20 个应用程序', '20 applications', '20 個のアプリ', '앱 20개'),
+
   // App catalog and App Center
   '詩雲': entry('诗云', 'Poetry Cloud', '詩雲', '시운'),
   '古典詩詞關係宇宙': entry('古典诗词关系宇宙', 'Classical poetry universe', '古典詩歌の関係宇宙', '고전 시 관계 우주'),

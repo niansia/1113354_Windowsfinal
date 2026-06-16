@@ -30,6 +30,7 @@ import {
   Settings,
   Shirt,
   Sparkles,
+  Stethoscope,
   Terminal,
   Trophy,
   Volume2,
@@ -73,6 +74,10 @@ const LazyFusionPoetryCloud = React.lazy(() =>
   import('./FusionPoetryCloud').then((module) => ({ default: module.FusionPoetryCloud }))
 );
 
+const LazyFusionMedicalHub = React.lazy(() =>
+  import('./FusionMedicalHub').then((module) => ({ default: module.FusionMedicalHub }))
+);
+
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
 const CARD_W = 208;
 const CARD_GAP = 16;
@@ -113,6 +118,7 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   style: Shirt,
   sports: Trophy,
   poetry: BookOpenText,
+  medical: Stethoscope,
   db: Database,
   web: Globe2,
   game: Gamepad2,
@@ -205,6 +211,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       app.id === 'style' ||
       app.id === 'sports' ||
       app.id === 'poetry' ||
+      app.id === 'medical' ||
       app.id === 'toolbox'
     ) {
       setOverlayApp(app.id);
@@ -874,6 +881,15 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
             open
             onClose={() => setOverlayApp('tool')}
             accent="#ffc857"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'medical' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionMedicalHub
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#66e8ff"
           />
         </React.Suspense>
       )}

@@ -16,6 +16,7 @@ import {
   Play,
   Search,
   Sparkles,
+  Stethoscope,
   Terminal,
   Trophy,
   UserRound,
@@ -60,7 +61,8 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   user: UserRound,
   add: FolderInput,
   game: Gamepad2,
-  sports: Trophy
+  sports: Trophy,
+  medical: Stethoscope
 };
 
 const RECENT_KEY = 'fusion-app-center-recent-v1';

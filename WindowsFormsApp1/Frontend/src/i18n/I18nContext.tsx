@@ -10,6 +10,7 @@ import { STYLE_TRANSLATIONS } from '../style/styleText';
 import { ENGINEERING_MATH_TRANSLATIONS } from '../math/engineeringMathText';
 import { DEVELOPMENT_LAB_TRANSLATIONS } from '../devlab/developmentLabText';
 import { SPORTS_TRANSLATIONS } from '../sports/sportsText';
+import { MEDICAL_TRANSLATIONS } from '../medical/medicalText';
 
 // Source-as-key i18n: the Traditional-Chinese string in the JSX is itself the key. For
 // zh-TW we return it unchanged; for the other four languages we look it up in
@@ -33,7 +34,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const t = useCallback(
     (source: string): string => {
       if (lang === 'zh-TW') return source;
-      const entry = SETTINGS_TRANSLATIONS[source] ?? ASSISTANT_TRANSLATIONS[source] ?? ENGINEERING_MATH_TRANSLATIONS[source] ?? DEVELOPMENT_LAB_TRANSLATIONS[source] ?? SPORTS_TRANSLATIONS[source] ?? STYLE_TRANSLATIONS[source] ?? FEATURE_TRANSLATIONS[source] ?? TRANSLATIONS[source];
+      const entry = SETTINGS_TRANSLATIONS[source] ?? ASSISTANT_TRANSLATIONS[source] ?? ENGINEERING_MATH_TRANSLATIONS[source] ?? DEVELOPMENT_LAB_TRANSLATIONS[source] ?? SPORTS_TRANSLATIONS[source] ?? MEDICAL_TRANSLATIONS[source] ?? STYLE_TRANSLATIONS[source] ?? FEATURE_TRANSLATIONS[source] ?? TRANSLATIONS[source];
       return (entry && entry[lang]) || source;
     },
     [lang]

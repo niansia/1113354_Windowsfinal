@@ -61,7 +61,7 @@ export const FUSION_APPS: FusionApp[] = [
     color: '#ff6a9e',
     category: 'system',
     tags: ['啟動器', '應用程式', '入口'],
-    status: '24 個應用程式',
+    status: '20 個應用程式',
     launchMode: 'overlay',
     featured: true
   },
@@ -249,6 +249,19 @@ export const FUSION_APPS: FusionApp[] = [
     category: 'data',
     tags: ['即時比分', '世界盃', '蒙地卡羅', 'AI 分析'],
     status: '免金鑰資料',
+    launchMode: 'overlay',
+    featured: true
+  },
+  {
+    id: 'medical',
+    title: 'MediSphere',
+    subtitle: '醫療學習與健康導航',
+    description: '生命徵象、醫學影像與就醫準備整合工作區。',
+    glyph: 'MED',
+    color: '#66e8ff',
+    category: 'data',
+    tags: ['醫療', '醫學影像', '生命徵象', '就醫準備'],
+    status: '健康導航',
     launchMode: 'overlay',
     featured: true
   },

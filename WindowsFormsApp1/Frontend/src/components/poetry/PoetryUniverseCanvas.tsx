@@ -1,262 +1,805 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react';
-import { createPoetryLayout } from '../../poetry/poetryLayout';
-import type {
-  Poet,
-  PoetryGraph
-} from '../../poetry/poetryTypes';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import * as THREE from 'three';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Html } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { KernelSize } from 'postprocessing';
+import { Minus, Plus, LocateFixed, X } from 'lucide-react';
+import type { Poet, Poem, PoetryForm, PoetryGraph } from '../../poetry/poetryTypes';
+import { fishFromCoord } from '../../poetry/poetryVoid';
+import type { FishedPoem, VoidForm } from '../../poetry/poetryVoid';
 
 interface PoetryUniverseCanvasProps {
   poets: Poet[];
+  poems: Poem[];
   graph: PoetryGraph;
   selectedPoetId: string;
-  highlightedPoetIds: string[];
+  selectedPoemId: string;
+  form: PoetryForm | '全部';
   resetToken: number;
   onSelectPoet: (poetId: string) => void;
+  onSelectPoem: (poetId: string, poemId: string) => void;
 }
 
-interface ViewTransform {
-  x: number;
-  y: number;
-  scale: number;
-}
+const GOLDEN = 2.399963229728653;
+const WORLD = 70;
 
-interface Size {
-  width: number;
-  height: number;
-}
-
-const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
-
-const seededStars = (count: number) => {
-  let seed = 0x9e3779b9;
-  const random = () => {
-    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
-    return seed / 4294967296;
-  };
-  return Array.from({ length: count }, () => ({
-    x: random(),
-    y: random(),
-    radius: 0.35 + random() * 1.4,
-    alpha: 0.16 + random() * 0.58,
-    warm: random() > 0.72
-  }));
+const PALETTES: Record<string, string[]> = {
+  先秦: ['#ffe2a6', '#ffd27a', '#f6b96a'],
+  漢: ['#ffce8a', '#ffb86b', '#ff9f5a'],
+  魏晉: ['#ffe0a0', '#f6c878', '#e8b46a'],
+  南北朝: ['#f4d68a', '#e8c070', '#d9ad62'],
+  唐: ['#ffd166', '#ff9f68', '#ff6f91', '#ffc07a'],
+  宋: ['#7fe3c0', '#6fd0ff', '#86f1c8', '#5fc8e6'],
+  元: ['#c79bff', '#b388ff', '#9f7bff'],
+  明: ['#7db8ff', '#6aa0ff', '#8fc4ff'],
+  清: ['#ff9ec4', '#ff7fb0', '#ffadd2']
 };
+const paletteFor = (d: string) => PALETTES[d] ?? PALETTES['唐'];
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+const hash = (v: string) => {
+  let h = 2166136261;
+  for (let i = 0; i < v.length; i += 1) {
+    h ^= v.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+};
+const rngFrom = (seed: number) => {
+  let v = seed >>> 0 || 1;
+  return () => {
+    v = (Math.imul(v, 1664525) + 1013904223) >>> 0;
+    return v / 4294967296;
+  };
+};
+
+interface PoetNode {
+  id: string;
+  name: string;
+  dynasty: string;
+  count: number;
+  pos: THREE.Vector3;
+  color: THREE.Color;
+}
+interface SceneData {
+  poetNodes: PoetNode[];
+  byId: Map<string, PoetNode>;
+  clusters: { dynasty: string; center: THREE.Vector3; color: THREE.Color; size: number }[];
+}
+
+function buildPoetScene(poets: Poet[]): SceneData {
+  const byDynasty = new Map<string, Poet[]>();
+  for (const p of poets) {
+    const arr = byDynasty.get(p.dynasty) ?? [];
+    arr.push(p);
+    byDynasty.set(p.dynasty, arr);
+  }
+  const groups = [...byDynasty.entries()].sort((a, b) => b[1].length - a[1].length);
+  const maxGroup = Math.max(...groups.map((g) => g[1].length), 1);
+  const poetNodes: PoetNode[] = [];
+  const clusters: SceneData['clusters'] = [];
+
+  groups.forEach(([dynasty, members], gi) => {
+    const y = groups.length > 1 ? 1 - (gi / (groups.length - 1)) * 1.6 : 0;
+    const rr = Math.sqrt(Math.max(0, 1 - y * y));
+    const theta = gi * GOLDEN;
+    const centerDist = gi === 0 ? 0 : WORLD * 0.62 * (0.5 + (gi % 3) * 0.22);
+    const center = new THREE.Vector3(
+      Math.cos(theta) * rr * centerDist,
+      y * centerDist * 0.7,
+      Math.sin(theta) * rr * centerDist
+    );
+    const palette = paletteFor(dynasty);
+    const n = members.length;
+    const clusterR = WORLD * 0.5 * (0.4 + 0.6 * Math.sqrt(n / maxGroup));
+    clusters.push({ dynasty, center, color: new THREE.Color(palette[1] ?? palette[0]), size: clusterR });
+    const sorted = [...members].sort((a, b) => b.poemCount - a.poemCount);
+    sorted.forEach((poet, k) => {
+      const rnd = rngFrom(hash(poet.id));
+      const sy = 1 - ((k + 0.5) / n) * 2;
+      const sr = Math.sqrt(Math.max(0, 1 - sy * sy));
+      const st = k * GOLDEN;
+      const dir = new THREE.Vector3(Math.cos(st) * sr, sy, Math.sin(st) * sr);
+      const radius = clusterR * Math.pow((k + 0.7) / n, 0.5) * (0.78 + rnd() * 0.4);
+      const pos = center
+        .clone()
+        .add(dir.multiplyScalar(radius))
+        .add(new THREE.Vector3((rnd() - 0.5) * 6, (rnd() - 0.5) * 6, (rnd() - 0.5) * 6));
+      poetNodes.push({
+        id: poet.id,
+        name: poet.name,
+        dynasty,
+        count: poet.poemCount,
+        pos,
+        color: new THREE.Color(palette[hash(poet.id + dynasty) % palette.length])
+      });
+    });
+  });
+  return { poetNodes, byId: new Map(poetNodes.map((p) => [p.id, p])), clusters };
+}
+
+// ---- shared additive round-point shaders --------------------------------
+const POINT_VERT = /* glsl */ `
+  attribute float aSize;
+  attribute float aGlow;
+  attribute vec3 aColor;
+  uniform float uPixelRatio;
+  uniform float uTime;
+  uniform float uScale;
+  varying vec3 vCol;
+  varying float vGlow;
+  void main() {
+    vCol = aColor; vGlow = aGlow;
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    float tw = 0.82 + 0.18 * sin(uTime * 1.4 + position.x * 0.4 + position.y * 0.7);
+    gl_PointSize = clamp(aSize * uScale * uPixelRatio * tw * (150.0 / max(0.1, -mv.z)), 1.0, 46.0);
+    gl_Position = projectionMatrix * mv;
+  }
+`;
+const POINT_FRAG = /* glsl */ `
+  precision highp float;
+  varying vec3 vCol;
+  varying float vGlow;
+  void main() {
+    vec2 d = gl_PointCoord - 0.5;
+    float r2 = dot(d, d);
+    float core = exp(-r2 * 11.0);
+    float halo = exp(-r2 * 3.2) * 0.45;
+    float a = core + halo;
+    if (a < 0.01) discard;
+    gl_FragColor = vec4(vCol * (0.45 + vGlow * 1.5), a);
+  }
+`;
+
+// ---- poem stars: every poem is a planet, clustered around its poet ------
+interface PoemMeta {
+  poemId: string;
+  poetId: string;
+}
+function PoemStars({
+  poems,
+  byId,
+  onSelectPoem,
+  onHover
+}: {
+  poems: Poem[];
+  byId: Map<string, PoetNode>;
+  onSelectPoem: (poetId: string, poemId: string, pos: THREE.Vector3) => void;
+  onHover: (poetId: string) => void;
+}) {
+  const pixelRatio = useThree((s) => s.gl.getPixelRatio());
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+
+  const { geometry, meta, positions } = useMemo(() => {
+    const valid = poems.filter((p) => byId.has(p.poetId));
+    const n = valid.length;
+    const pos = new Float32Array(n * 3);
+    const col = new Float32Array(n * 3);
+    const size = new Float32Array(n);
+    const glow = new Float32Array(n);
+    const meta: PoemMeta[] = [];
+    const positions: THREE.Vector3[] = [];
+    valid.forEach((poem, i) => {
+      const node = byId.get(poem.poetId)!;
+      const rnd = rngFrom(hash(poem.id));
+      const u = rnd() * 2 - 1;
+      const t = rnd() * Math.PI * 2;
+      const s = Math.sqrt(1 - u * u);
+      const r = 2 + Math.pow(rnd(), 0.7) * 9;
+      const x = node.pos.x + Math.cos(t) * s * r;
+      const y = node.pos.y + u * r;
+      const z = node.pos.z + Math.sin(t) * s * r;
+      pos[i * 3] = x;
+      pos[i * 3 + 1] = y;
+      pos[i * 3 + 2] = z;
+      col[i * 3] = node.color.r;
+      col[i * 3 + 1] = node.color.g;
+      col[i * 3 + 2] = node.color.b;
+      size[i] = 1.0 + rnd() * 0.6;
+      glow[i] = 0.35 + rnd() * 0.35;
+      meta.push({ poemId: poem.id, poetId: poem.poetId });
+      positions.push(new THREE.Vector3(x, y, z));
+    });
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+    g.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+    g.setAttribute('aGlow', new THREE.BufferAttribute(glow, 1));
+    return { geometry: g, meta, positions };
+  }, [poems, byId]);
+
+  const uniforms = useMemo(
+    () => ({ uTime: { value: 0 }, uPixelRatio: { value: pixelRatio }, uScale: { value: 0.85 } }),
+    [pixelRatio]
+  );
+  useFrame((_, dt) => {
+    if (matRef.current) matRef.current.uniforms.uTime.value += dt;
+  });
+
+  return (
+    <points
+      geometry={geometry}
+      frustumCulled={false}
+      onClick={(e) => {
+        if (e.index == null) return;
+        e.stopPropagation();
+        const m = meta[e.index];
+        onSelectPoem(m.poetId, m.poemId, positions[e.index]);
+      }}
+      onPointerOver={(e) => {
+        if (e.index != null) onHover(meta[e.index].poetId);
+      }}
+      onPointerOut={() => onHover('')}
+    >
+      <shaderMaterial
+        ref={matRef}
+        vertexShader={POINT_VERT}
+        fragmentShader={POINT_FRAG}
+        uniforms={uniforms}
+        transparent
+        depthTest
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+// ---- poet cores: bright nucleus at each cluster, click to select poet ----
+function PoetCores({
+  scene,
+  onSelectPoet,
+  onHover
+}: {
+  scene: SceneData;
+  onSelectPoet: (id: string, pos: THREE.Vector3) => void;
+  onHover: (id: string) => void;
+}) {
+  const pixelRatio = useThree((s) => s.gl.getPixelRatio());
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const geometry = useMemo(() => {
+    const n = scene.poetNodes.length;
+    const pos = new Float32Array(n * 3);
+    const col = new Float32Array(n * 3);
+    const size = new Float32Array(n);
+    const glow = new Float32Array(n);
+    scene.poetNodes.forEach((node, i) => {
+      pos[i * 3] = node.pos.x;
+      pos[i * 3 + 1] = node.pos.y;
+      pos[i * 3 + 2] = node.pos.z;
+      col[i * 3] = node.color.r;
+      col[i * 3 + 1] = node.color.g;
+      col[i * 3 + 2] = node.color.b;
+      size[i] = clamp(1.6 + Math.sqrt(node.count) * 0.14, 1.6, 7.5);
+      glow[i] = clamp(0.6 + Math.log10(node.count + 10) * 0.5, 0.6, 2.0);
+    });
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+    g.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+    g.setAttribute('aGlow', new THREE.BufferAttribute(glow, 1));
+    return g;
+  }, [scene]);
+  const uniforms = useMemo(
+    () => ({ uTime: { value: 0 }, uPixelRatio: { value: pixelRatio }, uScale: { value: 1.2 } }),
+    [pixelRatio]
+  );
+  useFrame((_, dt) => {
+    if (matRef.current) matRef.current.uniforms.uTime.value += dt;
+  });
+  return (
+    <points
+      geometry={geometry}
+      frustumCulled={false}
+      onClick={(e) => {
+        if (e.index == null) return;
+        e.stopPropagation();
+        const node = scene.poetNodes[e.index];
+        onSelectPoet(node.id, node.pos);
+      }}
+      onPointerOver={(e) => {
+        if (e.index != null) onHover(scene.poetNodes[e.index].id);
+      }}
+      onPointerOut={() => onHover('')}
+    >
+      <shaderMaterial
+        ref={matRef}
+        vertexShader={POINT_VERT}
+        fragmentShader={POINT_FRAG}
+        uniforms={uniforms}
+        transparent
+        depthTest
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+// ---- the void: dense faint "all possible poems" noise -------------------
+const DUST_VERT = /* glsl */ `
+  attribute float aSeed;
+  uniform float uTime;
+  uniform float uPixelRatio;
+  varying float vA;
+  varying vec3 vCol;
+  float h(float x){ return fract(sin(x*127.1)*43758.5453); }
+  void main(){
+    vec3 p = position;
+    float jt = uTime*0.04 + aSeed*30.0;
+    p += vec3(sin(jt), cos(jt*1.2), sin(jt*0.8)) * 1.2;
+    vec4 mv = modelViewMatrix * vec4(p,1.0);
+    gl_PointSize = clamp(uPixelRatio * (34.0/max(0.1,-mv.z)) * (0.5+h(aSeed)*1.0), 1.0, 5.0);
+    gl_Position = projectionMatrix * mv;
+    vA = 0.10 + 0.4*h(aSeed*3.3) * (0.5+0.5*sin(uTime*0.7+aSeed*40.0));
+    vCol = h(aSeed*7.1) > 0.62 ? vec3(1.0,0.84,0.6) : vec3(0.68,0.84,1.0);
+  }
+`;
+const DUST_FRAG = /* glsl */ `
+  precision highp float;
+  varying float vA; varying vec3 vCol;
+  void main(){
+    vec2 d = gl_PointCoord-0.5; float r2=dot(d,d);
+    float a = exp(-r2*7.0)*vA;
+    if(a<0.004) discard;
+    gl_FragColor = vec4(vCol, a);
+  }
+`;
+function VoidField({ count = 26000 }: { count?: number }) {
+  const pixelRatio = useThree((s) => s.gl.getPixelRatio());
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const geometry = useMemo(() => {
+    const pos = new Float32Array(count * 3);
+    const seed = new Float32Array(count);
+    const rnd = rngFrom(0x9e3779b9);
+    for (let i = 0; i < count; i += 1) {
+      const r = WORLD * (0.25 + Math.pow(rnd(), 0.65) * 1.7);
+      const u = rnd() * 2 - 1;
+      const t = rnd() * Math.PI * 2;
+      const s = Math.sqrt(1 - u * u);
+      pos[i * 3] = Math.cos(t) * s * r;
+      pos[i * 3 + 1] = u * r * 0.82;
+      pos[i * 3 + 2] = Math.sin(t) * s * r;
+      seed[i] = rnd();
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+    g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), WORLD * 4);
+    return g;
+  }, [count]);
+  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uPixelRatio: { value: pixelRatio } }), [pixelRatio]);
+  useFrame((_, dt) => {
+    if (matRef.current) matRef.current.uniforms.uTime.value += dt;
+  });
+  return (
+    <points geometry={geometry} frustumCulled={false}>
+      <shaderMaterial
+        ref={matRef}
+        vertexShader={DUST_VERT}
+        fragmentShader={DUST_FRAG}
+        uniforms={uniforms}
+        transparent
+        depthTest={false}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+function makeGasTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const ctx = c.getContext('2d')!;
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(255,255,255,0.6)');
+  g.addColorStop(0.4, 'rgba(255,255,255,0.18)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+function NebulaGas({ scene }: { scene: SceneData }) {
+  const tex = useMemo(() => makeGasTexture(), []);
+  const blobs = useMemo(() => {
+    const out: { pos: THREE.Vector3; scale: number; color: THREE.Color }[] = [];
+    for (const c of scene.clusters) {
+      const rnd = rngFrom(hash('gas' + c.dynasty));
+      const blobN = 2 + Math.min(3, Math.floor(c.size / 30));
+      for (let i = 0; i < blobN; i += 1) {
+        out.push({
+          pos: c.center
+            .clone()
+            .add(new THREE.Vector3((rnd() - 0.5) * c.size, (rnd() - 0.5) * c.size * 0.7, (rnd() - 0.5) * c.size)),
+          scale: c.size * (1.1 + rnd() * 1.0),
+          color: c.color
+        });
+      }
+    }
+    return out;
+  }, [scene]);
+  return (
+    <group>
+      {blobs.map((b, i) => (
+        <sprite key={i} position={b.pos} scale={[b.scale, b.scale, 1]}>
+          <spriteMaterial
+            map={tex}
+            color={b.color}
+            transparent
+            opacity={0.15}
+            depthTest={false}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </sprite>
+      ))}
+    </group>
+  );
+}
+
+function RelationWeb({ scene, edges }: { scene: SceneData; edges: PoetryGraph['edges'] }) {
+  const geometry = useMemo(() => {
+    const pts: number[] = [];
+    for (const e of edges) {
+      const a = scene.byId.get(e.source);
+      const b = scene.byId.get(e.target);
+      if (!a || !b) continue;
+      pts.push(a.pos.x, a.pos.y, a.pos.z, b.pos.x, b.pos.y, b.pos.z);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3));
+    return g;
+  }, [scene, edges]);
+  return (
+    <lineSegments geometry={geometry} frustumCulled={false}>
+      <lineBasicMaterial color="#8a7ad0" transparent opacity={0.07} depthTest={false} depthWrite={false} blending={THREE.AdditiveBlending} />
+    </lineSegments>
+  );
+}
+
+function SelectedAura({ scene, edges, selectedId }: { scene: SceneData; edges: PoetryGraph['edges']; selectedId: string }) {
+  const node = scene.byId.get(selectedId);
+  const lineRef = useRef<THREE.LineSegments>(null);
+  const ringRef = useRef<THREE.Mesh>(null);
+  const lineGeo = useMemo(() => {
+    const pts: number[] = [];
+    if (node) {
+      for (const e of edges) {
+        if (e.source !== selectedId && e.target !== selectedId) continue;
+        const other = scene.byId.get(e.source === selectedId ? e.target : e.source);
+        if (!other) continue;
+        pts.push(node.pos.x, node.pos.y, node.pos.z, other.pos.x, other.pos.y, other.pos.z);
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3));
+    return g;
+  }, [scene, edges, selectedId, node]);
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    if (lineRef.current) (lineRef.current.material as THREE.LineBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(t * 2.5);
+    if (ringRef.current) {
+      ringRef.current.scale.setScalar(1 + 0.12 * Math.sin(t * 3));
+      ringRef.current.lookAt(state.camera.position);
+    }
+  });
+  if (!node) return null;
+  return (
+    <group>
+      <lineSegments ref={lineRef} geometry={lineGeo} frustumCulled={false}>
+        <lineBasicMaterial color="#ffcf6e" transparent opacity={0.55} depthTest={false} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </lineSegments>
+      <mesh ref={ringRef} position={node.pos}>
+        <ringGeometry args={[3.2, 3.8, 48]} />
+        <meshBasicMaterial color="#fff3cf" transparent opacity={0.85} side={THREE.DoubleSide} depthTest={false} />
+      </mesh>
+    </group>
+  );
+}
+
+function Labels({ scene, selectedId, hoveredId }: { scene: SceneData; selectedId: string; hoveredId: string }) {
+  const shown = useMemo(() => {
+    const top = [...scene.poetNodes].sort((a, b) => b.count - a.count).slice(0, 14);
+    const set = new Map(top.map((n) => [n.id, n]));
+    const sel = scene.byId.get(selectedId);
+    const hov = scene.byId.get(hoveredId);
+    if (sel) set.set(sel.id, sel);
+    if (hov) set.set(hov.id, hov);
+    return [...set.values()];
+  }, [scene, selectedId, hoveredId]);
+  return (
+    <>
+      {shown.map((n) => (
+        <Html key={n.id} position={n.pos} center distanceFactor={130} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
+          <span className={`poetry-3d-label${n.id === selectedId ? ' is-selected' : ''}`}>{n.name}</span>
+        </Html>
+      ))}
+    </>
+  );
+}
+
+// ---- free-flight pilot: WASD + drag-look + wheel-speed + auto fly-to -----
+interface PilotApi {
+  flyTo: (pos: THREE.Vector3, dist: number) => void;
+  dolly: (factor: number) => void;
+  reset: () => void;
+}
+function Pilot({
+  apiRef,
+  speedLabelRef
+}: {
+  apiRef: React.MutableRefObject<PilotApi>;
+  speedLabelRef: React.RefObject<HTMLSpanElement | null>;
+}) {
+  const camera = useThree((s) => s.camera);
+  const gl = useThree((s) => s.gl);
+  const keys = useRef<Record<string, boolean>>({});
+  const drag = useRef<{ x: number; y: number } | null>(null);
+  const yaw = useRef(0);
+  const pitch = useRef(0);
+  const speed = useRef(70);
+  const fly = useRef<{ active: boolean; t: number; fromP: THREE.Vector3; toP: THREE.Vector3; fromQ: THREE.Quaternion; toQ: THREE.Quaternion } | null>(null);
+
+  useEffect(() => {
+    const e = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
+    yaw.current = e.y;
+    pitch.current = e.x;
+  }, [camera]);
+
+  const startFly = (target: THREE.Vector3, dist: number) => {
+    const dirFromTarget = camera.position.clone().sub(target);
+    if (dirFromTarget.lengthSq() < 0.01) dirFromTarget.set(0, 0, 1);
+    dirFromTarget.normalize();
+    const toP = target.clone().add(dirFromTarget.multiplyScalar(dist));
+    const m = new THREE.Matrix4().lookAt(toP, target, new THREE.Vector3(0, 1, 0));
+    const toQ = new THREE.Quaternion().setFromRotationMatrix(m);
+    fly.current = { active: true, t: 0, fromP: camera.position.clone(), toP, fromQ: camera.quaternion.clone(), toQ };
+  };
+
+  apiRef.current = {
+    flyTo: (pos, dist) => startFly(pos, dist),
+    dolly: (factor) => {
+      const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+      camera.position.addScaledVector(fwd, factor);
+    },
+    reset: () => startFly(new THREE.Vector3(0, 0, 0), 168)
+  };
+
+  useEffect(() => {
+    const dom = gl.domElement;
+    const isTyping = () => {
+      const t = document.activeElement?.tagName;
+      return t === 'INPUT' || t === 'TEXTAREA';
+    };
+    const kd = (e: KeyboardEvent) => {
+      if (isTyping()) return;
+      keys.current[e.key.toLowerCase()] = true;
+    };
+    const ku = (e: KeyboardEvent) => {
+      keys.current[e.key.toLowerCase()] = false;
+    };
+    const pd = (e: PointerEvent) => {
+      drag.current = { x: e.clientX, y: e.clientY };
+      fly.current = null; // taking manual control cancels auto-flight
+    };
+    const pm = (e: PointerEvent) => {
+      if (!drag.current) return;
+      const dx = e.clientX - drag.current.x;
+      const dy = e.clientY - drag.current.y;
+      drag.current.x = e.clientX;
+      drag.current.y = e.clientY;
+      yaw.current -= dx * 0.0026;
+      pitch.current = clamp(pitch.current - dy * 0.0026, -1.45, 1.45);
+    };
+    const pu = () => {
+      drag.current = null;
+    };
+    const wheel = (e: WheelEvent) => {
+      e.preventDefault();
+      speed.current = clamp(speed.current * (e.deltaY > 0 ? 0.85 : 1.18), 12, 2600);
+    };
+    window.addEventListener('keydown', kd);
+    window.addEventListener('keyup', ku);
+    dom.addEventListener('pointerdown', pd);
+    window.addEventListener('pointermove', pm);
+    window.addEventListener('pointerup', pu);
+    dom.addEventListener('wheel', wheel, { passive: false });
+    return () => {
+      window.removeEventListener('keydown', kd);
+      window.removeEventListener('keyup', ku);
+      dom.removeEventListener('pointerdown', pd);
+      window.removeEventListener('pointermove', pm);
+      window.removeEventListener('pointerup', pu);
+      dom.removeEventListener('wheel', wheel);
+    };
+  }, [gl]);
+
+  useFrame((_, dt) => {
+    const d = Math.min(dt, 0.05);
+    if (fly.current?.active) {
+      fly.current.t = Math.min(1, fly.current.t + d * 0.9);
+      const e = 1 - Math.pow(1 - fly.current.t, 3);
+      camera.position.lerpVectors(fly.current.fromP, fly.current.toP, e);
+      camera.quaternion.copy(fly.current.fromQ).slerp(fly.current.toQ, e);
+      if (fly.current.t >= 1) {
+        const eu = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ');
+        yaw.current = eu.y;
+        pitch.current = eu.x;
+        fly.current = null;
+      }
+    } else {
+      camera.quaternion.setFromEuler(new THREE.Euler(pitch.current, yaw.current, 0, 'YXZ'));
+      const k = keys.current;
+      const mv = new THREE.Vector3();
+      if (k['w'] || k['arrowup']) mv.z -= 1;
+      if (k['s'] || k['arrowdown']) mv.z += 1;
+      if (k['a'] || k['arrowleft']) mv.x -= 1;
+      if (k['d'] || k['arrowright']) mv.x += 1;
+      if (k['e'] || k[' ']) mv.y += 1;
+      if (k['q'] || k['shift']) mv.y -= 1;
+      if (mv.lengthSq() > 0) {
+        mv.normalize().applyQuaternion(camera.quaternion);
+        camera.position.addScaledVector(mv, speed.current * d);
+      }
+    }
+    if (speedLabelRef.current) {
+      speedLabelRef.current.textContent = `速度 ${Math.round(speed.current)} 單位/秒`;
+    }
+  });
+
+  return null;
+}
+
+function Scene(props: {
+  scene: SceneData;
+  poems: Poem[];
+  edges: PoetryGraph['edges'];
+  selectedId: string;
+  hoveredId: string;
+  apiRef: React.MutableRefObject<PilotApi>;
+  speedLabelRef: React.RefObject<HTMLSpanElement | null>;
+  onSelectPoet: (id: string, pos: THREE.Vector3) => void;
+  onSelectPoem: (poetId: string, poemId: string, pos: THREE.Vector3) => void;
+  onHover: (id: string) => void;
+}) {
+  const { scene, poems, edges, selectedId, hoveredId } = props;
+  return (
+    <>
+      <color attach="background" args={['#04030a']} />
+      <fog attach="fog" args={['#04030a', WORLD * 1.6, WORLD * 4.6]} />
+      <NebulaGas scene={scene} />
+      <VoidField />
+      <RelationWeb scene={scene} edges={edges} />
+      <PoemStars poems={poems} byId={scene.byId} onSelectPoem={props.onSelectPoem} onHover={props.onHover} />
+      <PoetCores scene={scene} onSelectPoet={props.onSelectPoet} onHover={props.onHover} />
+      <SelectedAura scene={scene} edges={edges} selectedId={selectedId} />
+      <Labels scene={scene} selectedId={selectedId} hoveredId={hoveredId} />
+      <Pilot apiRef={props.apiRef} speedLabelRef={props.speedLabelRef} />
+      <EffectComposer multisampling={0} enableNormalPass={false}>
+        <Bloom intensity={0.85} luminanceThreshold={0.5} luminanceSmoothing={0.5} mipmapBlur kernelSize={KernelSize.LARGE} />
+      </EffectComposer>
+    </>
+  );
+}
 
 export function PoetryUniverseCanvas({
   poets,
+  poems,
   graph,
   selectedPoetId,
-  highlightedPoetIds,
+  selectedPoemId,
+  form,
   resetToken,
-  onSelectPoet
+  onSelectPoet,
+  onSelectPoem
 }: PoetryUniverseCanvasProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const dragRef = useRef<{ x: number; y: number; originX: number; originY: number; moved: boolean } | null>(null);
-  const [size, setSize] = useState<Size>({ width: 960, height: 680 });
-  const [view, setView] = useState<ViewTransform>({ x: 0, y: 0, scale: 1 });
-  const [hoveredPoetId, setHoveredPoetId] = useState('');
-  const stars = useMemo(() => seededStars(230), []);
-  const poetById = useMemo(() => new Map(poets.map((poet) => [poet.id, poet])), [poets]);
-  const visibleIds = useMemo(() => new Set(poets.map((poet) => poet.id)), [poets]);
-  const visibleGraph = useMemo<PoetryGraph>(() => ({
-    nodes: graph.nodes.filter((node) => visibleIds.has(node.poetId)),
-    edges: graph.edges.filter((edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target))
-  }), [graph, visibleIds]);
-  const layout = useMemo(
-    () => createPoetryLayout(visibleGraph, { width: size.width, height: size.height, seed: 20260616 }),
-    [size.height, size.width, visibleGraph]
+  const apiRef = useRef<PilotApi>({ flyTo: () => {}, dolly: () => {}, reset: () => {} });
+  const speedLabelRef = useRef<HTMLSpanElement | null>(null);
+  const cameraRef = useRef<THREE.Camera | null>(null);
+  const handledRef = useRef(0); // timestamp of the last star click (suppresses void fishing)
+  const [hoveredId, setHoveredId] = useState('');
+  const [fish, setFish] = useState<FishedPoem | null>(null);
+  void selectedPoemId;
+
+  const visibleIds = useMemo(() => new Set(poets.map((p) => p.id)), [poets]);
+  const edges = useMemo(
+    () => graph.edges.filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target)),
+    [graph.edges, visibleIds]
   );
-  const layoutById = useMemo(() => new Map(layout.map((node) => [node.poetId, node])), [layout]);
-  const highlightSet = useMemo(() => new Set(highlightedPoetIds), [highlightedPoetIds]);
+  const scene = useMemo(() => buildPoetScene(poets), [poets]);
 
+  // fly to the selected poet whenever it changes from outside (panel / route)
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const observer = new ResizeObserver(([entry]) => {
-      const width = Math.max(320, Math.round(entry.contentRect.width));
-      const height = Math.max(360, Math.round(entry.contentRect.height));
-      setSize({ width, height });
-    });
-    observer.observe(canvas);
-    return () => observer.disconnect();
-  }, []);
-
+    const node = scene.byId.get(selectedPoetId);
+    if (node) apiRef.current.flyTo(node.pos, 30);
+  }, [selectedPoetId, scene]);
   useEffect(() => {
-    setView({ x: 0, y: 0, scale: 1 });
+    if (resetToken > 0) apiRef.current.reset();
   }, [resetToken]);
 
-  const screenToWorld = useCallback((clientX: number, clientY: number) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return { x: 0, y: 0 };
-    return {
-      x: (clientX - rect.left - view.x) / view.scale,
-      y: (clientY - rect.top - view.y) / view.scale
-    };
-  }, [view]);
+  const voidForm: VoidForm = form === '全部' || form === '古體' || form === '樂府' || form === '詞' || form === '曲'
+    ? '五絕'
+    : (form as VoidForm);
 
-  const findNode = useCallback((clientX: number, clientY: number) => {
-    const world = screenToWorld(clientX, clientY);
-    return [...layout]
-      .reverse()
-      .find((node) => Math.hypot(world.x - node.x, world.y - node.y) <= node.radius + 7);
-  }, [layout, screenToWorld]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(size.width * ratio);
-    canvas.height = Math.round(size.height * ratio);
-    const context = canvas.getContext('2d');
-    if (!context) return;
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    context.clearRect(0, 0, size.width, size.height);
-
-    for (const star of stars) {
-      context.beginPath();
-      context.fillStyle = star.warm
-        ? `rgba(255, 210, 128, ${star.alpha})`
-        : `rgba(202, 232, 255, ${star.alpha})`;
-      context.arc(star.x * size.width, star.y * size.height, star.radius, 0, Math.PI * 2);
-      context.fill();
-    }
-
-    context.save();
-    context.translate(view.x, view.y);
-    context.scale(view.scale, view.scale);
-    for (const edge of visibleGraph.edges) {
-      const source = layoutById.get(edge.source);
-      const target = layoutById.get(edge.target);
-      if (!source || !target) continue;
-      const active = highlightSet.has(edge.source) && highlightSet.has(edge.target);
-      context.beginPath();
-      context.moveTo(source.x, source.y);
-      const midX = (source.x + target.x) / 2;
-      const midY = (source.y + target.y) / 2 - Math.min(42, Math.abs(source.x - target.x) * 0.06);
-      context.quadraticCurveTo(midX, midY, target.x, target.y);
-      context.strokeStyle = active
-        ? 'rgba(255, 211, 103, 0.92)'
-        : `rgba(255, 157, 178, ${0.1 + edge.weight * 0.24})`;
-      context.lineWidth = active ? 2.2 / view.scale : Math.max(0.55, edge.weight) / view.scale;
-      context.stroke();
-    }
-
-    for (const node of layout) {
-      const poet = poetById.get(node.poetId);
-      if (!poet) continue;
-      const selected = node.poetId === selectedPoetId;
-      const hovered = node.poetId === hoveredPoetId;
-      const highlighted = highlightSet.has(node.poetId);
-      const radius = node.radius + (selected ? 8 : hovered ? 4 : highlighted ? 3 : 0);
-      const glow = context.createRadialGradient(node.x, node.y, 0, node.x, node.y, radius * 3.4);
-      glow.addColorStop(0, selected ? 'rgba(255, 239, 181, 0.98)' : `${node.color}ee`);
-      glow.addColorStop(0.23, selected ? 'rgba(255, 173, 76, 0.7)' : `${node.color}70`);
-      glow.addColorStop(1, 'rgba(255, 70, 135, 0)');
-      context.fillStyle = glow;
-      context.beginPath();
-      context.arc(node.x, node.y, radius * 3.4, 0, Math.PI * 2);
-      context.fill();
-
-      context.beginPath();
-      context.fillStyle = selected ? '#fff4c7' : highlighted ? '#ffe08a' : node.color;
-      context.arc(node.x, node.y, Math.max(3.8, radius * 0.42), 0, Math.PI * 2);
-      context.fill();
-      context.lineWidth = selected ? 1.8 / view.scale : 0.7 / view.scale;
-      context.strokeStyle = selected ? '#fff7dc' : 'rgba(255,255,255,0.58)';
-      context.stroke();
-
-      const fontSize = clamp(10 + node.radius * 0.18 + (selected ? 3 : 0), 11, 17);
-      context.font = `${selected ? 800 : 650} ${fontSize}px "Noto Serif TC", "Microsoft JhengHei", serif`;
-      context.textAlign = 'center';
-      context.textBaseline = 'top';
-      context.shadowBlur = 10;
-      context.shadowColor = 'rgba(0,0,0,0.9)';
-      context.fillStyle = selected ? '#fff5d6' : 'rgba(255, 244, 230, 0.9)';
-      context.fillText(poet.name, node.x, node.y + radius * 0.6 + 5);
-      context.shadowBlur = 0;
-    }
-    context.restore();
-  }, [
-    highlightSet,
-    hoveredPoetId,
-    layout,
-    layoutById,
-    poetById,
-    selectedPoetId,
-    size.height,
-    size.width,
-    stars,
-    view,
-    visibleGraph.edges
-  ]);
-
-  const onPointerDown = (event: ReactPointerEvent<HTMLCanvasElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = {
-      x: event.clientX,
-      y: event.clientY,
-      originX: view.x,
-      originY: view.y,
-      moved: false
-    };
-  };
-
-  const onPointerMove = (event: ReactPointerEvent<HTMLCanvasElement>) => {
-    const drag = dragRef.current;
-    if (!drag) {
-      setHoveredPoetId(findNode(event.clientX, event.clientY)?.poetId ?? '');
-      return;
-    }
-    const dx = event.clientX - drag.x;
-    const dy = event.clientY - drag.y;
-    if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true;
-    setView((current) => ({ ...current, x: drag.originX + dx, y: drag.originY + dy }));
-  };
-
-  const onPointerUp = (event: ReactPointerEvent<HTMLCanvasElement>) => {
-    const drag = dragRef.current;
-    dragRef.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-    if (!drag?.moved) {
-      const node = findNode(event.clientX, event.clientY);
-      if (node) onSelectPoet(node.poetId);
-    }
-  };
-
-  const onWheel = (event: ReactWheelEvent<HTMLCanvasElement>) => {
-    event.preventDefault();
-    const rect = event.currentTarget.getBoundingClientRect();
-    const pointerX = event.clientX - rect.left;
-    const pointerY = event.clientY - rect.top;
-    setView((current) => {
-      const nextScale = clamp(current.scale * (event.deltaY > 0 ? 0.9 : 1.1), 0.55, 2.4);
-      const worldX = (pointerX - current.x) / current.scale;
-      const worldY = (pointerY - current.y) / current.scale;
-      return {
-        scale: nextScale,
-        x: pointerX - worldX * nextScale,
-        y: pointerY - worldY * nextScale
-      };
-    });
+  // click on empty space → fish a poem out of the void at that coordinate.
+  // (own handler instead of R3F onPointerMissed, which is unreliable; a recent
+  // star click sets handledRef so we don't also fish.)
+  const onWrapperClick = (e: React.MouseEvent) => {
+    const el = e.target as HTMLElement;
+    if (el.closest('.poetry-zoom') || el.closest('.poetry-fish-card') || el.closest('.poetry-3d-label')) return;
+    if (performance.now() - handledRef.current < 160) return; // a star was just clicked
+    const cam = cameraRef.current;
+    const canvas = e.currentTarget as HTMLElement;
+    if (!cam) return;
+    const rect = canvas.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1
+    );
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(ndc, cam);
+    const point = ray.ray.origin.clone().add(ray.ray.direction.clone().multiplyScalar(55));
+    setFish(fishFromCoord(point.x, point.y, point.z, voidForm));
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="poetry-universe-canvas"
-      aria-label="可拖曳與縮放的詩人關係星圖"
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerLeave={() => {
-        if (!dragRef.current) setHoveredPoetId('');
-      }}
-      onPointerUp={onPointerUp}
-      onPointerCancel={() => {
-        dragRef.current = null;
-      }}
-      onWheel={onWheel}
-    />
+    <div className="poetry-universe-3d" onClick={onWrapperClick}>
+      <Canvas
+        className="poetry-universe-canvas"
+        dpr={[1, 1.8]}
+        camera={{ position: [0, 8, 168], fov: 55, near: 0.1, far: 1200 }}
+        gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: THREE.ACESFilmicToneMapping }}
+        raycaster={{ params: { Points: { threshold: 2.2 } } as THREE.RaycasterParameters }}
+        onCreated={(state) => {
+          cameraRef.current = state.camera;
+        }}
+      >
+        <Scene
+          scene={scene}
+          poems={poems}
+          edges={edges}
+          selectedId={selectedPoetId}
+          hoveredId={hoveredId}
+          apiRef={apiRef}
+          speedLabelRef={speedLabelRef}
+          onHover={setHoveredId}
+          onSelectPoet={(id, pos) => {
+            handledRef.current = performance.now();
+            onSelectPoet(id);
+            apiRef.current.flyTo(pos, 26);
+          }}
+          onSelectPoem={(poetId, poemId, pos) => {
+            handledRef.current = performance.now();
+            onSelectPoem(poetId, poemId);
+            apiRef.current.flyTo(pos, 12);
+          }}
+        />
+      </Canvas>
+
+      <div className="poetry-zoom poetry-zoom-left">
+        <button type="button" title="前進" onClick={() => apiRef.current.dolly(22)}><Plus size={18} /></button>
+        <button type="button" title="後退" onClick={() => apiRef.current.dolly(-22)}><Minus size={18} /></button>
+        <button type="button" title="回到全景" onClick={() => apiRef.current.reset()}><LocateFixed size={16} /></button>
+      </div>
+      <div className="poetry-zoom poetry-zoom-right">
+        <button type="button" title="前進" onClick={() => apiRef.current.dolly(22)}><Plus size={18} /></button>
+        <button type="button" title="後退" onClick={() => apiRef.current.dolly(-22)}><Minus size={18} /></button>
+      </div>
+
+      <div className="poetry-flight-hud"><span ref={speedLabelRef}>速度 70 單位/秒</span></div>
+
+      {fish && (
+        <div className="poetry-fish-card">
+          <button type="button" className="poetry-fish-close" onClick={() => setFish(null)} title="放回虛空"><X size={15} /></button>
+          <small>從噪聲裡撈起 · {fish.form}</small>
+          <div className="poetry-fish-verses">
+            {fish.lines.map((line, i) => <p key={i}>{line}</p>)}
+          </div>
+          <code title="此詩在「一切可能的詩」全集中的編號">編號 …{fish.code.slice(-28)}</code>
+        </div>
+      )}
+    </div>
   );
 }
-
