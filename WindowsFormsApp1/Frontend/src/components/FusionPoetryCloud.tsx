@@ -32,7 +32,7 @@ import {
   toggleFavoritePoem
 } from '../poetry/poetryFavorites';
 import { findPoetPath } from '../poetry/poetryGraph';
-import { fetchPoetryBundle, mergeCorpus } from '../poetry/poetryRemoteCorpus';
+import { fetchPoetryBundle, getPoetryDisplayStats, mergeCorpus } from '../poetry/poetryRemoteCorpus';
 import type { PoetryBundle } from '../poetry/poetryRemoteCorpus';
 import { searchPoetry } from '../poetry/poetrySearch';
 import type {
@@ -101,6 +101,7 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
   }, [open, bundle]);
 
   const corpus = useMemo(() => mergeCorpus(POETS, POEMS, bundle), [bundle]);
+  const archiveStats = useMemo(() => getPoetryDisplayStats(corpus), [corpus]);
   const allPoets = corpus.poets;
   const allPoems = corpus.poems;
   const graph = corpus.graph;
@@ -292,11 +293,11 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
 
           <div className="poetry-corpus-status">
             <span>
-              已載入 {allPoets.length.toLocaleString('zh-TW')} 位詩人・{allPoems.length.toLocaleString('zh-TW')} 首
-              {!bundle && '（載入中…）'}
+              {archiveStats.archivePoets.toLocaleString('zh-TW')} 位詩人・{archiveStats.archivePoems.toLocaleString('zh-TW')} 首
             </span>
             <b>
-              {(corpus.meta.totalAvailablePoems ?? POETRY_CORPUS_META.expandablePoemCount).toLocaleString('zh-TW')}+ 公開語料
+              已載入 {archiveStats.loadedPoets.toLocaleString('zh-TW')} 星節點・{archiveStats.loadedTextPoems.toLocaleString('zh-TW')} 首真實文本
+              {!bundle && '（載入中…）'}
             </b>
           </div>
           <button type="button" className="poetry-close" onClick={onClose} title="關閉詩雲"><X size={20} /></button>
@@ -424,6 +425,8 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
                 selectedPoemId={selectedPoem.id}
                 form={form}
                 resetToken={resetToken}
+                archivePoetCount={archiveStats.archivePoets}
+                archivePoemCount={archiveStats.archivePoems}
                 onSelectPoet={selectPoet}
                 onSelectPoem={selectPoem}
               />
@@ -438,7 +441,7 @@ export function FusionPoetryCloud({ open, onClose, accent }: FusionPoetryCloudPr
             <div className="poetry-stage-caption">
               <span><b>{visiblePoets.length.toLocaleString('zh-TW')}</b> 位詩人</span>
               <span><b>{visiblePoems.length.toLocaleString('zh-TW')}</b> 首作品</span>
-              <span>WASD 飛行・拖曳轉向・滾輪調速・點詩星看真作・點虛空撈詩</span>
+              <span>WASD / 方向鍵飛行・拖曳轉向・滾輪調速・點詩星看真作・點虛空撈詩</span>
             </div>
           </main>
 

@@ -10,6 +10,7 @@ import {
 } from '../src/poetry/poetryFavorites.js';
 import { buildPoetryGraph, findPoetPath } from '../src/poetry/poetryGraph.js';
 import { createPoetryLayout } from '../src/poetry/poetryLayout.js';
+import { getPoetryDisplayStats, mergeCorpus } from '../src/poetry/poetryRemoteCorpus.js';
 import { searchPoetry } from '../src/poetry/poetrySearch.js';
 
 test('searches poet names, poem titles, lines, and themes', () => {
@@ -101,4 +102,27 @@ test('resets search constraints when entering the favorites view', () => {
     form: '全部',
     mode: '全部'
   });
+});
+
+test('reports expanded archive totals separately from loaded poem text', () => {
+  const corpus = mergeCorpus(POETS, POEMS, {
+    meta: {
+      source: 'combined public poetry archive',
+      sourceUrl: 'https://example.test/archive',
+      poets: 3000,
+      poemsWithText: 8200,
+      totalAvailablePoems: 335000,
+      edges: 5000
+    },
+    poets: [],
+    poems: [],
+    edges: []
+  });
+
+  const stats = getPoetryDisplayStats(corpus);
+
+  assert.equal(stats.archivePoets, 32657);
+  assert.equal(stats.archivePoems, 933857);
+  assert.equal(stats.loadedPoets, POETS.length);
+  assert.equal(stats.loadedTextPoems, Math.max(POEMS.length, 8200));
 });

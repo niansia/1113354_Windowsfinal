@@ -27,9 +27,9 @@ const maxLevel = (flags: VitalFlag[]): MedicalLevel =>
   );
 
 const summaryFor = (level: MedicalLevel) => {
-  if (level === 'urgent') return '有一項以上數值落在急迫範圍，請儘快尋求專業醫療協助；若有胸痛、呼吸困難、意識改變或中風徵象，請立即急救。';
-  if (level === 'review') return '有數值需要由醫療人員或合格照護者評估，請結合症狀、病史與測量情境判讀。';
-  if (level === 'watch') return '有輕度偏離，建議休息後重新測量並持續觀察趨勢。';
+  if (level === 'urgent') return '目前輸入包含需要立即注意的警示值；若伴隨胸痛、呼吸困難、意識改變或單側無力，請儘快尋求專業醫療協助並立即尋求緊急協助。';
+  if (level === 'review') return '目前有數值建議與醫療人員討論；請搭配症狀、病史、用藥與量測方式一起判斷。';
+  if (level === 'watch') return '目前有數值值得持續觀察；建議在相同條件下重新量測並記錄變化。';
   return '目前輸入的生命徵象落在一般成人常見範圍內，仍需搭配症狀與個人病史判斷。';
 };
 
@@ -37,45 +37,46 @@ export const evaluateVitals = (input: VitalInput): VitalEvaluation => {
   const flags: VitalFlag[] = [];
 
   if (input.temperatureC >= 39 || input.temperatureC < 35) {
-    flags.push(flag('temperatureC', '體溫', formatC(input.temperatureC), 'urgent', '體溫明顯偏離一般範圍，若合併不適、意識改變或免疫低下，應儘快尋求醫療協助。'));
+    flags.push(flag('temperatureC', '體溫', formatC(input.temperatureC), 'urgent', '體溫明顯偏離常見範圍；若狀況急遽變化或伴隨嚴重症狀，請立即求助。'));
   } else if (input.temperatureC >= 38 || input.temperatureC < 36) {
-    flags.push(flag('temperatureC', '體溫', formatC(input.temperatureC), 'watch', '體溫略偏離常見範圍，建議重新測量並觀察是否伴隨其他症狀。'));
+    flags.push(flag('temperatureC', '體溫', formatC(input.temperatureC), 'watch', '體溫需要追蹤；請記錄量測時間、是否服藥與其他症狀。'));
   } else {
     flags.push(flag('temperatureC', '體溫', formatC(input.temperatureC), 'steady', '體溫位於一般成人常見範圍。'));
   }
 
+  const bloodPressure = `${Math.round(input.systolic)}/${Math.round(input.diastolic)} mmHg`;
   if (input.systolic >= 180 || input.diastolic >= 120 || input.systolic < 90) {
-    flags.push(flag('systolic', '血壓', `${Math.round(input.systolic)}/${Math.round(input.diastolic)} mmHg`, 'urgent', '血壓落在需要快速確認的範圍，若合併胸痛、神經症狀、呼吸困難或劇烈頭痛，請立即求助。'));
+    flags.push(flag('systolic', '血壓', bloodPressure, 'urgent', '血壓達警示區間或過低；若有胸痛、神經症狀、昏厥或呼吸困難，請立即求助。'));
   } else if (input.systolic >= 140 || input.diastolic >= 90) {
-    flags.push(flag('systolic', '血壓', `${Math.round(input.systolic)}/${Math.round(input.diastolic)} mmHg`, 'review', '血壓偏高，建議以正確姿勢重測並與醫療人員討論長期趨勢。'));
+    flags.push(flag('systolic', '血壓', bloodPressure, 'review', '血壓偏高，建議記錄多次量測結果並與醫療人員討論。'));
   } else if (input.systolic >= 130 || input.diastolic >= 80) {
-    flags.push(flag('systolic', '血壓', `${Math.round(input.systolic)}/${Math.round(input.diastolic)} mmHg`, 'watch', '血壓略高於理想範圍，適合追蹤生活型態與連續測量紀錄。'));
+    flags.push(flag('systolic', '血壓', bloodPressure, 'watch', '血壓略高，建議留意休息、咖啡因、運動與量測姿勢。'));
   } else {
-    flags.push(flag('systolic', '血壓', `${Math.round(input.systolic)}/${Math.round(input.diastolic)} mmHg`, 'steady', '血壓位於一般成人常見範圍。'));
+    flags.push(flag('systolic', '血壓', bloodPressure, 'steady', '血壓位於一般成人常見範圍。'));
   }
 
   if (input.pulse >= 130 || input.pulse < 40) {
-    flags.push(flag('pulse', '脈搏', formatBpm(input.pulse), 'urgent', '脈搏明顯過快或過慢，若伴隨胸悶、暈厥、呼吸不適或虛弱，應儘快求助。'));
+    flags.push(flag('pulse', '脈搏', formatBpm(input.pulse), 'urgent', '脈搏明顯偏快或偏慢；若伴隨胸悶、暈厥或呼吸困難，請立即求助。'));
   } else if (input.pulse > 100 || input.pulse < 60) {
-    flags.push(flag('pulse', '脈搏', formatBpm(input.pulse), 'watch', '脈搏略偏離靜息常見範圍，運動、壓力、發燒與藥物都可能影響數值。'));
+    flags.push(flag('pulse', '脈搏', formatBpm(input.pulse), 'watch', '脈搏值得追蹤；請記錄活動、焦慮、發燒、用藥與量測情境。'));
   } else {
     flags.push(flag('pulse', '脈搏', formatBpm(input.pulse), 'steady', '脈搏位於一般成人靜息常見範圍。'));
   }
 
   if (input.respiration >= 28 || input.respiration < 10) {
-    flags.push(flag('respiration', '呼吸', formatBpm(input.respiration), 'urgent', '呼吸次數明顯偏離常見範圍，若有喘、胸痛、嘴唇發紫或意識改變，請立即求助。'));
+    flags.push(flag('respiration', '呼吸', formatBpm(input.respiration), 'urgent', '呼吸次數達警示區間；若呼吸困難、嘴唇發紫或意識改變，請立即求助。'));
   } else if (input.respiration > 20) {
-    flags.push(flag('respiration', '呼吸', formatBpm(input.respiration), 'review', '呼吸次數偏快，請結合活動量、發燒、疼痛與呼吸困難感受判讀。'));
+    flags.push(flag('respiration', '呼吸', formatBpm(input.respiration), 'review', '呼吸次數偏快，建議搭配症狀、血氧與活動狀態一起評估。'));
   } else {
     flags.push(flag('respiration', '呼吸', formatBpm(input.respiration), 'steady', '呼吸次數位於一般成人常見範圍。'));
   }
 
   if (input.spo2 < 92) {
-    flags.push(flag('spo2', '血氧', formatPercent(input.spo2), 'urgent', '血氧偏低，若數值可靠或伴隨呼吸不適，應儘快尋求專業醫療協助。'));
+    flags.push(flag('spo2', '血氧', formatPercent(input.spo2), 'urgent', '血氧偏低可能代表氧合不足；請確認量測方式，若持續偏低或不適請立即求助。'));
   } else if (input.spo2 < 95) {
-    flags.push(flag('spo2', '血氧', formatPercent(input.spo2), 'review', '血氧略低，請確認手指溫度、指甲油、感測器位置並視情況諮詢醫療人員。'));
+    flags.push(flag('spo2', '血氧', formatPercent(input.spo2), 'review', '血氧略低，建議重新量測並搭配呼吸症狀與既往病史判斷。'));
   } else {
-    flags.push(flag('spo2', '血氧', formatPercent(input.spo2), 'steady', '血氧位於一般常見範圍。'));
+    flags.push(flag('spo2', '血氧', formatPercent(input.spo2), 'steady', '血氧位於一般成人常見範圍。'));
   }
 
   const overallLevel = maxLevel(flags);
@@ -85,4 +86,3 @@ export const evaluateVitals = (input: VitalInput): VitalEvaluation => {
     flags
   };
 };
-

@@ -17,6 +17,8 @@ interface PoetryUniverseCanvasProps {
   selectedPoemId: string;
   form: PoetryForm | '全部';
   resetToken: number;
+  archivePoetCount: number;
+  archivePoemCount: number;
   onSelectPoet: (poetId: string) => void;
   onSelectPoem: (poetId: string, poemId: string) => void;
 }
@@ -133,7 +135,7 @@ const POINT_VERT = /* glsl */ `
     vCol = aColor; vGlow = aGlow;
     vec4 mv = modelViewMatrix * vec4(position, 1.0);
     float tw = 0.82 + 0.18 * sin(uTime * 1.4 + position.x * 0.4 + position.y * 0.7);
-    gl_PointSize = clamp(aSize * uScale * uPixelRatio * tw * (150.0 / max(0.1, -mv.z)), 1.0, 46.0);
+    gl_PointSize = clamp(aSize * uScale * uPixelRatio * tw * (118.0 / max(0.1, -mv.z)), 0.9, 30.0);
     gl_Position = projectionMatrix * mv;
   }
 `;
@@ -145,10 +147,10 @@ const POINT_FRAG = /* glsl */ `
     vec2 d = gl_PointCoord - 0.5;
     float r2 = dot(d, d);
     float core = exp(-r2 * 11.0);
-    float halo = exp(-r2 * 3.2) * 0.45;
-    float a = core + halo;
+    float halo = exp(-r2 * 3.2) * 0.16;
+    float a = (core + halo) * 0.48;
     if (a < 0.01) discard;
-    gl_FragColor = vec4(vCol * (0.45 + vGlow * 1.5), a);
+    gl_FragColor = vec4(vCol * (0.28 + vGlow * 0.58), a);
   }
 `;
 
@@ -197,7 +199,7 @@ function PoemStars({
       col[i * 3 + 1] = node.color.g;
       col[i * 3 + 2] = node.color.b;
       size[i] = 1.0 + rnd() * 0.6;
-      glow[i] = 0.35 + rnd() * 0.35;
+      glow[i] = 0.28 + rnd() * 0.28;
       meta.push({ poemId: poem.id, poetId: poem.poetId });
       positions.push(new THREE.Vector3(x, y, z));
     });
@@ -210,7 +212,7 @@ function PoemStars({
   }, [poems, byId]);
 
   const uniforms = useMemo(
-    () => ({ uTime: { value: 0 }, uPixelRatio: { value: pixelRatio }, uScale: { value: 0.85 } }),
+    () => ({ uTime: { value: 0 }, uPixelRatio: { value: pixelRatio }, uScale: { value: 0.68 } }),
     [pixelRatio]
   );
   useFrame((_, dt) => {
@@ -271,8 +273,8 @@ function PoetCores({
       col[i * 3] = node.color.r;
       col[i * 3 + 1] = node.color.g;
       col[i * 3 + 2] = node.color.b;
-      size[i] = clamp(1.6 + Math.sqrt(node.count) * 0.14, 1.6, 7.5);
-      glow[i] = clamp(0.6 + Math.log10(node.count + 10) * 0.5, 0.6, 2.0);
+      size[i] = clamp(1.4 + Math.sqrt(node.count) * 0.09, 1.4, 5.6);
+      glow[i] = clamp(0.45 + Math.log10(node.count + 10) * 0.28, 0.45, 1.25);
     });
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -282,7 +284,7 @@ function PoetCores({
     return g;
   }, [scene]);
   const uniforms = useMemo(
-    () => ({ uTime: { value: 0 }, uPixelRatio: { value: pixelRatio }, uScale: { value: 1.2 } }),
+    () => ({ uTime: { value: 0 }, uPixelRatio: { value: pixelRatio }, uScale: { value: 0.82 } }),
     [pixelRatio]
   );
   useFrame((_, dt) => {
@@ -330,10 +332,15 @@ const DUST_VERT = /* glsl */ `
     float jt = uTime*0.04 + aSeed*30.0;
     p += vec3(sin(jt), cos(jt*1.2), sin(jt*0.8)) * 1.2;
     vec4 mv = modelViewMatrix * vec4(p,1.0);
-    gl_PointSize = clamp(uPixelRatio * (34.0/max(0.1,-mv.z)) * (0.5+h(aSeed)*1.0), 1.0, 5.0);
+    gl_PointSize = clamp(uPixelRatio * (20.0/max(0.1,-mv.z)) * (0.3+h(aSeed)*0.58), 0.55, 2.4);
     gl_Position = projectionMatrix * mv;
-    vA = 0.10 + 0.4*h(aSeed*3.3) * (0.5+0.5*sin(uTime*0.7+aSeed*40.0));
-    vCol = h(aSeed*7.1) > 0.62 ? vec3(1.0,0.84,0.6) : vec3(0.68,0.84,1.0);
+    vA = 0.02 + 0.09*h(aSeed*3.3) * (0.5+0.5*sin(uTime*0.7+aSeed*40.0));
+    float c = h(aSeed*7.1);
+    vCol = c > 0.82 ? vec3(1.0,0.55,0.76) :
+           c > 0.60 ? vec3(1.0,0.84,0.45) :
+           c > 0.38 ? vec3(0.45,1.0,0.74) :
+           c > 0.16 ? vec3(0.58,0.76,1.0) :
+                      vec3(1.0,0.96,0.86);
   }
 `;
 const DUST_FRAG = /* glsl */ `
@@ -428,7 +435,7 @@ function NebulaGas({ scene }: { scene: SceneData }) {
             map={tex}
             color={b.color}
             transparent
-            opacity={0.15}
+            opacity={0.045}
             depthTest={false}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
@@ -454,8 +461,143 @@ function RelationWeb({ scene, edges }: { scene: SceneData; edges: PoetryGraph['e
   }, [scene, edges]);
   return (
     <lineSegments geometry={geometry} frustumCulled={false}>
-      <lineBasicMaterial color="#8a7ad0" transparent opacity={0.07} depthTest={false} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <lineBasicMaterial color="#d9b96c" transparent opacity={0.045} depthTest={false} depthWrite={false} blending={THREE.NormalBlending} />
     </lineSegments>
+  );
+}
+
+function ArchiveColumns({
+  scene,
+  selectedId,
+  archivePoetCount
+}: {
+  scene: SceneData;
+  selectedId: string;
+  archivePoetCount: number;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  const geometry = useMemo(() => {
+    const node = scene.byId.get(selectedId) ?? scene.poetNodes[0];
+    const center = node?.pos ?? new THREE.Vector3();
+    const count = Math.round(clamp(Math.sqrt(archivePoetCount) * 1.75, 140, 320));
+    const pts = new Float32Array(count * 6);
+    const rnd = rngFrom(hash(`${selectedId}:archive-columns:${archivePoetCount}`));
+    for (let i = 0; i < count; i += 1) {
+      const theta = i * GOLDEN + rnd() * 0.4;
+      const radius = 4 + Math.pow(rnd(), 0.58) * WORLD * 0.9;
+      const lean = (rnd() - 0.5) * 6;
+      const x = center.x + Math.cos(theta) * radius;
+      const z = center.z + Math.sin(theta) * radius;
+      const y0 = center.y - WORLD * (1.1 + rnd() * 0.55);
+      const y1 = center.y + WORLD * (1.25 + rnd() * 0.75);
+      pts[i * 6] = x;
+      pts[i * 6 + 1] = y0;
+      pts[i * 6 + 2] = z;
+      pts[i * 6 + 3] = x + Math.cos(theta + 0.7) * lean;
+      pts[i * 6 + 4] = y1;
+      pts[i * 6 + 5] = z + Math.sin(theta + 0.7) * lean;
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pts, 3));
+    g.boundingSphere = new THREE.Sphere(center, WORLD * 3.2);
+    return g;
+  }, [archivePoetCount, scene, selectedId]);
+
+  useFrame((state) => {
+    if (!groupRef.current) return;
+    groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.08) * 0.045;
+  });
+
+  return (
+    <group ref={groupRef}>
+      <lineSegments geometry={geometry} frustumCulled={false}>
+        <lineBasicMaterial color="#ffd36a" transparent opacity={0.045} depthTest={false} depthWrite={false} blending={THREE.NormalBlending} />
+      </lineSegments>
+    </group>
+  );
+}
+
+function ArchiveLattice({
+  scene,
+  selectedId,
+  archivePoemCount
+}: {
+  scene: SceneData;
+  selectedId: string;
+  archivePoemCount: number;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  const geometry = useMemo(() => {
+    const node = scene.byId.get(selectedId) ?? scene.poetNodes[0];
+    const center = node?.pos ?? new THREE.Vector3();
+    const rects = Math.round(clamp(Math.sqrt(archivePoemCount) * 0.09, 58, 110));
+    const pts = new Float32Array(rects * 24);
+    const rnd = rngFrom(hash(`${selectedId}:archive-lattice:${archivePoemCount}`));
+    for (let i = 0; i < rects; i += 1) {
+      const theta = i * GOLDEN;
+      const radius = WORLD * (0.38 + rnd() * 1.05);
+      const cx = center.x + Math.cos(theta) * radius;
+      const cy = center.y + (rnd() - 0.5) * WORLD * 1.9;
+      const cz = center.z + Math.sin(theta) * radius;
+      const w = WORLD * (0.16 + rnd() * 0.5);
+      const h = WORLD * (0.12 + rnd() * 0.42);
+      const offset = i * 24;
+      const corners = [
+        [cx - w, cy, cz - h],
+        [cx + w, cy, cz - h],
+        [cx + w, cy, cz + h],
+        [cx - w, cy, cz + h]
+      ];
+      const segs = [0, 1, 1, 2, 2, 3, 3, 0];
+      for (let s = 0; s < segs.length; s += 1) {
+        const p = corners[segs[s]];
+        pts[offset + s * 3] = p[0];
+        pts[offset + s * 3 + 1] = p[1];
+        pts[offset + s * 3 + 2] = p[2];
+      }
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pts, 3));
+    g.boundingSphere = new THREE.Sphere(center, WORLD * 4);
+    return g;
+  }, [archivePoemCount, scene, selectedId]);
+
+  useFrame((state) => {
+    if (!groupRef.current) return;
+    groupRef.current.rotation.y = state.clock.elapsedTime * 0.018;
+    groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.05) * 0.035;
+  });
+
+  return (
+    <group ref={groupRef}>
+      <lineSegments geometry={geometry} frustumCulled={false}>
+        <lineBasicMaterial color="#caa24d" transparent opacity={0.035} depthTest={false} depthWrite={false} blending={THREE.NormalBlending} />
+      </lineSegments>
+    </group>
+  );
+}
+
+function SelectedBeacon({ scene, selectedId }: { scene: SceneData; selectedId: string }) {
+  const node = scene.byId.get(selectedId);
+  const haloRef = useRef<THREE.Mesh>(null);
+  useFrame((state) => {
+    if (!haloRef.current) return;
+    const pulse = 1 + Math.sin(state.clock.elapsedTime * 3.5) * 0.1;
+    haloRef.current.scale.setScalar(pulse);
+  });
+  if (!node) return null;
+  return (
+    <group position={node.pos}>
+      <pointLight color="#ffd36c" intensity={0.28} distance={58} decay={1.9} />
+      <mesh>
+        <sphereGeometry args={[0.86, 32, 18]} />
+        <meshBasicMaterial color="#fff2b8" transparent opacity={0.46} depthTest={false} />
+      </mesh>
+      <mesh ref={haloRef}>
+        <sphereGeometry args={[5.8, 40, 20]} />
+        <meshBasicMaterial color="#ffd36c" transparent opacity={0.025} depthTest={false} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </group>
   );
 }
 
@@ -479,7 +621,7 @@ function SelectedAura({ scene, edges, selectedId }: { scene: SceneData; edges: P
   }, [scene, edges, selectedId, node]);
   useFrame((state) => {
     const t = state.clock.elapsedTime;
-    if (lineRef.current) (lineRef.current.material as THREE.LineBasicMaterial).opacity = 0.45 + 0.25 * Math.sin(t * 2.5);
+    if (lineRef.current) (lineRef.current.material as THREE.LineBasicMaterial).opacity = 0.08 + 0.035 * Math.sin(t * 2.5);
     if (ringRef.current) {
       ringRef.current.scale.setScalar(1 + 0.12 * Math.sin(t * 3));
       ringRef.current.lookAt(state.camera.position);
@@ -489,11 +631,11 @@ function SelectedAura({ scene, edges, selectedId }: { scene: SceneData; edges: P
   return (
     <group>
       <lineSegments ref={lineRef} geometry={lineGeo} frustumCulled={false}>
-        <lineBasicMaterial color="#ffcf6e" transparent opacity={0.55} depthTest={false} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <lineBasicMaterial color="#ffcf6e" transparent opacity={0.08} depthTest={false} depthWrite={false} blending={THREE.NormalBlending} />
       </lineSegments>
       <mesh ref={ringRef} position={node.pos}>
         <ringGeometry args={[3.2, 3.8, 48]} />
-        <meshBasicMaterial color="#fff3cf" transparent opacity={0.85} side={THREE.DoubleSide} depthTest={false} />
+        <meshBasicMaterial color="#fff3cf" transparent opacity={0.34} side={THREE.DoubleSide} depthTest={false} />
       </mesh>
     </group>
   );
@@ -569,16 +711,24 @@ function Pilot({
 
   useEffect(() => {
     const dom = gl.domElement;
+    const flightKeys = new Set(['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'e', 'q', ' ', 'shift']);
     const isTyping = () => {
       const t = document.activeElement?.tagName;
       return t === 'INPUT' || t === 'TEXTAREA';
     };
     const kd = (e: KeyboardEvent) => {
       if (isTyping()) return;
-      keys.current[e.key.toLowerCase()] = true;
+      const key = e.key.toLowerCase();
+      if (flightKeys.has(key)) {
+        e.preventDefault();
+        fly.current = null;
+      }
+      keys.current[key] = true;
     };
     const ku = (e: KeyboardEvent) => {
-      keys.current[e.key.toLowerCase()] = false;
+      const key = e.key.toLowerCase();
+      if (flightKeys.has(key)) e.preventDefault();
+      keys.current[key] = false;
     };
     const pd = (e: PointerEvent) => {
       drag.current = { x: e.clientX, y: e.clientY };
@@ -645,7 +795,7 @@ function Pilot({
       }
     }
     if (speedLabelRef.current) {
-      speedLabelRef.current.textContent = `速度 ${Math.round(speed.current)} 單位/秒`;
+      speedLabelRef.current.textContent = `速度 ×${(speed.current / 70).toFixed(2)} · ${Math.round(speed.current)} 單位/秒`;
     }
   });
 
@@ -658,6 +808,8 @@ function Scene(props: {
   edges: PoetryGraph['edges'];
   selectedId: string;
   hoveredId: string;
+  archivePoetCount: number;
+  archivePoemCount: number;
   apiRef: React.MutableRefObject<PilotApi>;
   speedLabelRef: React.RefObject<HTMLSpanElement | null>;
   onSelectPoet: (id: string, pos: THREE.Vector3) => void;
@@ -665,20 +817,24 @@ function Scene(props: {
   onHover: (id: string) => void;
 }) {
   const { scene, poems, edges, selectedId, hoveredId } = props;
+  const dustCount = Math.round(clamp(Math.sqrt(props.archivePoemCount) * 34, 26000, 48000));
   return (
     <>
       <color attach="background" args={['#04030a']} />
       <fog attach="fog" args={['#04030a', WORLD * 1.6, WORLD * 4.6]} />
       <NebulaGas scene={scene} />
-      <VoidField />
+      <VoidField count={dustCount} />
+      <ArchiveLattice scene={scene} selectedId={selectedId} archivePoemCount={props.archivePoemCount} />
+      <ArchiveColumns scene={scene} selectedId={selectedId} archivePoetCount={props.archivePoetCount} />
       <RelationWeb scene={scene} edges={edges} />
       <PoemStars poems={poems} byId={scene.byId} onSelectPoem={props.onSelectPoem} onHover={props.onHover} />
       <PoetCores scene={scene} onSelectPoet={props.onSelectPoet} onHover={props.onHover} />
+      <SelectedBeacon scene={scene} selectedId={selectedId} />
       <SelectedAura scene={scene} edges={edges} selectedId={selectedId} />
       <Labels scene={scene} selectedId={selectedId} hoveredId={hoveredId} />
       <Pilot apiRef={props.apiRef} speedLabelRef={props.speedLabelRef} />
       <EffectComposer multisampling={0} enableNormalPass={false}>
-        <Bloom intensity={0.85} luminanceThreshold={0.5} luminanceSmoothing={0.5} mipmapBlur kernelSize={KernelSize.LARGE} />
+        <Bloom intensity={0.16} luminanceThreshold={0.82} luminanceSmoothing={0.52} mipmapBlur kernelSize={KernelSize.MEDIUM} />
       </EffectComposer>
     </>
   );
@@ -692,6 +848,8 @@ export function PoetryUniverseCanvas({
   selectedPoemId,
   form,
   resetToken,
+  archivePoetCount,
+  archivePoemCount,
   onSelectPoet,
   onSelectPoem
 }: PoetryUniverseCanvasProps) {
@@ -713,7 +871,7 @@ export function PoetryUniverseCanvas({
   // fly to the selected poet whenever it changes from outside (panel / route)
   useEffect(() => {
     const node = scene.byId.get(selectedPoetId);
-    if (node) apiRef.current.flyTo(node.pos, 30);
+    if (node) apiRef.current.flyTo(node.pos, 74);
   }, [selectedPoetId, scene]);
   useEffect(() => {
     if (resetToken > 0) apiRef.current.reset();
@@ -762,18 +920,20 @@ export function PoetryUniverseCanvas({
           edges={edges}
           selectedId={selectedPoetId}
           hoveredId={hoveredId}
+          archivePoetCount={archivePoetCount}
+          archivePoemCount={archivePoemCount}
           apiRef={apiRef}
           speedLabelRef={speedLabelRef}
           onHover={setHoveredId}
           onSelectPoet={(id, pos) => {
             handledRef.current = performance.now();
             onSelectPoet(id);
-            apiRef.current.flyTo(pos, 26);
+            apiRef.current.flyTo(pos, 68);
           }}
           onSelectPoem={(poetId, poemId, pos) => {
             handledRef.current = performance.now();
             onSelectPoem(poetId, poemId);
-            apiRef.current.flyTo(pos, 12);
+            apiRef.current.flyTo(pos, 34);
           }}
         />
       </Canvas>
@@ -788,7 +948,7 @@ export function PoetryUniverseCanvas({
         <button type="button" title="後退" onClick={() => apiRef.current.dolly(-22)}><Minus size={18} /></button>
       </div>
 
-      <div className="poetry-flight-hud"><span ref={speedLabelRef}>速度 70 單位/秒</span></div>
+      <div className="poetry-flight-hud"><span ref={speedLabelRef}>速度 ×1.00 · 70 單位/秒</span></div>
 
       {fish && (
         <div className="poetry-fish-card">

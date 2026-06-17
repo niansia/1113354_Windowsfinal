@@ -10,37 +10,37 @@ export const IMAGING_MODALITIES: ImagingModality[] = [
   {
     id: 'xray',
     title: 'X 光',
-    bestFor: ['骨骼', '胸腔初步評估', '牙科與簡易定位'],
-    notes: ['速度快、常作為第一線影像工具。', '使用少量放射線，懷孕或可能懷孕時需先告知。'],
-    prepQuestions: ['是否懷孕或可能懷孕？', '檢查部位是否有金屬飾品或外物？']
+    bestFor: ['骨骼與關節', '胸部初步檢查', '牙科與急診快速評估'],
+    notes: ['X 光通常時間短、輻射劑量較低，但仍應主動告知懷孕可能。', '檢查前可能需要移除金屬飾品或含金屬衣物。'],
+    prepQuestions: ['是否懷孕或可能懷孕？', '檢查部位是否有金屬物、石膏或固定器？']
   },
   {
     id: 'ct',
     title: 'CT',
-    bestFor: ['急症評估', '頭胸腹影像', '血管與外傷'],
-    notes: ['CT 使用放射線，影像速度快且解析度高。', '部分檢查會使用含碘顯影劑，需要確認腎功能與過敏史。'],
-    prepQuestions: ['是否懷孕或可能懷孕？', '是否有腎臟疾病或近期腎功能異常？', '是否曾對含碘顯影劑過敏？']
+    bestFor: ['外傷與急症', '胸腹部結構', '血管或腫瘤評估'],
+    notes: ['CT 解析度高，可能使用放射線、游離輻射與含碘造影劑。', '若安排造影，請確認腎功能、過敏史與禁食指示。'],
+    prepQuestions: ['是否懷孕或可能懷孕？', '是否有腎臟病史或近期腎功能異常？', '是否曾對含碘造影劑過敏？']
   },
   {
     id: 'mri',
     title: 'MRI',
-    bestFor: ['腦神經', '肌肉骨骼軟組織', '脊椎與關節'],
-    notes: ['MRI 使用強磁場，不使用游離輻射。', '金屬植入物、心律調節器或體內異物需要檢查前確認安全性。'],
-    prepQuestions: ['是否有金屬植入物、心律調節器、人工耳蝸或體內金屬異物？', '是否容易幽閉恐懼？', '是否需要顯影劑且有腎臟病史？']
+    bestFor: ['腦部與神經', '肌肉骨骼軟組織', '脊椎與關節'],
+    notes: ['MRI 使用強磁場，金屬植入物與部分電子裝置需要事前確認。', '檢查時間較長，幽閉恐懼或疼痛姿勢需提前告知。'],
+    prepQuestions: ['是否有心律調節器、人工耳蝸、金屬植入物或彈片？', '是否有幽閉恐懼或無法長時間平躺？', '是否需要注射含釓造影劑？']
   },
   {
     id: 'ultrasound',
     title: '超音波',
-    bestFor: ['腹部', '婦產科', '血管', '淺層軟組織'],
-    notes: ['超音波使用聲波，不使用游離輻射。', '部分腹部檢查可能需要禁食或脹尿。'],
-    prepQuestions: ['檢查前是否需要禁食？', '是否需要喝水並保留尿液？']
+    bestFor: ['腹部器官', '婦產科', '血流與血管', '肌腱與軟組織'],
+    notes: ['超音波不使用游離輻射，常用於即時動態觀察。', '腹部檢查可能需要禁食，泌尿或婦科檢查可能需要憋尿。'],
+    prepQuestions: ['檢查前是否需要禁食或喝水憋尿？', '檢查部位是否有敷料、傷口或疼痛限制？']
   },
   {
     id: 'nuclear',
     title: '核醫',
-    bestFor: ['功能性代謝影像', '骨掃描', '甲狀腺與心肌灌流'],
-    notes: ['核醫會使用少量放射性示蹤劑，重點在功能與代謝資訊。', '懷孕、哺乳或照顧嬰幼兒時需事先告知。'],
-    prepQuestions: ['是否懷孕、可能懷孕或正在哺乳？', '檢查後是否需要避免近距離接觸嬰幼兒一段時間？']
+    bestFor: ['器官功能評估', '骨骼掃描', '甲狀腺或心肌灌流'],
+    notes: ['核醫檢查使用少量放射性示蹤劑，可能需要等待藥物分布後再掃描。', '檢查後依指示補充水分並注意與孕婦、幼兒接觸建議。'],
+    prepQuestions: ['是否懷孕、哺乳或可能懷孕？', '檢查前是否需要停用特定藥物或調整飲食？']
   }
 ];
 
@@ -65,19 +65,19 @@ export const getImagingPrep = (id: ImagingModalityId, profile: ImagingProfile): 
 
   if ((id === 'xray' || id === 'ct' || id === 'nuclear') && profile.pregnant) {
     level = higher(level, 'review');
-    questions.push('已標記懷孕或可能懷孕，檢查前請務必告知醫療團隊。');
+    questions.push('請主動告知懷孕或可能懷孕，讓醫療團隊評估檢查必要性與防護方式。');
   }
   if (id === 'mri' && profile.hasMetalImplant) {
     level = higher(level, 'review');
-    questions.push('已標記金屬或植入物，MRI 前需要由影像團隊確認相容性。');
+    questions.push('請提供植入物型號或手術資料，確認 MRI 相容性後再安排檢查。');
   }
   if ((id === 'ct' || id === 'mri') && profile.kidneyDisease) {
     level = higher(level, 'review');
-    questions.push('已標記腎臟病史，若使用顯影劑請先確認腎功能與風險。');
+    questions.push('若需造影，請詢問是否需要近期腎功能檢驗或調整用藥。');
   }
   if (id === 'ct' && profile.contrastAllergy) {
     level = higher(level, 'review');
-    questions.push('曾有含碘顯影劑過敏或嚴重過敏史，請提前告知。');
+    questions.push('曾有造影劑過敏請提前告知，醫療團隊可能調整檢查或預防處置。');
   }
 
   return {
@@ -87,4 +87,3 @@ export const getImagingPrep = (id: ImagingModalityId, profile: ImagingProfile): 
     notes
   };
 };
-

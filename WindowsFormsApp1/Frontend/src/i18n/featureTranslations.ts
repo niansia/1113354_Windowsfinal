@@ -23,7 +23,29 @@ export const FEATURE_TRANSLATIONS: Record<string, Entry> = {
   '生命徵象': entry('生命体征', 'Vital signs', 'バイタルサイン', '활력 징후'),
   '就醫準備': entry('就医准备', 'Visit prep', '受診準備', '진료 준비'),
   '健康導航': entry('健康导航', 'Health navigator', '健康ナビゲーター', '건강 내비게이터'),
+  '健康行動工作台': entry('健康行动工作台', 'Health action workspace', '健康アクションワークスペース', '건강 실행 작업대'),
+  '把生命徵象、影像檢查與門診準備整理成可執行的健康行動。': entry(
+    '把生命体征、影像检查与门诊准备整理成可执行的健康行动。',
+    'Turn vital signs, imaging prep, and clinic preparation into actionable health tasks.',
+    'バイタル、画像検査準備、外来準備を実行できる健康アクションに整理します。',
+    '활력 징후, 영상 검사 준비, 외래 준비를 실행 가능한 건강 작업으로 정리합니다.'
+  ),
+  '健康行動': entry('健康行动', 'Health actions', '健康アクション', '건강 실행'),
+  SignalForge: entry('SignalForge', 'SignalForge', 'SignalForge', 'SignalForge'),
+  '通訊與硬體實驗場': entry('通信与硬件实验场', 'Communication and hardware lab', '通信とハードウェア実験場', '통신 및 하드웨어 실험장'),
+  '把訊號、位元、處理器與物理通道整合成可操作的系統實驗。': entry(
+    '把信号、位、处理器与物理通道整合成可操作的系统实验。',
+    'Combine signals, bits, processors, and physical channels into an operable systems lab.',
+    '信号、ビット、プロセッサ、物理チャネルを操作可能なシステム実験に統合します。',
+    '신호, 비트, 프로세서, 물리 채널을 조작 가능한 시스템 실험으로 통합합니다.'
+  ),
+  '資料鏈路': entry('数据链路', 'Data link', 'データリンク', '데이터 링크'),
+  '處理器': entry('处理器', 'Processor', 'プロセッサ', '프로세서'),
+  '物理通道': entry('物理通道', 'Physical channel', '物理チャネル', '물리 채널'),
+  '封包分析': entry('封包分析', 'Packet analysis', 'パケット分析', '패킷 분석'),
+  '系統實驗': entry('系统实验', 'Systems lab', 'システム実験', '시스템 실험'),
   '20 個應用程式': entry('20 个应用程序', '20 applications', '20 個のアプリ', '앱 20개'),
+  '21 個應用程式': entry('21 个应用程序', '21 applications', '21 個のアプリ', '앱 21개'),
 
   // App catalog and App Center
   '詩雲': entry('诗云', 'Poetry Cloud', '詩雲', '시운'),

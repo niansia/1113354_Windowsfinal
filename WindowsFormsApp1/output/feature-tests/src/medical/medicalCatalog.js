@@ -24,64 +24,64 @@ exports.MEDICAL_SOURCES = [
         id: 'cdc-emergency',
         label: 'CDC',
         url: 'https://www.cdc.gov/',
-        scope: '急症警示與公共衛生教育'
+        scope: '公共衛生與緊急照護資訊'
     }
 ];
 exports.MEDICAL_COURSES = [
     {
-        id: 'medicine-health',
-        title: '醫學與健康',
+        id: 'health-action-overview',
+        title: '健康行動總覽',
         track: 'health',
         level: 'foundation',
-        summary: '用日常語言理解睡眠、營養、感染預防、生命徵象與就醫準備。',
-        modules: ['健康素養', '生命徵象', '感染預防', '就醫溝通'],
-        skills: ['整理症狀', '讀懂檢查前說明', '判斷何時需要專業協助'],
-        minutes: 36,
+        summary: '把睡眠、飲食、活動、用藥與生命徵象整理成今天可執行的健康摘要。',
+        modules: ['生命徵象整理', '生活型態紀錄', '感染預防', '風險提醒'],
+        skills: ['建立每日健康摘要', '辨識需要追蹤的變化', '把症狀轉成可溝通的紀錄'],
+        minutes: 12,
         sourceIds: ['medlineplus-vitals', 'who-hand-hygiene']
     },
     {
-        id: 'medical-imaging-1',
-        title: '醫學影像概論（一）',
+        id: 'imaging-readiness',
+        title: '影像檢查準備',
         track: 'imaging',
         level: 'foundation',
-        summary: '建立 X 光、超音波、CT、MRI 的基本概念與檢查前注意事項。',
-        modules: ['X 光', '超音波', 'CT', 'MRI', '安全問答'],
-        skills: ['比較影像 modality', '理解輻射與非輻射檢查', '準備檢查前問題'],
-        minutes: 42,
+        summary: '依檢查型態整理安全問題、禁食提醒、攜帶資料與檢查前溝通重點。',
+        modules: ['檢查類型比對', '安全問答', '造影劑提醒', '檢查前清單'],
+        skills: ['確認影像檢查適合情境', '整理造影與金屬植入風險', '準備檢查前要問的問題'],
+        minutes: 15,
         sourceIds: ['radiologyinfo']
     },
     {
-        id: 'medical-imaging-2',
-        title: '醫學影像概論（二）',
-        track: 'imaging',
-        level: 'intermediate',
-        summary: '延伸到核醫、顯影劑、影像品質、臨床問題與檢查限制。',
-        modules: ['核醫', '顯影劑', '影像品質', '禁忌與風險溝通'],
-        skills: ['提出安全問題', '整理檢查史', '辨識需要技師或醫師確認的情境'],
-        minutes: 48,
-        sourceIds: ['radiologyinfo']
+        id: 'visit-brief',
+        title: '門診溝通助手',
+        track: 'medicine',
+        level: 'foundation',
+        summary: '把症狀時間線、目前用藥、過敏史與想問的問題收束成清楚的看診摘要。',
+        modules: ['症狀時間線', '用藥與過敏', '問題清單', '回診追蹤'],
+        skills: ['用精簡語句描述症狀', '整理檢查報告與影像資料', '判斷何時需要專業協助'],
+        minutes: 10,
+        sourceIds: ['medlineplus-vitals', 'radiologyinfo']
     },
     {
-        id: 'biomedical-engineering-2',
-        title: '醫學工程概論（二）',
+        id: 'device-safety',
+        title: '醫療設備安全',
         track: 'engineering',
         level: 'intermediate',
-        summary: '從感測器、訊號、醫材安全與人因設計理解醫療科技。',
-        modules: ['生理訊號', '感測器', '醫材安全', '人因工程'],
-        skills: ['讀取感測資料', '理解假警報', '設計更友善的醫療介面'],
-        minutes: 45,
+        summary: '把血壓計、血氧機、穿戴感測與影像設備的量測限制整理成使用前檢查。',
+        modules: ['感測器限制', '量測誤差', '資料可信度', '設備安全'],
+        skills: ['辨識量測值可能失真的情境', '建立重測與校準習慣', '理解設備資料不能單獨診斷'],
+        minutes: 14,
         sourceIds: ['medlineplus-vitals']
     },
     {
-        id: 'medicine-intro',
-        title: '醫學概論',
+        id: 'urgent-signal-check',
+        title: '急症警示辨識',
         track: 'medicine',
-        level: 'foundation',
-        summary: '從病史、身體檢查、檢驗、影像與共同決策理解醫療流程。',
-        modules: ['病史', '身體檢查', '檢驗與影像', '醫病溝通'],
-        skills: ['準備問題清單', '理解檢查目的', '記錄追蹤事項'],
-        minutes: 40,
-        sourceIds: ['medlineplus-vitals', 'radiologyinfo']
+        level: 'intermediate',
+        summary: '把胸痛、呼吸困難、單側無力、意識改變與低血氧等警示整理成求助判斷。',
+        modules: ['警示症狀', '生命徵象門檻', '緊急求助', '照護交接'],
+        skills: ['辨識不可等待的狀況', '準備給急救或醫療人員的關鍵資訊', '避免把教育工具當成診斷結果'],
+        minutes: 8,
+        sourceIds: ['cdc-emergency', 'medlineplus-vitals']
     }
 ];
 const normalize = (value) => value.normalize('NFKC').toLocaleLowerCase('zh-Hant').replace(/\s+/g, '');

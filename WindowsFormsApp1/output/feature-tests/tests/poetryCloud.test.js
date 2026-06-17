@@ -10,6 +10,7 @@ const poetryAnalysis_js_1 = require("../src/poetry/poetryAnalysis.js");
 const poetryFavorites_js_1 = require("../src/poetry/poetryFavorites.js");
 const poetryGraph_js_1 = require("../src/poetry/poetryGraph.js");
 const poetryLayout_js_1 = require("../src/poetry/poetryLayout.js");
+const poetryRemoteCorpus_js_1 = require("../src/poetry/poetryRemoteCorpus.js");
 const poetrySearch_js_1 = require("../src/poetry/poetrySearch.js");
 (0, node_test_1.default)('searches poet names, poem titles, lines, and themes', () => {
     const result = (0, poetrySearch_js_1.searchPoetry)(poetryCorpus_js_1.POETS, poetryCorpus_js_1.POEMS, {
@@ -85,4 +86,24 @@ const poetrySearch_js_1 = require("../src/poetry/poetrySearch.js");
         form: '全部',
         mode: '全部'
     });
+});
+(0, node_test_1.default)('reports expanded archive totals separately from loaded poem text', () => {
+    const corpus = (0, poetryRemoteCorpus_js_1.mergeCorpus)(poetryCorpus_js_1.POETS, poetryCorpus_js_1.POEMS, {
+        meta: {
+            source: 'combined public poetry archive',
+            sourceUrl: 'https://example.test/archive',
+            poets: 3000,
+            poemsWithText: 8200,
+            totalAvailablePoems: 335000,
+            edges: 5000
+        },
+        poets: [],
+        poems: [],
+        edges: []
+    });
+    const stats = (0, poetryRemoteCorpus_js_1.getPoetryDisplayStats)(corpus);
+    strict_1.default.equal(stats.archivePoets, 32657);
+    strict_1.default.equal(stats.archivePoems, 933857);
+    strict_1.default.equal(stats.loadedPoets, poetryCorpus_js_1.POETS.length);
+    strict_1.default.equal(stats.loadedTextPoems, Math.max(poetryCorpus_js_1.POEMS.length, 8200));
 });

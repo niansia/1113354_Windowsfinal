@@ -7,15 +7,15 @@ import { getImagingPrep } from '../src/medical/medicalImaging.js';
 import { MEDICAL_TRANSLATIONS } from '../src/medical/medicalText.js';
 import { evaluateVitals } from '../src/medical/medicalVitals.js';
 
-test('organizes the requested medical course areas into a searchable curriculum', () => {
+test('presents integrated health workspaces instead of course titles', () => {
   const titles = MEDICAL_COURSES.map((course) => course.title);
+  const retiredCourseTitles = ['醫學與健康', '醫學影像概論（一）', '醫學影像概論（二）', '醫學工程概論（二）', '醫學概論'];
 
-  assert.ok(titles.includes('醫學與健康'));
-  assert.ok(titles.includes('醫學影像概論（一）'));
-  assert.ok(titles.includes('醫學影像概論（二）'));
-  assert.ok(titles.includes('醫學工程概論（二）'));
-  assert.ok(titles.includes('醫學概論'));
-  assert.ok(filterMedicalCourses('影像', 'imaging').every((course) => course.track === 'imaging'));
+  assert.equal(titles.some((title) => retiredCourseTitles.includes(title)), false);
+  assert.ok(titles.includes('健康行動總覽'));
+  assert.ok(titles.includes('影像檢查準備'));
+  assert.ok(titles.includes('門診溝通助手'));
+  assert.ok(filterMedicalCourses('影像準備', 'imaging').every((course) => course.track === 'imaging'));
 });
 
 test('evaluates vital signs conservatively without pretending to diagnose', () => {
@@ -54,7 +54,7 @@ test('builds imaging preparation guidance for modality-specific safety questions
 });
 
 test('provides complete medical translations for supported system languages', () => {
-  for (const key of ['MediSphere', '醫療學習與健康導航', '生命徵象整理', '醫學影像導覽', '就醫準備清單']) {
+  for (const key of ['MediSphere', '健康行動工作台', '健康行動總覽', '影像檢查準備', '門診溝通助手', '依系統語言與日期格式同步顯示。']) {
     const translation = MEDICAL_TRANSLATIONS[key];
     assert.ok(translation, `missing translation for ${key}`);
     for (const lang of ['zh-CN', 'en', 'ja', 'ko'] as const) {
@@ -70,4 +70,11 @@ test('keeps the medical hub background as designed CSS instead of image assets',
   assert.doesNotMatch(css, /url\(/i);
   assert.match(css, /radial-gradient/i);
   assert.match(css, /linear-gradient/i);
+});
+
+test('removes visible course-route wording from the medical application shell', () => {
+  const repositoryRoot = resolve(process.cwd(), '..');
+  const source = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/FusionMedicalHub.tsx'), 'utf8');
+
+  assert.doesNotMatch(source, /課程路線|搜尋課程|教育模式|course-list|course-panel/i);
 });

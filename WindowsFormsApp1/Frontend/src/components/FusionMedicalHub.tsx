@@ -3,13 +3,14 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Activity,
   AlertTriangle,
-  BookOpenText,
   CalendarClock,
   CheckCircle2,
   ClipboardCheck,
   ExternalLink,
   Gauge,
   HeartPulse,
+  ListChecks,
+  Radar,
   ScanLine,
   Search,
   ShieldCheck,
@@ -37,22 +38,22 @@ type TrackFilter = MedicalTrack | 'all';
 
 const TRACKS: Array<{ id: TrackFilter; label: string }> = [
   { id: 'all', label: '全部' },
-  { id: 'medicine', label: '醫學' },
   { id: 'health', label: '健康' },
+  { id: 'medicine', label: '門診' },
   { id: 'imaging', label: '影像' },
-  { id: 'engineering', label: '醫工' }
+  { id: 'engineering', label: '醫材' }
 ];
 
 const LEVEL_LABELS: Record<MedicalLevel, string> = {
   steady: '穩定',
-  watch: '留意',
-  review: '建議檢視',
+  watch: '觀察',
+  review: '建議討論',
   urgent: '緊急'
 };
 
-const COURSE_LEVEL_LABELS = {
-  foundation: '基礎',
-  intermediate: '進階'
+const WORK_DEPTH_LABELS = {
+  foundation: '快速任務',
+  intermediate: '深入任務'
 };
 
 const VITAL_FIELDS: Array<{ key: keyof VitalInput; label: string; icon: React.ComponentType<{ size?: number; strokeWidth?: number }> }> = [
@@ -68,12 +69,12 @@ const PROFILE_TOGGLES: Array<{ key: keyof ImagingProfile; label: string }> = [
   { key: 'pregnant', label: '懷孕或可能懷孕' },
   { key: 'hasMetalImplant', label: '金屬植入物' },
   { key: 'kidneyDisease', label: '腎臟病史' },
-  { key: 'contrastAllergy', label: '顯影劑過敏' }
+  { key: 'contrastAllergy', label: '造影劑過敏' }
 ];
 
 const VISIT_CHECKLIST = [
   '記錄症狀開始時間、誘因、持續時間與目前用藥。',
-  '帶上檢查報告、影像光碟、藥袋與過敏紀錄。',
+  '帶上檢查報告、影像檔、藥袋與過敏紀錄。',
   '影像檢查前主動告知懷孕可能、金屬植入、腎臟病史與顯影劑過敏。',
   '胸痛、呼吸困難、單側無力、意識改變或血氧偏低時請立即尋求緊急協助。'
 ];
@@ -102,7 +103,7 @@ export const FusionMedicalHub: React.FC<FusionMedicalHubProps> = ({ open, onClos
   const [now, setNow] = useState(() => new Date());
   const [query, setQuery] = useState('');
   const [track, setTrack] = useState<TrackFilter>('all');
-  const [selectedCourseId, setSelectedCourseId] = useState(MEDICAL_COURSES[0]?.id ?? '');
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState(MEDICAL_COURSES[0]?.id ?? '');
   const [vitals, setVitals] = useState<VitalInput>(DEFAULT_VITALS);
   const [modalityId, setModalityId] = useState<ImagingModalityId>('ct');
   const [profile, setProfile] = useState<ImagingProfile>(DEFAULT_PROFILE);
@@ -113,23 +114,23 @@ export const FusionMedicalHub: React.FC<FusionMedicalHubProps> = ({ open, onClos
     return () => window.clearInterval(timer);
   }, [open]);
 
-  const filteredCourses = useMemo(() => filterMedicalCourses(query, track), [query, track]);
-  const selectedCourse = useMemo(
-    () => MEDICAL_COURSES.find((course) => course.id === selectedCourseId) ?? filteredCourses[0] ?? MEDICAL_COURSES[0],
-    [filteredCourses, selectedCourseId]
+  const filteredWorkspaces = useMemo(() => filterMedicalCourses(query, track), [query, track]);
+  const selectedWorkspace = useMemo(
+    () => MEDICAL_COURSES.find((item) => item.id === selectedWorkspaceId) ?? filteredWorkspaces[0] ?? MEDICAL_COURSES[0],
+    [filteredWorkspaces, selectedWorkspaceId]
   );
   const vitalEvaluation = useMemo(() => evaluateVitals(vitals), [vitals]);
   const imagingPrep = useMemo(() => getImagingPrep(modalityId, profile), [modalityId, profile]);
-  const courseSources = useMemo(
-    () => selectedCourse.sourceIds.map(getMedicalSource).filter((source): source is NonNullable<typeof source> => Boolean(source)),
-    [selectedCourse]
+  const workspaceSources = useMemo(
+    () => selectedWorkspace.sourceIds.map(getMedicalSource).filter((source): source is NonNullable<typeof source> => Boolean(source)),
+    [selectedWorkspace]
   );
 
   useEffect(() => {
-    if (filteredCourses.length && !filteredCourses.some((course) => course.id === selectedCourseId)) {
-      setSelectedCourseId(filteredCourses[0].id);
+    if (filteredWorkspaces.length && !filteredWorkspaces.some((item) => item.id === selectedWorkspaceId)) {
+      setSelectedWorkspaceId(filteredWorkspaces[0].id);
     }
-  }, [filteredCourses, selectedCourseId]);
+  }, [filteredWorkspaces, selectedWorkspaceId]);
 
   const updateVital = (key: keyof VitalInput, value: number) => {
     setVitals((current) => ({ ...current, [key]: Number.isFinite(value) ? value : 0 }));
@@ -173,7 +174,7 @@ export const FusionMedicalHub: React.FC<FusionMedicalHubProps> = ({ open, onClos
                 <span className="medical-brand-mark"><Stethoscope size={23} strokeWidth={1.8} /></span>
                 <div>
                   <strong>{t('MediSphere')}</strong>
-                  <small>{t('醫療學習與健康導航')}</small>
+                  <small>{t('健康行動工作台')}</small>
                 </div>
               </div>
               <div className="medical-time">
@@ -187,12 +188,12 @@ export const FusionMedicalHub: React.FC<FusionMedicalHubProps> = ({ open, onClos
             </header>
 
             <main className="medical-hub-grid">
-              <aside className="medical-course-panel">
+              <aside className="medical-context-panel">
                 <div className="medical-section-title">
-                  <BookOpenText size={18} strokeWidth={1.8} />
+                  <Radar size={18} strokeWidth={1.8} />
                   <div>
-                    <span>{t('課程路線')}</span>
-                    <strong>{t('五個醫療學習主題')}</strong>
+                    <span>{t('情境中心')}</span>
+                    <strong>{t('選擇今天要完成的健康任務')}</strong>
                   </div>
                 </div>
                 <label className="medical-search">
@@ -200,7 +201,7 @@ export const FusionMedicalHub: React.FC<FusionMedicalHubProps> = ({ open, onClos
                   <input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder={t('搜尋課程、影像或健康主題')}
+                    placeholder={t('搜尋症狀、影像、門診或健康任務')}
                   />
                 </label>
                 <div className="medical-track-tabs" role="tablist" aria-label={t('健康焦點')}>
@@ -215,18 +216,18 @@ export const FusionMedicalHub: React.FC<FusionMedicalHubProps> = ({ open, onClos
                     </button>
                   ))}
                 </div>
-                <div className="medical-course-list">
-                  {filteredCourses.map((course) => (
+                <div className="medical-workspace-list">
+                  {filteredWorkspaces.map((workspace) => (
                     <button
-                      key={course.id}
+                      key={workspace.id}
                       type="button"
-                      className={selectedCourse.id === course.id ? 'active' : ''}
-                      onClick={() => setSelectedCourseId(course.id)}
+                      className={selectedWorkspace.id === workspace.id ? 'active' : ''}
+                      onClick={() => setSelectedWorkspaceId(workspace.id)}
                     >
-                      <span>{t(COURSE_LEVEL_LABELS[course.level])}</span>
-                      <strong>{t(course.title)}</strong>
-                      <small>{t(course.summary)}</small>
-                      <em>{course.minutes} {t('分鐘')}</em>
+                      <span>{t(WORK_DEPTH_LABELS[workspace.level])}</span>
+                      <strong>{t(workspace.title)}</strong>
+                      <small>{t(workspace.summary)}</small>
+                      <em>{workspace.minutes} {t('分鐘')}</em>
                     </button>
                   ))}
                 </div>
@@ -235,13 +236,13 @@ export const FusionMedicalHub: React.FC<FusionMedicalHubProps> = ({ open, onClos
               <section className="medical-main-panel">
                 <div className="medical-hero-card">
                   <div>
-                    <span>{t('教育模式')}</span>
-                    <h2>{t(selectedCourse.title)}</h2>
-                    <p>{t(selectedCourse.summary)}</p>
+                    <span>{t('今日工作區')}</span>
+                    <h2>{t(selectedWorkspace.title)}</h2>
+                    <p>{t(selectedWorkspace.summary)}</p>
                   </div>
                   <div className="medical-hero-metrics">
-                    <span><BookOpenText size={16} /> {selectedCourse.modules.length} {t('單元')}</span>
-                    <span><Timer size={16} /> {selectedCourse.minutes} {t('分鐘')}</span>
+                    <span><ListChecks size={16} /> {selectedWorkspace.modules.length} {t('任務')}</span>
+                    <span><Timer size={16} /> {selectedWorkspace.minutes} {t('分鐘')}</span>
                     <span><ShieldCheck size={16} /> {t('非診斷')}</span>
                   </div>
                 </div>
@@ -250,19 +251,19 @@ export const FusionMedicalHub: React.FC<FusionMedicalHubProps> = ({ open, onClos
                   <section className="medical-glass-card">
                     <div className="medical-card-head">
                       <ClipboardCheck size={18} />
-                      <strong>{t('學習重點')}</strong>
+                      <strong>{t('行動模組')}</strong>
                     </div>
                     <div className="medical-chip-list">
-                      {selectedCourse.modules.map((module) => <span key={module}>{t(module)}</span>)}
+                      {selectedWorkspace.modules.map((module) => <span key={module}>{t(module)}</span>)}
                     </div>
                   </section>
                   <section className="medical-glass-card">
                     <div className="medical-card-head">
                       <CheckCircle2 size={18} />
-                      <strong>{t('實作能力')}</strong>
+                      <strong>{t('可完成的成果')}</strong>
                     </div>
                     <ul className="medical-compact-list">
-                      {selectedCourse.skills.map((skill) => <li key={skill}>{t(skill)}</li>)}
+                      {selectedWorkspace.skills.map((skill) => <li key={skill}>{t(skill)}</li>)}
                     </ul>
                   </section>
                 </div>
@@ -317,7 +318,7 @@ export const FusionMedicalHub: React.FC<FusionMedicalHubProps> = ({ open, onClos
                     <div className="medical-section-title">
                       <ScanLine size={19} />
                       <div>
-                        <span>{t('醫學影像導覽')}</span>
+                        <span>{t('影像檢查導覽')}</span>
                         <strong>{t(imagingPrep.modality.title)}</strong>
                       </div>
                     </div>
@@ -352,11 +353,11 @@ export const FusionMedicalHub: React.FC<FusionMedicalHubProps> = ({ open, onClos
                   </div>
                   <div className="medical-imaging-columns">
                     <div>
-                      <strong>{t('適合觀察')}</strong>
+                      <strong>{t('檢查重點')}</strong>
                       <ul>{imagingPrep.modality.bestFor.map((item) => <li key={item}>{t(item)}</li>)}</ul>
                     </div>
                     <div>
-                      <strong>{t('準備問題')}</strong>
+                      <strong>{t('安全問題')}</strong>
                       <ul>{imagingPrep.questions.slice(0, 5).map((item) => <li key={item}>{t(item)}</li>)}</ul>
                     </div>
                   </div>
@@ -388,7 +389,7 @@ export const FusionMedicalHub: React.FC<FusionMedicalHubProps> = ({ open, onClos
                     <strong>{t('可信來源')}</strong>
                   </div>
                   <div className="medical-source-list">
-                    {[...courseSources, ...MEDICAL_SOURCES.filter((source) => !courseSources.some((item) => item.id === source.id))]
+                    {[...workspaceSources, ...MEDICAL_SOURCES.filter((source) => !workspaceSources.some((item) => item.id === source.id))]
                       .slice(0, 4)
                       .map((source) => (
                         <a key={source.id} href={source.url} target="_blank" rel="noreferrer">

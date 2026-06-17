@@ -35,7 +35,7 @@ exports.FUSION_APPS = [
         color: '#ff6a9e',
         category: 'system',
         tags: ['啟動器', '應用程式', '入口'],
-        status: '20 個應用程式',
+        status: '21 個應用程式',
         launchMode: 'overlay',
         featured: true
     },
@@ -229,13 +229,26 @@ exports.FUSION_APPS = [
     {
         id: 'medical',
         title: 'MediSphere',
-        subtitle: '醫療學習與健康導航',
-        description: '生命徵象、醫學影像與就醫準備整合工作區。',
+        subtitle: '健康行動工作台',
+        description: '把生命徵象、影像檢查與門診準備整理成可執行的健康行動。',
         glyph: 'MED',
         color: '#66e8ff',
         category: 'data',
         tags: ['醫療', '醫學影像', '生命徵象', '就醫準備'],
-        status: '健康導航',
+        status: '健康行動',
+        launchMode: 'overlay',
+        featured: true
+    },
+    {
+        id: 'signal',
+        title: 'SignalForge',
+        subtitle: '通訊與硬體實驗場',
+        description: '把訊號、位元、處理器與物理通道整合成可操作的系統實驗。',
+        glyph: 'SIG',
+        color: '#4bdcff',
+        category: 'development',
+        tags: ['資料鏈路', '處理器', '物理通道', '封包分析'],
+        status: '系統實驗',
         launchMode: 'overlay',
         featured: true
     },

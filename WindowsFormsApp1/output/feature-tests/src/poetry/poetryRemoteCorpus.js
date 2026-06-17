@@ -1,7 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.POETRY_ARCHIVE_TOTALS = void 0;
 exports.fetchPoetryBundle = fetchPoetryBundle;
 exports.mergeCorpus = mergeCorpus;
+exports.getPoetryDisplayStats = getPoetryDisplayStats;
+exports.POETRY_ARCHIVE_TOTALS = {
+    poets: 32657,
+    poems: 933857
+};
 const KNOWN_DYNASTIES = ['先秦', '漢', '魏晉', '南北朝', '唐', '宋', '元', '明', '清'];
 const KNOWN_FORMS = ['五絕', '七絕', '五律', '七律', '古體', '樂府', '詞', '曲', '自由'];
 const asDynasty = (value) => KNOWN_DYNASTIES.includes(value) ? value : '唐';
@@ -140,5 +146,18 @@ function mergeCorpus(curatedPoets, curatedPoems, bundle) {
         poems,
         graph: { nodes, edges },
         meta: bundle?.meta ?? {}
+    };
+}
+function getPoetryDisplayStats(corpus) {
+    const metaPoets = corpus.meta.poets ?? 0;
+    const metaTextPoems = corpus.meta.poemsWithText ?? 0;
+    const metaArchivePoems = corpus.meta.totalAvailablePoems ?? 0;
+    const metaEdges = corpus.meta.edges ?? 0;
+    return {
+        loadedPoets: corpus.poets.length,
+        loadedTextPoems: Math.max(corpus.poems.length, metaTextPoems),
+        archivePoets: Math.max(corpus.poets.length, metaPoets, exports.POETRY_ARCHIVE_TOTALS.poets),
+        archivePoems: Math.max(corpus.poems.length, metaArchivePoems, exports.POETRY_ARCHIVE_TOTALS.poems),
+        relationEdges: Math.max(corpus.graph.edges.length, metaEdges)
     };
 }

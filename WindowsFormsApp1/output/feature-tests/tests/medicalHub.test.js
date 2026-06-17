@@ -11,14 +11,14 @@ const medicalCatalog_js_1 = require("../src/medical/medicalCatalog.js");
 const medicalImaging_js_1 = require("../src/medical/medicalImaging.js");
 const medicalText_js_1 = require("../src/medical/medicalText.js");
 const medicalVitals_js_1 = require("../src/medical/medicalVitals.js");
-(0, node_test_1.default)('organizes the requested medical course areas into a searchable curriculum', () => {
+(0, node_test_1.default)('presents integrated health workspaces instead of course titles', () => {
     const titles = medicalCatalog_js_1.MEDICAL_COURSES.map((course) => course.title);
-    strict_1.default.ok(titles.includes('醫學與健康'));
-    strict_1.default.ok(titles.includes('醫學影像概論（一）'));
-    strict_1.default.ok(titles.includes('醫學影像概論（二）'));
-    strict_1.default.ok(titles.includes('醫學工程概論（二）'));
-    strict_1.default.ok(titles.includes('醫學概論'));
-    strict_1.default.ok((0, medicalCatalog_js_1.filterMedicalCourses)('影像', 'imaging').every((course) => course.track === 'imaging'));
+    const retiredCourseTitles = ['醫學與健康', '醫學影像概論（一）', '醫學影像概論（二）', '醫學工程概論（二）', '醫學概論'];
+    strict_1.default.equal(titles.some((title) => retiredCourseTitles.includes(title)), false);
+    strict_1.default.ok(titles.includes('健康行動總覽'));
+    strict_1.default.ok(titles.includes('影像檢查準備'));
+    strict_1.default.ok(titles.includes('門診溝通助手'));
+    strict_1.default.ok((0, medicalCatalog_js_1.filterMedicalCourses)('影像準備', 'imaging').every((course) => course.track === 'imaging'));
 });
 (0, node_test_1.default)('evaluates vital signs conservatively without pretending to diagnose', () => {
     const normal = (0, medicalVitals_js_1.evaluateVitals)({
@@ -52,7 +52,7 @@ const medicalVitals_js_1 = require("../src/medical/medicalVitals.js");
     strict_1.default.ok(ct.notes.some((note) => note.includes('放射線')));
 });
 (0, node_test_1.default)('provides complete medical translations for supported system languages', () => {
-    for (const key of ['MediSphere', '醫療學習與健康導航', '生命徵象整理', '醫學影像導覽', '就醫準備清單']) {
+    for (const key of ['MediSphere', '健康行動工作台', '健康行動總覽', '影像檢查準備', '門診溝通助手', '依系統語言與日期格式同步顯示。']) {
         const translation = medicalText_js_1.MEDICAL_TRANSLATIONS[key];
         strict_1.default.ok(translation, `missing translation for ${key}`);
         for (const lang of ['zh-CN', 'en', 'ja', 'ko']) {
@@ -66,4 +66,9 @@ const medicalVitals_js_1 = require("../src/medical/medicalVitals.js");
     strict_1.default.doesNotMatch(css, /url\(/i);
     strict_1.default.match(css, /radial-gradient/i);
     strict_1.default.match(css, /linear-gradient/i);
+});
+(0, node_test_1.default)('removes visible course-route wording from the medical application shell', () => {
+    const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
+    const source = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/FusionMedicalHub.tsx'), 'utf8');
+    strict_1.default.doesNotMatch(source, /課程路線|搜尋課程|教育模式|course-list|course-panel/i);
 });

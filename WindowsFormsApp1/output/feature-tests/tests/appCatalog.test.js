@@ -84,16 +84,32 @@ const sportsText_js_1 = require("../src/sports/sportsText.js");
 (0, node_test_1.default)('registers MediSphere as a translated medical overlay', () => {
     const medical = (0, fusionApps_js_1.getAppById)('medical');
     strict_1.default.equal(medical?.title, 'MediSphere');
-    strict_1.default.equal(medical?.subtitle, '醫療學習與健康導航');
+    strict_1.default.equal(medical?.subtitle, '健康行動工作台');
     strict_1.default.equal(medical?.category, 'data');
     strict_1.default.equal(medical?.launchMode, 'overlay');
     strict_1.default.equal(medical?.featured, true);
     strict_1.default.equal(fusionApps_js_1.APP_CENTER_APPS.some((app) => String(app.id) === 'medical'), true);
-    for (const key of ['MediSphere', '醫療學習與健康導航', '生命徵象、醫學影像與就醫準備整合工作區。']) {
+    for (const key of ['MediSphere', '健康行動工作台', '把生命徵象、影像檢查與門診準備整理成可執行的健康行動。']) {
         const translation = featureTranslations_js_1.FEATURE_TRANSLATIONS[key];
         strict_1.default.ok(translation, `missing MediSphere translation for "${key}"`);
         for (const lang of ['zh-CN', 'en', 'ja', 'ko']) {
             strict_1.default.ok(translation[lang], `missing ${lang} MediSphere translation for "${key}"`);
+        }
+    }
+});
+(0, node_test_1.default)('registers SignalForge as an integrated communication systems overlay', () => {
+    const signal = (0, fusionApps_js_1.getAppById)('signal');
+    strict_1.default.equal(signal?.title, 'SignalForge');
+    strict_1.default.equal(signal?.subtitle, '通訊與硬體實驗場');
+    strict_1.default.equal(signal?.category, 'development');
+    strict_1.default.equal(signal?.launchMode, 'overlay');
+    strict_1.default.equal(signal?.featured, true);
+    strict_1.default.equal(fusionApps_js_1.APP_CENTER_APPS.some((app) => String(app.id) === 'signal'), true);
+    for (const key of ['SignalForge', '通訊與硬體實驗場', '把訊號、位元、處理器與物理通道整合成可操作的系統實驗。']) {
+        const translation = featureTranslations_js_1.FEATURE_TRANSLATIONS[key];
+        strict_1.default.ok(translation, `missing SignalForge translation for "${key}"`);
+        for (const lang of ['zh-CN', 'en', 'ja', 'ko']) {
+            strict_1.default.ok(translation[lang], `missing ${lang} SignalForge translation for "${key}"`);
         }
     }
 });
@@ -120,6 +136,14 @@ const sportsText_js_1 = require("../src/sports/sportsText.js");
     strict_1.default.match(shellSource, /FusionMedicalHub/);
     strict_1.default.match(shellSource, /overlayApp === 'medical'/);
     strict_1.default.match(entrySource, /fusionMedicalHub\.css/);
+});
+(0, node_test_1.default)('wires SignalForge into the React overlay shell', () => {
+    const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
+    const shellSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
+    const entrySource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/main.tsx'), 'utf8');
+    strict_1.default.match(shellSource, /FusionSignalForge/);
+    strict_1.default.match(shellSource, /overlayApp === 'signal'/);
+    strict_1.default.match(entrySource, /fusionSignalForge\.css/);
 });
 (0, node_test_1.default)('wires event dossiers, prediction evidence, and player matchups into Sports Center', () => {
     const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');

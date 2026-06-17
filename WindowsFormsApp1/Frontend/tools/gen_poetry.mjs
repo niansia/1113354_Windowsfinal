@@ -351,7 +351,7 @@ async function main() {
     candCache.set(op.id, cands);
     return cands;
   };
-  const poemPoets = outPoets.filter((p) => !CURATED[p.name]); // curated keep their own poems
+  const poemPoets = outPoets; // curated poets keep hand-authored poems and also receive public-corpus samples
   for (let pass = 0; pass < POEMS_PER_POET && outPoems.length < MAX_POEMS; pass += 1) {
     for (const op of poemPoets) {
       if (outPoems.length >= MAX_POEMS) break;
@@ -384,7 +384,7 @@ async function main() {
   }
 
   // 8. write -----------------------------------------------------------------
-  const totalAvailable = 58000 + 255000 + 22000; // tang + song(shi) + song-ci, full repo
+  const totalAvailable = 933857; // aggregate public/archive target used by the Poetry Cloud shell
   const bundle = {
     meta: {
       generatedAt: new Date().toISOString(),

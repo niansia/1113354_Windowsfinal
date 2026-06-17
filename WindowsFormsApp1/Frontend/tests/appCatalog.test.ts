@@ -106,17 +106,36 @@ test('registers MediSphere as a translated medical overlay', () => {
   const medical = getAppById('medical');
 
   assert.equal(medical?.title, 'MediSphere');
-  assert.equal(medical?.subtitle, '醫療學習與健康導航');
+  assert.equal(medical?.subtitle, '健康行動工作台');
   assert.equal(medical?.category, 'data');
   assert.equal(medical?.launchMode, 'overlay');
   assert.equal(medical?.featured, true);
   assert.equal(APP_CENTER_APPS.some((app) => String(app.id) === 'medical'), true);
 
-  for (const key of ['MediSphere', '醫療學習與健康導航', '生命徵象、醫學影像與就醫準備整合工作區。']) {
+  for (const key of ['MediSphere', '健康行動工作台', '把生命徵象、影像檢查與門診準備整理成可執行的健康行動。']) {
     const translation = FEATURE_TRANSLATIONS[key];
     assert.ok(translation, `missing MediSphere translation for "${key}"`);
     for (const lang of ['zh-CN', 'en', 'ja', 'ko'] as const) {
       assert.ok(translation[lang], `missing ${lang} MediSphere translation for "${key}"`);
+    }
+  }
+});
+
+test('registers SignalForge as an integrated communication systems overlay', () => {
+  const signal = getAppById('signal' as never);
+
+  assert.equal(signal?.title, 'SignalForge');
+  assert.equal(signal?.subtitle, '通訊與硬體實驗場');
+  assert.equal(signal?.category, 'development');
+  assert.equal(signal?.launchMode, 'overlay');
+  assert.equal(signal?.featured, true);
+  assert.equal(APP_CENTER_APPS.some((app) => String(app.id) === 'signal'), true);
+
+  for (const key of ['SignalForge', '通訊與硬體實驗場', '把訊號、位元、處理器與物理通道整合成可操作的系統實驗。']) {
+    const translation = FEATURE_TRANSLATIONS[key];
+    assert.ok(translation, `missing SignalForge translation for "${key}"`);
+    for (const lang of ['zh-CN', 'en', 'ja', 'ko'] as const) {
+      assert.ok(translation[lang], `missing ${lang} SignalForge translation for "${key}"`);
     }
   }
 });
@@ -149,6 +168,16 @@ test('wires MediSphere into the React overlay shell', () => {
   assert.match(shellSource, /FusionMedicalHub/);
   assert.match(shellSource, /overlayApp === 'medical'/);
   assert.match(entrySource, /fusionMedicalHub\.css/);
+});
+
+test('wires SignalForge into the React overlay shell', () => {
+  const repositoryRoot = resolve(process.cwd(), '..');
+  const shellSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
+  const entrySource = readFileSync(resolve(repositoryRoot, 'Frontend/src/main.tsx'), 'utf8');
+
+  assert.match(shellSource, /FusionSignalForge/);
+  assert.match(shellSource, /overlayApp === 'signal'/);
+  assert.match(entrySource, /fusionSignalForge\.css/);
 });
 
 test('wires event dossiers, prediction evidence, and player matchups into Sports Center', () => {
