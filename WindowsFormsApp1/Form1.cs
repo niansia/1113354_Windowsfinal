@@ -61,6 +61,7 @@ namespace WindowsFormsApp1
         private Process iotNexusServerProcess;
         private Process veriLensServerProcess;
         private Process culturaServerProcess;
+        private Process finWebServerProcess;
         private Process voiceServerProcess;
         private int cameraAppWindowCount = 0;
         private bool nativeWarmupStarted;
@@ -1728,6 +1729,7 @@ namespace WindowsFormsApp1
                     else if (lower.Contains("\"iot\"") || lower.Contains("\"nexus\"")) LaunchIoTNexus();
                     else if (lower.Contains("\"verify\"") || lower.Contains("\"verilens\"") || lower.Contains("\"news\"")) LaunchVeriLens();
                     else if (lower.Contains("\"cultura\"") || lower.Contains("\"culture\"") || lower.Contains("\"globe\"")) LaunchCulturaGlobe();
+                    else if (lower.Contains("\"finweb\"") || lower.Contains("\"finance\"") || lower.Contains("\"stocks\"")) LaunchFinWeb();
                     else if (lower.Contains("\"game\"") || lower.Contains("\"fusionrpg\"") || lower.Contains("\"rpg\"")) LaunchFusionRPG();
                     else if (lower.Contains("\"cmd\"") || lower.Contains("\"terminal\"")) OpenFusionTerminal();
                     else if (lower.Contains("\"settings\"") || lower.Contains("\"set\"")) OpenSettingsWindow();
@@ -2821,6 +2823,98 @@ namespace WindowsFormsApp1
         private void LaunchWaveStudio()
         {
             LaunchIntegratedExeApp("wav", "WaveStudio", "WaveStudio", Color.FromArgb(120, 235, 218));
+        }
+
+        private async void LaunchFinWeb()
+        {
+            Color finWebColor = Color.FromArgb(98, 217, 183);
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "FinWeb"));
+            string appPath = appRoot == null ? null : Path.Combine(appRoot, "app.py");
+            if (appPath == null || !File.Exists(appPath))
+            {
+                ShowToast(L("FinWebServerMissing"), finWebColor);
+                PostAppLaunchStatus("finweb", "error", L("FinWebServerMissing"));
+                return;
+            }
+
+            bool serverReady = await IsFinWebServerReadyAsync();
+            if (!serverReady)
+            {
+                string python = FindPythonCommand();
+                if (python == null)
+                {
+                    ShowToast(L("FinWebPythonMissing"), finWebColor);
+                    PostAppLaunchStatus("finweb", "error", L("FinWebPythonMissing"));
+                    return;
+                }
+
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = python,
+                        Arguments = "-c \"import app; app.socketio.run(app.app, debug=True, use_reloader=False, host='127.0.0.1', port=5000)\"",
+                        WorkingDirectory = appRoot,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+                    startInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
+                    finWebServerProcess = Process.Start(startInfo);
+                    serverReady = await WaitForFinWebServerAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[FinWeb] server launch failed: " + ex.Message);
+                    ShowToast(L("FinWebStartFailed"), finWebColor);
+                    PostAppLaunchStatus("finweb", "error", L("FinWebStartFailed"));
+                    return;
+                }
+            }
+
+            if (!serverReady)
+            {
+                ShowToast(L("FinWebNotReady"), finWebColor);
+                PostAppLaunchStatus("finweb", "error", L("FinWebNotReady"));
+                return;
+            }
+
+            PostAppLaunchStatus("finweb", "open", L("FinWebOpening"));
+            OpenWebAppWindow(L("FinWeb"), "http://127.0.0.1:5000/", finWebColor, ownsCamera: false, kind: "finweb");
+        }
+
+        private async Task<bool> WaitForFinWebServerAsync()
+        {
+            for (int i = 0; i < 120; i++)
+            {
+                if (await IsFinWebServerReadyAsync()) return true;
+                if (finWebServerProcess != null && finWebServerProcess.HasExited) return false;
+                await Task.Delay(250);
+            }
+            return false;
+        }
+
+        private Task<bool> IsFinWebServerReadyAsync()
+        {
+            return Task.Run(delegate
+            {
+                try
+                {
+                    var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:5000/login");
+                    request.Timeout = 900;
+                    using (var response = (HttpWebResponse)request.GetResponse())
+                    using (var reader = new StreamReader(response.GetResponseStream()))
+                    {
+                        string body = reader.ReadToEnd();
+                        return response.StatusCode == HttpStatusCode.OK &&
+                            body.IndexOf("FinWeb", StringComparison.OrdinalIgnoreCase) >= 0;
+                    }
+                }
+                catch
+                {
+                    return false;
+                }
+            });
         }
 
         private async void LaunchMetroPulse()
@@ -5346,6 +5440,7 @@ namespace WindowsFormsApp1
             StopOwnedServerProcess(iotNexusServerProcess);
             StopOwnedServerProcess(veriLensServerProcess);
             StopOwnedServerProcess(culturaServerProcess);
+            StopOwnedServerProcess(finWebServerProcess);
             StopOwnedServerProcess(voiceServerProcess);
             base.OnFormClosing(e);
         }
@@ -5571,6 +5666,12 @@ namespace WindowsFormsApp1
                 case "ThisPCDesc": return zh ? "系統檔案管理與電腦資訊入口。" : "System file manager and computer information.";
                 case "ProjectFilesDesc": return zh ? "存放舊作品與新作品的預設資料夾。" : "Default folder for all old and new school projects.";
                 case "PianoStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/PianoStudio。啟動鋼琴學習與音樂工具。" : "Integrated app package: IntegratedApps/PianoStudio.";
+                case "FinWeb": return "FinWeb";
+                case "FinWebServerMissing": return zh ? "找不到 FinWeb 的 app.py。" : "FinWeb app.py was not found.";
+                case "FinWebPythonMissing": return zh ? "找不到可用的 Python，無法啟動 FinWeb。" : "Python was not found; FinWeb cannot start.";
+                case "FinWebStartFailed": return zh ? "FinWeb 服務啟動失敗。" : "FinWeb failed to start.";
+                case "FinWebNotReady": return zh ? "FinWeb 服務尚未就緒。" : "FinWeb is not ready.";
+                case "FinWebOpening": return zh ? "正在開啟 FinWeb。" : "Opening FinWeb.";
                 case "EnglishFlashcardsDesc": return zh ? "內建英文單字查詢、語音練習、測驗與學習報表。" : "Vocabulary lookup, speech practice, quizzes, and learning reports.";
                 case "MultimediaStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/MultimediaStudio。啟動 AURORA Cinema 多媒體播放器。" : "Integrated app package: IntegratedApps/MultimediaStudio.";
                 case "WaveStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/WaveStudio。啟動 WAV 與音訊播放工具。" : "Integrated app package: IntegratedApps/WaveStudio.";

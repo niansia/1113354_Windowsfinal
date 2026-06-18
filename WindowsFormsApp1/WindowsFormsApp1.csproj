@@ -134,6 +134,7 @@
     <None Include="IntegratedApps\WaveStudio\**\*.*" />
     <None Include="IntegratedApps\CosmicGesture\**\*.*" />
     <None Include="IntegratedApps\MetroPulse\**\*.*" />
+    <None Include="IntegratedApps\FinWeb\**\*.*" />
     <None Remove="IntegratedApps\**\packages\**\*.*" />
     <None Remove="IntegratedApps\**\bin\**\*.*" />
     <None Remove="IntegratedApps\**\obj\**\*.*" />

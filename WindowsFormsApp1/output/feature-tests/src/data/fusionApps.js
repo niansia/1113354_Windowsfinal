@@ -35,7 +35,7 @@ exports.FUSION_APPS = [
         color: '#ff6a9e',
         category: 'system',
         tags: ['啟動器', '應用程式', '入口'],
-        status: '23 個應用程式',
+        status: '24 個應用程式',
         launchMode: 'overlay',
         featured: true
     },
@@ -263,6 +263,19 @@ exports.FUSION_APPS = [
         tags: ['人工智慧', '神經網路', 'LNN', '本機推論'],
         status: '3D 推論引擎',
         launchMode: 'overlay',
+        featured: true
+    },
+    {
+        id: 'finweb',
+        title: 'FinWeb',
+        subtitle: 'AI 投資與市場情報',
+        description: '整合股票、加密貨幣、AI 預測、型態辨識與策略回測的金融平台。',
+        glyph: 'FIN',
+        color: '#62d9b7',
+        category: 'data',
+        tags: ['股票', '加密貨幣', 'AI 預測', '策略回測'],
+        status: '金融情報',
+        launchMode: 'host',
         featured: true
     },
     {

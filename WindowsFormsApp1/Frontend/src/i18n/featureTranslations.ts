@@ -136,6 +136,19 @@ export const FEATURE_TRANSLATIONS: Record<string, Entry> = {
   '可匯入': entry('可导入', 'Import', 'インポート可能', '가져오기 가능'),
   '22 個應用程式': entry('22 个应用程序', '22 apps', '22 個のアプリ', '앱 22개'),
   '23 個應用程式': entry('23 个应用程序', '23 apps', '23 個のアプリ', '앱 23개'),
+  FinWeb: entry('FinWeb', 'FinWeb', 'FinWeb', 'FinWeb'),
+  'AI 投資與市場情報': entry('AI 投资与市场情报', 'AI investing and market intelligence', 'AI 投資・市場インテリジェンス', 'AI 투자 및 시장 인텔리전스'),
+  '整合股票、加密貨幣、AI 預測、型態辨識與策略回測的金融平台。': entry(
+    '整合股票、加密货币、AI 预测、形态识别与策略回测的金融平台。',
+    'A financial platform integrating stocks, crypto, AI forecasts, pattern detection, and strategy backtesting.',
+    '株式、暗号資産、AI 予測、パターン検出、戦略バックテストを統合した金融プラットフォームです。',
+    '주식, 암호화폐, AI 예측, 패턴 탐지, 전략 백테스트를 통합한 금융 플랫폼입니다.'
+  ),
+  '股票': entry('股票', 'Stocks', '株式', '주식'),
+  '加密貨幣': entry('加密货币', 'Crypto', '暗号資産', '암호화폐'),
+  'AI 預測': entry('AI 预测', 'AI forecast', 'AI 予測', 'AI 예측'),
+  '策略回測': entry('策略回测', 'Backtesting', '戦略バックテスト', '전략 백테스트'),
+  '金融情報': entry('金融情报', 'Market intelligence', '金融情報', '금융 정보'),
   '11 個工具': entry('11 个工具', '11 tools', '11 個のツール', '도구 11개'),
   '工程數學': entry('工程数学', 'Engineering math', '工学数学', '공학 수학'),
   '使用工程數學、計算、換算、色彩、文字、安全性、時間與繪圖工具。': entry(

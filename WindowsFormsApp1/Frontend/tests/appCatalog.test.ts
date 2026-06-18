@@ -160,6 +160,25 @@ test('registers NeuroFlow AI as a translated online-first neural intelligence st
   }
 });
 
+test('registers the untouched FinWeb package as a translated host application', () => {
+  const finweb = getAppById('finweb');
+
+  assert.equal(finweb?.title, 'FinWeb');
+  assert.equal(finweb?.subtitle, 'AI 投資與市場情報');
+  assert.equal(finweb?.category, 'data');
+  assert.equal(finweb?.launchMode, 'host');
+  assert.equal(finweb?.featured, true);
+  assert.equal(APP_CENTER_APPS.some((app) => app.id === 'finweb'), true);
+
+  for (const key of ['FinWeb', 'AI 投資與市場情報', '整合股票、加密貨幣、AI 預測、型態辨識與策略回測的金融平台。']) {
+    const translation = FEATURE_TRANSLATIONS[key];
+    assert.ok(translation, `missing FinWeb translation for "${key}"`);
+    for (const lang of ['zh-CN', 'en', 'ja', 'ko'] as const) {
+      assert.ok(translation[lang], `missing ${lang} FinWeb translation for "${key}"`);
+    }
+  }
+});
+
 test('wires Global Sports Center into the React overlay shell', () => {
   const repositoryRoot = resolve(process.cwd(), '..');
   const shellSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
@@ -282,6 +301,20 @@ test('wires English Flashcards into the WinForms host build and launch route', (
   assert.match(hostSource, /LaunchEnglishFlashcards\(\)/);
   assert.match(hostSource, /lower\.Contains\("\\"flashcards\\""\)/);
   assert.match(projectSource, /IntegratedApps\\EnglishFlashcards\\\*\*\\\*\.csproj/);
+});
+
+test('wires the FinWeb Flask package into the WinForms host without editing its app source', () => {
+  const repositoryRoot = resolve(process.cwd(), '..');
+  const hostSource = readFileSync(resolve(repositoryRoot, 'Form1.cs'), 'utf8');
+  const projectSource = readFileSync(resolve(repositoryRoot, 'WindowsFormsApp1.csproj'), 'utf8');
+  const upstreamSource = readFileSync(resolve(repositoryRoot, 'IntegratedApps/FinWeb.UPSTREAM.md'), 'utf8');
+
+  assert.match(hostSource, /LaunchFinWeb\(\)/);
+  assert.match(hostSource, /lower\.Contains\("\\"finweb\\""\)/);
+  assert.match(hostSource, /IntegratedApps", "FinWeb/);
+  assert.match(projectSource, /IntegratedApps\\FinWeb\\\*\*\\\*\.\*/);
+  assert.match(upstreamSource, /FinWeb-AI\/FinWeb/);
+  assert.match(upstreamSource, /ff4c6c1/);
 });
 
 test('uses Traditional Chinese source keys for the default app catalog', () => {

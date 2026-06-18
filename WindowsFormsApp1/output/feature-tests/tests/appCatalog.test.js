@@ -130,6 +130,22 @@ const neuroText_js_1 = require("../src/neuro/neuroText.js");
         }
     }
 });
+(0, node_test_1.default)('registers the untouched FinWeb package as a translated host application', () => {
+    const finweb = (0, fusionApps_js_1.getAppById)('finweb');
+    strict_1.default.equal(finweb?.title, 'FinWeb');
+    strict_1.default.equal(finweb?.subtitle, 'AI 投資與市場情報');
+    strict_1.default.equal(finweb?.category, 'data');
+    strict_1.default.equal(finweb?.launchMode, 'host');
+    strict_1.default.equal(finweb?.featured, true);
+    strict_1.default.equal(fusionApps_js_1.APP_CENTER_APPS.some((app) => app.id === 'finweb'), true);
+    for (const key of ['FinWeb', 'AI 投資與市場情報', '整合股票、加密貨幣、AI 預測、型態辨識與策略回測的金融平台。']) {
+        const translation = featureTranslations_js_1.FEATURE_TRANSLATIONS[key];
+        strict_1.default.ok(translation, `missing FinWeb translation for "${key}"`);
+        for (const lang of ['zh-CN', 'en', 'ja', 'ko']) {
+            strict_1.default.ok(translation[lang], `missing ${lang} FinWeb translation for "${key}"`);
+        }
+    }
+});
 (0, node_test_1.default)('wires Global Sports Center into the React overlay shell', () => {
     const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
     const shellSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
@@ -237,6 +253,18 @@ const neuroText_js_1 = require("../src/neuro/neuroText.js");
     strict_1.default.match(hostSource, /LaunchEnglishFlashcards\(\)/);
     strict_1.default.match(hostSource, /lower\.Contains\("\\"flashcards\\""\)/);
     strict_1.default.match(projectSource, /IntegratedApps\\EnglishFlashcards\\\*\*\\\*\.csproj/);
+});
+(0, node_test_1.default)('wires the FinWeb Flask package into the WinForms host without editing its app source', () => {
+    const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
+    const hostSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Form1.cs'), 'utf8');
+    const projectSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'WindowsFormsApp1.csproj'), 'utf8');
+    const upstreamSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'IntegratedApps/FinWeb.UPSTREAM.md'), 'utf8');
+    strict_1.default.match(hostSource, /LaunchFinWeb\(\)/);
+    strict_1.default.match(hostSource, /lower\.Contains\("\\"finweb\\""\)/);
+    strict_1.default.match(hostSource, /IntegratedApps", "FinWeb/);
+    strict_1.default.match(projectSource, /IntegratedApps\\FinWeb\\\*\*\\\*\.\*/);
+    strict_1.default.match(upstreamSource, /FinWeb-AI\/FinWeb/);
+    strict_1.default.match(upstreamSource, /ff4c6c1/);
 });
 (0, node_test_1.default)('uses Traditional Chinese source keys for the default app catalog', () => {
     strict_1.default.equal((0, fusionApps_js_1.getAppById)('pc')?.title, '本機');

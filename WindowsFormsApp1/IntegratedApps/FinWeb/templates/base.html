@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}FinWeb{% endblock %}</title>
+
+  <!-- Bootstrap / Animate.css / FontAwesome -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        rel="stylesheet" crossorigin="anonymous"/>
+
+  <!-- 自訂 CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <script type="importmap">
+  {"imports":{
+    "three":"https://unpkg.com/three@0.160.0/build/three.module.js",
+    "@tweenjs/tween.js":"https://unpkg.com/@tweenjs/tween.js@18.6.4/dist/tween.esm.js",
+    "three/examples/jsm/":"https://unpkg.com/three@0.160.0/examples/jsm/"
+  }}
+  </script>
+  <style>
+    :root {
+      --accent1: #a58bff;
+      --accent2: #5fd8ff;
+      --glass-bg: rgba(255,255,255,0.07);
+      --glass-br: rgba(255,255,255,0.28);
+      --text-light: #eef1ff;
+    }
+
+    /* 僅當 body 沒有 .metaverse-page 類別時，才套用全站深色背景 */
+    body:not(.metaverse-page) {
+      margin: 0;
+      color: var(--text-light);
+      background: #0e111d;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body:not(.metaverse-page)::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      background: linear-gradient(140deg,
+        #131a35 0%, #0e111d 40%, #191328 70%, #1b132e 100%);
+    }
+    body:not(.metaverse-page)::after {
+      content: "";
+      position: fixed;
+      inset: -15%;
+      z-index: -2;
+      filter: blur(90px);
+      background:
+        radial-gradient(circle at 15% 25%, rgba(165,139,255,.30) 0%, transparent 60%),
+        radial-gradient(circle at 85% 85%, rgba(95,216,255,.25) 0%, transparent 55%);
+    }
+
+    /* Navbar 樣式 */
+    .navbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1100;
+      background: var(--glass-bg);
+      backdrop-filter: blur(30px) saturate(200%);
+      border-bottom: 1px solid var(--glass-br);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+      transition: background .3s, box-shadow .3s;
+    }
+    .navbar.scrolled {
+      background: rgba(255,255,255,0.04);
+      box-shadow: 0 6px 36px rgba(0,0,0,0.4);
+    }
+    .navbar-brand {
+      padding: .5rem 1rem; font-size: 1.4rem; color: var(--text-light)!important;
+    }
+    .navbar .nav-link {
+      position: relative; color: var(--text-light)!important;
+      margin: 0 .5rem; padding: .5rem .75rem;
+    }
+    .navbar .nav-link::after {
+      content: ""; position: absolute; bottom: 0; left: 50%; width: 0; height: 2px;
+      background: var(--accent2); transition: width .3s ease, left .3s ease;
+      border-radius: 1px;
+    }
+    .navbar .nav-link:hover,
+    .navbar .nav-link.active { color: var(--accent2)!important; }
+    .navbar .nav-link:hover::after,
+    .navbar .nav-link.active::after { left: 10%; width: 80%; }
+
+    /* 下拉選單統一樣式 */
+    /* 僅當 body 沒有 .metaverse-page 時，才套用下拉選單樣式 */
+    body:not(.metaverse-page) .navbar .dropdown-menu {
+      background-color: #0e111d !important;
+      border: 1px solid var(--glass-br) !important;
+      backdrop-filter: none !important;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.2) !important;
+      z-index: 1200 !important;
+    }
+    body:not(.metaverse-page) .navbar .dropdown-item {
+      color: var(--text-light) !important;
+      padding: .5rem 1rem !important;
+      transition: background .25s, color .25s, box-shadow .25s;
+    }
+    /* ★ 這兩行改成與「即時行情」按鈕同款效果 ★ */
+    body:not(.metaverse-page) .navbar .dropdown-item:hover,
+    body:not(.metaverse-page) .navbar .dropdown-item:focus {
+      background: linear-gradient(135deg, var(--accent1), var(--accent2));
+      color: #000 !important;                         /* 文字改深色 */
+      box-shadow: 0 0 12px rgba(106, 227, 255, .6);
+    }
+
+    /* AI 助理 按鈕/面板 */
+    #chat-toggle {
+      position: fixed; bottom: 20px; right: 20px;
+      width: 60px; height: 60px; border: none; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent1), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 24px rgba(0,0,0,.45); cursor: pointer; z-index: 1050;
+    }
+    #chat-panel {
+      position: fixed; bottom: 95px; right: 20px;
+      width: 380px; height: 500px; display: none; flex-direction: column;
+      background: var(--glass-bg); border: 1px solid var(--glass-br);
+      border-radius: 22px; backdrop-filter: blur(24px) saturate(180%);
+      box-shadow: 0 8px 28px rgba(0,0,0,.55); z-index: 1049;
+    }
+    #chat-panel.show {
+      display: flex; animation: fadeInUp .35s;
+    }
+    .chat-header {
+      background: rgba(0,0,0,.35); color: #fff; padding: .6rem 1rem;
+    }
+    .chat-iframe { flex: 1; border: none; }
+  </style>
+
+  {% block head %}{% endblock %}
+</head>
+
+<body class="{{ body_class|default('') }}">
+  <div id="tsparticles"></div>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">
+        <i class="fas fa-chart-line me-1"></i>FinWeb
+      </a>
+      <button class="navbar-toggler bg-light" type="button"
+              data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div id="navMenu" class="collapse navbar-collapse">
+        {% include 'nav_items.html' %}
+        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          {% if current_user.is_authenticated %}
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                <i class="fas fa-user-circle me-1"></i>{{ current_user.username }}
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item"
+                       href="{{ url_for('member.dashboard') }}">會員中心</a></li>
+                <li><a class="dropdown-item"
+                       href="{{ url_for('logout') }}">登出</a></li>
+              </ul>
+            </li>
+          {% else %}
+            <li class="nav-item"><a class="nav-link"
+               href="{{ url_for('login') }}">登入</a></li>
+            <li class="nav-item"><a class="nav-link"
+               href="{{ url_for('register') }}">註冊</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    window.addEventListener('scroll', () => {
+      document.querySelector('.navbar')
+              .classList.toggle('scrolled', window.scrollY > 20);
+    });
+  </script>
+
+  <!-- Flash Messages -->
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+      <div class="position-fixed"
+           style="top:70px; left:50%; transform:translateX(-50%); z-index:1150; max-width:480px;">
+        {% for cat, msg in msgs %}
+          <div class="alert alert-{{ cat }} alert-dismissible fade show shadow mb-2">
+            {{ msg }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- 主內容 -->
+  <main class="container pt-5 mt-4 animate__animated animate__fadeIn">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- AI 助理 元件 -->
+  <button id="chat-toggle">
+    <img src="{{ url_for('static', filename='img/assistant-icon.svg') }}"
+         width="26" height="26" alt="">
+  </button>
+  <div id="chat-panel">
+    <div class="chat-header d-flex justify-content-between align-items-center">
+      <span>FinWeb AI 助理</span>
+      <button id="chat-close" class="btn-close btn-close-white"></button>
+    </div>
+    <iframe id="chat-iframe"
+            data-src="{{ url_for('assistant') }}"
+            class="chat-iframe"></iframe>
+  </div>
+
+  <!-- 外部 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2/tsparticles.bundle.min.js"></script>
+  <script defer src="{{ url_for('static', filename='js/tsp-bg.js') }}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+  {% block scripts %}
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const btn    = document.getElementById('chat-toggle');
+        const panel  = document.getElementById('chat-panel');
+        const close  = document.getElementById('chat-close');
+        const iframe = document.getElementById('chat-iframe');
+        let inited = false;
+
+        btn.addEventListener('click', () => {
+          if (!inited) {
+            iframe.src = iframe.dataset.src;
+            inited = true;
+          }
+          panel.classList.toggle('show');
+        });
+        close.addEventListener('click', () => panel.classList.remove('show'));
+      });
+    </script>
+  {% endblock %}
+</body>
+</html>

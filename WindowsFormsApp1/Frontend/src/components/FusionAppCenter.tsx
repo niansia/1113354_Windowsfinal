@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowRight,
   BookOpenText,
+  ChartCandlestick,
   CircuitBoard,
   Clock3,
   Code2,
@@ -62,7 +63,8 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   add: FolderInput,
   game: Gamepad2,
   sports: Trophy,
-  medical: Stethoscope
+  medical: Stethoscope,
+  finweb: ChartCandlestick
 };
 
 const RECENT_KEY = 'fusion-app-center-recent-v1';

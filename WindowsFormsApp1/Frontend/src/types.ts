@@ -1,7 +1,7 @@
 export type AppId =
   | 'pc' | 'dir' | 'piano' | 'flashcards' | 'media' | 'wav' | 'cosmic' | 'user'
   | 'metro' | 'iot' | 'verify' | 'cultura' | 'add' | 'dev' | 'tool' | 'db' | 'web'
-  | 'game' | 'cmd' | 'set' | 'circuit' | 'toolbox' | 'style' | 'sports' | 'poetry' | 'medical' | 'signal' | 'neuro' | 'notes';
+  | 'game' | 'cmd' | 'set' | 'circuit' | 'toolbox' | 'style' | 'sports' | 'poetry' | 'medical' | 'signal' | 'neuro' | 'notes' | 'finweb';
 
 export type GestureType =
   | 'INDEX_SWIPE'
@@ -79,5 +79,6 @@ export const APPS_CONFIG: AppConfig[] = [
   { id: 'game', title: 'Fusion RPG', glyph: 'GAME', description: '啟動櫻花學院第三人稱動作 RPG 原型。', color: '#c35cff' },
   { id: 'cmd', title: '終端機', glyph: 'CMD', description: '開啟 Fusion OS 指令面板，用於腳本與診斷。', color: '#70e2bc' },
   { id: 'set', title: '設定', glyph: 'SET', description: '管理語言、主題、路徑、啟動設定與偏好。', color: '#a385ff' },
-  { id: 'neuro', title: 'NeuroFlow AI', glyph: 'AI', description: '連網優先並具本機備援的神經推論與動態視覺化工作室。', color: '#72e6ff' }
+  { id: 'neuro', title: 'NeuroFlow AI', glyph: 'AI', description: '連網優先並具本機備援的神經推論與動態視覺化工作室。', color: '#72e6ff' },
+  { id: 'finweb', title: 'FinWeb', glyph: 'FIN', description: '整合股票、加密貨幣、AI 預測、型態辨識與策略回測的金融平台。', color: '#62d9b7' }
 ];
