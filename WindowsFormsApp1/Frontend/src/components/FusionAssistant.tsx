@@ -9,8 +9,11 @@ import { useI18n } from '../i18n/I18nContext';
 import { LANG_LABELS, type Lang } from '../i18n/strings';
 import { formatFusionDate, formatFusionTime } from '../i18n/localeFormatting';
 import { useVoice } from '../hooks/useVoice';
+import { useAgenda } from '../state/AgendaContext';
 import { parseIntent, type ParsedIntent } from '../assistant/nlu';
+import { parseAgenda } from '../assistant/agendaParse';
 import { ASSISTANT_TEXT } from '../assistant/assistantText';
+import { sanitizeVoiceCommand } from '../assistant/wakeWords';
 import { fetchWeather } from '../assistant/weather';
 import { understand } from '../assistant/brain';
 
@@ -52,6 +55,7 @@ export const FusionAssistant: React.FC<FusionAssistantProps> = ({
   onLaunchAppId
 }) => {
   const { t, tf, lang } = useI18n();
+  const { addEvent: addAgendaEvent, requestFocusDate } = useAgenda();
   const voice = useVoice(lang, settings.assistantServerUrl);
   const {
     engine,
@@ -148,6 +152,19 @@ export const FusionAssistant: React.FC<FusionAssistantProps> = ({
           if (!opened) onLaunchAppId('web');
           return q ? tf(ASSISTANT_TEXT.searching, q) : t(ASSISTANT_TEXT.openedWeb);
         }
+        case 'add_note': {
+          // Parse the spoken date/time/task, drop it on the shared calendar, and open the
+          // Notes & Calendar app focused on that day so it visibly "appears".
+          const plan = parseAgenda(raw, lang, now);
+          const event = addAgendaEvent({ date: plan.date, time: plan.time, title: plan.title, source: 'voice' });
+          requestFocusDate(plan.date);
+          onLaunchAppId('notes');
+          window.setTimeout(() => onOpenChange(false), 900);
+          const dateLabel = formatFusionDate(new Date(`${plan.date}T00:00:00`), lang, s.timezone);
+          return plan.time
+            ? tf(ASSISTANT_TEXT.reminderAdded, dateLabel, plan.time, event.title)
+            : tf(ASSISTANT_TEXT.reminderAddedAllDay, dateLabel, '', event.title);
+        }
         case 'setting':
           return applySetting(parsed, s);
         case 'help':
@@ -166,7 +183,7 @@ export const FusionAssistant: React.FC<FusionAssistantProps> = ({
     },
     // applySetting is defined below and is stable via closure over onChange
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lang, onLaunchAppId, onOpenChange, t, tf]
+    [addAgendaEvent, lang, onLaunchAppId, onOpenChange, requestFocusDate, t, tf]
   );
 
   const applySetting = useCallback(
@@ -288,7 +305,11 @@ export const FusionAssistant: React.FC<FusionAssistantProps> = ({
 
   const startListening = useCallback(() => {
     if (!canVoiceInput) return;
-    startCommand((finalText) => handleRef.current(finalText));
+    startCommand((finalText) => {
+      // Drop silence hallucinations / bare wake phrases that slipped past the audio gate.
+      const command = sanitizeVoiceCommand(finalText);
+      if (command) handleRef.current(command);
+    });
   }, [canVoiceInput, startCommand]);
 
   const toggleMic = useCallback(() => {
@@ -326,9 +347,10 @@ export const FusionAssistant: React.FC<FusionAssistantProps> = ({
     if (!enabled || !settings.assistantWakeWord || !canVoiceInput) return;
     if (open || speaking || listening) return;
     startWake((command) => {
-      pendingWakeCommandRef.current = command;
+      const cleaned = sanitizeVoiceCommand(command);
+      pendingWakeCommandRef.current = cleaned;
       onOpenChange(true);
-      if (command) {
+      if (cleaned) {
         window.setTimeout(() => {
           const pending = pendingWakeCommandRef.current;
           pendingWakeCommandRef.current = '';

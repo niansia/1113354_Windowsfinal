@@ -33,20 +33,23 @@ import { useI18n } from '../i18n/I18nContext';
 import { useSettings } from '../state/SettingsContext';
 import { formatFusionDate, formatFusionTime, localeForLanguage } from '../i18n/localeFormatting';
 import {
+  analyzePrompt,
   buildInferenceTrace,
   calculateReward,
   composeGroundedAnswer,
   getInferencePlaybackMs,
   retrieveLocalKnowledge,
+  streamChunks,
   tokenizePrompt,
   type KnowledgeHit,
   type LiquidParameters,
   type NeuroArchitecture,
+  type PromptIntent,
   type RewardSignals
 } from '../neuro/neuroFlow';
 import { searchPublicKnowledge } from '../neuro/onlineKnowledge';
 import { LiquidStateCanvas } from './neuro/NeuralFlowCanvas';
-import { NeuralFlow3D } from './neuro/NeuralFlow3D';
+import { NeuralFlow3D, type NeuralFlowState } from './neuro/NeuralFlow3D';
 
 interface FusionNeuroFlowProps {
   open: boolean;
@@ -96,6 +99,14 @@ const SOURCE_MODES: Array<{ id: SourceMode; label: string }> = [
 
 const PIPELINE_KEYS = ['Token 化', '向量嵌入', '注意力', '液態狀態', '獎勵評估', '答案解碼'];
 
+const INTENT_LABELS: Record<PromptIntent, string> = {
+  compare: '比較分析',
+  explain: '解釋說明',
+  define: '定義',
+  reason: '成因與影響',
+  general: '綜合'
+};
+
 const clamp = (value: number, min = 0, max = 1) => Math.max(min, Math.min(max, value));
 
 const waitForPlayback = (milliseconds: number, signal: AbortSignal) => new Promise<boolean>((resolve) => {
@@ -122,9 +133,12 @@ export const FusionNeuroFlow: React.FC<FusionNeuroFlowProps> = ({ open, onClose,
   const [sourceMode, setSourceMode] = useState<SourceMode>('auto');
   const [networkState, setNetworkState] = useState<NetworkState>('ready');
   const [running, setRunning] = useState(false);
+  const [streaming, setStreaming] = useState(false);
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [speed, setSpeed] = useState(1);
   const [answer, setAnswer] = useState('');
+  const [decoded, setDecoded] = useState(0);
+  const [outputCount, setOutputCount] = useState(0);
   const [evidence, setEvidence] = useState<KnowledgeHit[]>([]);
   const [latencyMs, setLatencyMs] = useState(0);
   const [notes, setNotes] = useState<WorkspaceNote[]>([]);
@@ -135,6 +149,8 @@ export const FusionNeuroFlow: React.FC<FusionNeuroFlowProps> = ({ open, onClose,
   const [rewardWeights, setRewardWeights] = useState<RewardSignals>({ accuracy: 4, helpfulness: 4, safety: 3, clarity: 3 });
   const abortRef = useRef<AbortController | null>(null);
   const runIdRef = useRef(0);
+  const flowRef = useRef<NeuralFlowState>({ progress: 0, decoded: 0, outputCount: 0 });
+  const progressRafRef = useRef(0);
 
   useEffect(() => {
     if (!open) return;
@@ -142,7 +158,7 @@ export const FusionNeuroFlow: React.FC<FusionNeuroFlowProps> = ({ open, onClose,
     return () => window.clearInterval(timer);
   }, [open]);
 
-  useEffect(() => () => abortRef.current?.abort(), []);
+  useEffect(() => () => { abortRef.current?.abort(); cancelAnimationFrame(progressRafRef.current); }, []);
 
   useEffect(() => {
     const online = () => setIsOnline(true);
@@ -165,6 +181,7 @@ export const FusionNeuroFlow: React.FC<FusionNeuroFlowProps> = ({ open, onClose,
   const reward = useMemo(() => calculateReward(rewardSignals, rewardWeights), [rewardSignals, rewardWeights]);
   const numberFormat = useMemo(() => new Intl.NumberFormat(localeForLanguage(lang), { maximumFractionDigits: 1 }), [lang]);
   const stageLabels = useMemo(() => PIPELINE_KEYS.map(t), [t]);
+  const intent = useMemo<PromptIntent>(() => analyzePrompt(prompt, lang).intent, [prompt, lang]);
 
   const workspaceHits = useCallback((query: string): KnowledgeHit[] => {
     const terms = new Set(tokenizePrompt(query.toLocaleLowerCase()).map((token) => token.text));
@@ -185,23 +202,40 @@ export const FusionNeuroFlow: React.FC<FusionNeuroFlowProps> = ({ open, onClose,
 
   const runInference = useCallback(async () => {
     const cleanPrompt = prompt.trim();
-    if (!cleanPrompt || running) return;
+    if (!cleanPrompt || running || streaming) return;
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
     const currentRun = ++runIdRef.current;
     const startedAt = performance.now();
     setRunning(true);
+    setStreaming(false);
     setAnswer('');
     setEvidence([]);
     setLatencyMs(0);
+    setDecoded(0);
+    setOutputCount(0);
     setPhaseIndex(0);
     setNetworkState(sourceMode === 'offline' ? 'offline' : 'connecting');
 
-    const playbackMs = getInferencePlaybackMs(trace.stages.length, speed);
+    const stageCount = trace.stages.length;
+    const playbackMs = getInferencePlaybackMs(stageCount, speed);
+
+    // Smoothly sweep the activation wavefront across the pipeline (drives the 3D scene at
+    // 60fps via flowRef without re-rendering React).
+    flowRef.current = { progress: 0, decoded: 0, outputCount: 0 };
+    cancelAnimationFrame(progressRafRef.current);
+    const sweep = () => {
+      if (controller.signal.aborted) return;
+      const k = Math.min(1, (performance.now() - startedAt) / Math.max(1, playbackMs));
+      flowRef.current.progress = k * k * (3 - 2 * k);
+      if (k < 1) progressRafRef.current = requestAnimationFrame(sweep);
+    };
+    progressRafRef.current = requestAnimationFrame(sweep);
+
     const phaseTimer = window.setInterval(() => {
-      setPhaseIndex((current) => Math.min(trace.stages.length - 1, current + 1));
-    }, playbackMs / trace.stages.length);
+      setPhaseIndex((current) => Math.min(stageCount - 1, current + 1));
+    }, playbackMs / stageCount);
 
     let resolvedState: NetworkState = 'offline';
     let hits: KnowledgeHit[] = [];
@@ -223,15 +257,35 @@ export const FusionNeuroFlow: React.FC<FusionNeuroFlowProps> = ({ open, onClose,
         resolvedState = sourceMode === 'offline' ? 'offline' : 'fallback';
       }
       if (currentRun !== runIdRef.current) return;
+
+      // Let the wavefront finish sweeping through the network before decoding begins.
       const remainingPlayback = playbackMs - (performance.now() - startedAt);
       if (!(await waitForPlayback(remainingPlayback, controller.signal))) return;
-      const finalAnswer = composeGroundedAnswer(cleanPrompt, lang, hits);
-      const elapsed = Math.max(1, Math.round(performance.now() - startedAt));
+      const inferenceMs = Math.max(1, Math.round(performance.now() - startedAt));
       setEvidence(hits);
-      setAnswer(finalAnswer);
-      setLatencyMs(elapsed);
+      setLatencyMs(inferenceMs);
       setNetworkState(resolvedState);
-      setPhaseIndex(trace.stages.length - 1);
+      setPhaseIndex(stageCount - 1);
+
+      // Autoregressive decode: stream the grounded answer token by token while emission
+      // particles fly out of the final layer.
+      const finalAnswer = composeGroundedAnswer(cleanPrompt, lang, hits);
+      const chunks = streamChunks(finalAnswer);
+      flowRef.current.outputCount = chunks.length;
+      setOutputCount(chunks.length);
+      setStreaming(true);
+      const perToken = Math.max(10, Math.round(24 / Math.max(0.5, speed)));
+      let shown = '';
+      for (let i = 0; i < chunks.length; i += 1) {
+        if (controller.signal.aborted || currentRun !== runIdRef.current) return;
+        shown += chunks[i];
+        flowRef.current.decoded = i + 1;
+        setAnswer(shown);
+        setDecoded(i + 1);
+        if (!(await waitForPlayback(perToken, controller.signal))) return;
+      }
+      setStreaming(false);
+
       const finalReward = calculateReward({
         accuracy: clamp(0.7 + hits.length * 0.07),
         helpfulness: 0.86,
@@ -243,7 +297,7 @@ export const FusionNeuroFlow: React.FC<FusionNeuroFlowProps> = ({ open, onClose,
         prompt: cleanPrompt,
         answer: finalAnswer,
         sourceMode: resolvedState,
-        latencyMs: elapsed,
+        latencyMs: inferenceMs,
         reward: finalReward,
         tokenCount: trace.tokens.length,
         timestamp: new Date().toISOString(),
@@ -251,9 +305,14 @@ export const FusionNeuroFlow: React.FC<FusionNeuroFlowProps> = ({ open, onClose,
       }, ...items].slice(0, 18));
     } finally {
       window.clearInterval(phaseTimer);
-      if (currentRun === runIdRef.current) setRunning(false);
+      if (currentRun === runIdRef.current) {
+        cancelAnimationFrame(progressRafRef.current);
+        flowRef.current.progress = 1;
+        setRunning(false);
+        setStreaming(false);
+      }
     }
-  }, [isOnline, lang, prompt, rewardWeights, running, sourceMode, speed, trace.stages.length, trace.tokens.length, workspaceHits]);
+  }, [isOnline, lang, prompt, rewardWeights, running, streaming, sourceMode, speed, trace.stages.length, trace.tokens.length, workspaceHits]);
 
   const addNote = () => {
     if (!noteTitle.trim() || !noteContent.trim()) return;
@@ -350,16 +409,16 @@ export const FusionNeuroFlow: React.FC<FusionNeuroFlowProps> = ({ open, onClose,
                       <div className="neuro-example-row">{EXAMPLES.map((example) => <button key={example} type="button" onClick={() => setPrompt(example)}>{t(example)}</button>)}</div>
                       <div className="neuro-run-row">
                         <div className="neuro-segmented">{SOURCE_MODES.map((mode) => <button key={mode.id} type="button" className={sourceMode === mode.id ? 'active' : ''} onClick={() => setSourceMode(mode.id)}>{t(mode.label)}</button>)}</div>
-                        <button type="button" className="neuro-run-button" onClick={runInference} disabled={running || !prompt.trim()}>{running ? <RefreshCw className="spin" size={17} /> : <Play size={17} fill="currentColor" />}{t(running ? '推論中' : '執行推論')}</button>
+                        <button type="button" className="neuro-run-button" onClick={runInference} disabled={running || streaming || !prompt.trim()}>{running || streaming ? <RefreshCw className="spin" size={17} /> : <Play size={17} fill="currentColor" />}{t(streaming ? '生成中' : running ? '推論中' : '執行推論')}</button>
                       </div>
                     </section>
                     <section className="neuro-visual-stage">
                       <div className="neuro-stage-toolbar"><div><Network size={17} /><strong>{t('動態神經路徑')}</strong></div><span>{architecture === 'hybrid' ? 'Transformer + LNN + RL' : architecture}</span></div>
-                      <NeuralFlow3D trace={trace} phaseIndex={phaseIndex} running={running} speed={speed} stageLabels={stageLabels} label={t('3D 神經網路動態視覺化')} />
+                      <NeuralFlow3D trace={trace} phaseIndex={phaseIndex} running={running || streaming} speed={speed} stageLabels={stageLabels} label={t('3D 神經網路動態視覺化')} flowRef={flowRef} />
                     </section>
-                    <section className={`neuro-answer-panel ${answer ? 'has-answer' : ''}`}>
-                      <div className="neuro-answer-head"><div><Sparkles size={17} /><strong>{t('生成結果')}</strong></div>{latencyMs > 0 && <span>{latencyMs} ms · {evidence.length} {t('筆證據')}</span>}</div>
-                      <p>{answer || t('執行推論後，答案與證據會顯示在這裡。')}</p>
+                    <section className={`neuro-answer-panel ${answer || streaming ? 'has-answer' : ''}`}>
+                      <div className="neuro-answer-head"><div><Sparkles size={17} /><strong>{t('生成結果')}</strong>{(answer || streaming) && <span className="neuro-intent-badge">{t('推論意圖')}· {t(INTENT_LABELS[intent])}</span>}</div>{latencyMs > 0 && <span>{latencyMs} ms · {evidence.length} {t('筆證據')}</span>}</div>
+                      <p>{answer || (streaming ? '' : t('執行推論後，答案與證據會顯示在這裡。'))}{streaming && <span className="neuro-caret" aria-hidden="true" />}</p>
                       {evidence.length > 0 && <div className="neuro-citation-row">{evidence.slice(0, 3).map((item) => <span key={item.id}>{item.provider} · {item.title}</span>)}</div>}
                     </section>
                   </div>
@@ -423,7 +482,7 @@ export const FusionNeuroFlow: React.FC<FusionNeuroFlowProps> = ({ open, onClose,
                 </section>
                 <section className="neuro-inspector-card">
                   <div className="neuro-card-title"><Gauge size={16} /><strong>{t('即時遙測')}</strong></div>
-                  <dl className="neuro-telemetry"><div><dt>{t('來源')}</dt><dd>{t(sourceLabel)}</dd></div><div><dt>{t('架構')}</dt><dd>{architecture}</dd></div><div><dt>{t('估計延遲')}</dt><dd>{trace.estimatedLatencyMs} ms</dd></div><div><dt>{t('實際延遲')}</dt><dd>{latencyMs ? `${latencyMs} ms` : '—'}</dd></div><div><dt>{t('證據')}</dt><dd>{evidence.length}</dd></div><div><dt>{t('上下文')}</dt><dd>{trace.tokens.length * 64}</dd></div></dl>
+                  <dl className="neuro-telemetry"><div><dt>{t('來源')}</dt><dd>{t(sourceLabel)}</dd></div><div><dt>{t('架構')}</dt><dd>{architecture}</dd></div><div><dt>{t('估計延遲')}</dt><dd>{trace.estimatedLatencyMs} ms</dd></div><div><dt>{t('實際延遲')}</dt><dd>{latencyMs ? `${latencyMs} ms` : '—'}</dd></div><div><dt>{t('證據')}</dt><dd>{evidence.length}</dd></div><div><dt>{t('輸出 Token')}</dt><dd>{outputCount ? `${decoded}/${outputCount}` : '—'}</dd></div><div><dt>{t('上下文')}</dt><dd>{trace.tokens.length * 64}</dd></div></dl>
                 </section>
                 <section className="neuro-inspector-card neuro-live-source">
                   <div className="neuro-card-title"><Radio size={16} /><strong>{t('來源追蹤')}</strong></div>

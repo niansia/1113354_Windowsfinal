@@ -8,6 +8,14 @@ const entry = (zhCN, en, ja, ko) => ({
     ko
 });
 exports.FEATURE_TRANSLATIONS = {
+    '記事本與日曆': entry('记事本与日历', 'Notes & Calendar', 'メモとカレンダー', '메모 및 캘린더'),
+    '備忘錄與行事曆': entry('备忘录与日程表', 'Memos and schedule', 'メモとスケジュール', '메모 및 일정'),
+    '記錄備忘事項、在行事曆上標註待辦，並透過語音助理新增提醒，立即顯示在日曆上。': entry('记录备忘事项、在日历上标注待办，并通过语音助理新增提醒，立即显示在日历上。', 'Jot down memos, mark to-dos on the calendar, and add reminders by voice that appear on the calendar instantly.', 'メモを書き留め、カレンダーに予定を記し、音声アシスタントで追加したリマインダーをすぐにカレンダーへ表示します。', '메모를 적고 캘린더에 할 일을 표시하며, 음성 비서로 추가한 알림이 즉시 캘린더에 나타납니다.'),
+    '本機儲存': entry('本机存储', 'Local storage', 'ローカル保存', '로컬 저장'),
+    '記事本': entry('记事本', 'Notes', 'メモ', '메모'),
+    '日曆': entry('日历', 'Calendar', 'カレンダー', '캘린더'),
+    '提醒': entry('提醒', 'Reminders', 'リマインダー', '알림'),
+    '待辦': entry('待办', 'To-do', 'やること', '할 일'),
     MediSphere: entry('MediSphere', 'MediSphere', 'MediSphere', 'MediSphere'),
     '醫療學習與健康導航': entry('医疗学习与健康导航', 'Medical learning and health navigator', '医療学習と健康ナビゲーター', '의료 학습 및 건강 내비게이터'),
     '生命徵象、醫學影像與就醫準備整合工作區。': entry('生命体征、医学影像与就医准备整合工作区。', 'An integrated workspace for vital signs, medical imaging, and visit preparation.', 'バイタルサイン、医用画像、受診準備を統合したワークスペース。', '활력 징후, 의료 영상, 진료 준비를 통합한 작업 공간.'),

@@ -72,6 +72,9 @@ export const ASSISTANT_TEXT = {
   // ---- web search ----
   searching: '正在為你搜尋「{0}」。',
   openedWeb: '已為你開啟網頁區。',
+  // ---- calendar / reminders ----
+  reminderAdded: '好的，已在 {0} {1} 的行事曆標註「{2}」。',
+  reminderAddedAllDay: '好的，已在 {0} 的行事曆標註「{2}」。',
   // ---- settings control ----
   setDark: '已切換到深色模式。',
   setLight: '已切換到淺色模式。',
@@ -201,6 +204,8 @@ export const ASSISTANT_TRANSLATIONS: Record<string, Entry> = {
 
   [ASSISTANT_TEXT.searching]: entry('正在为你搜索「{0}」。', 'Searching for “{0}”.', '「{0}」を検索しています。', '“{0}”을(를) 검색합니다.'),
   [ASSISTANT_TEXT.openedWeb]: entry('已为你打开网页区。', 'I opened the Web Zone for you.', 'Web ゾーンを開きました。', '웹 구역을 열었습니다.'),
+  [ASSISTANT_TEXT.reminderAdded]: entry('好的，已在 {0} {1} 的日历标注「{2}」。', 'Done — added “{2}” to your calendar on {0} at {1}.', '{0} {1} のカレンダーに「{2}」を追加しました。', '{0} {1}에 “{2}”을(를) 캘린더에 추가했어요.'),
+  [ASSISTANT_TEXT.reminderAddedAllDay]: entry('好的，已在 {0} 的日历标注「{2}」。', 'Done — added “{2}” to your calendar on {0}.', '{0} のカレンダーに「{2}」を追加しました。', '{0}에 “{2}”을(를) 캘린더에 추가했어요.'),
 
   [ASSISTANT_TEXT.setDark]: entry('已切换到深色模式。', 'Switched to dark mode.', 'ダークモードに切り替えました。', '다크 모드로 전환했습니다.'),
   [ASSISTANT_TEXT.setLight]: entry('已切换到浅色模式。', 'Switched to light mode.', 'ライトモードに切り替えました。', '라이트 모드로 전환했습니다.'),

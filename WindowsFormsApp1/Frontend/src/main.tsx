@@ -17,16 +17,20 @@ import './styles/fusionPoetryCloud.css'
 import './styles/fusionMedicalHub.css'
 import './styles/fusionSignalForge.css'
 import './styles/fusionNeuroFlow.css'
+import './styles/fusionNotebook.css'
 import { SettingsProvider } from './state/SettingsContext'
 import { I18nProvider } from './i18n/I18nContext'
 import { AccountProvider } from './account/AccountContext'
+import { AgendaProvider } from './state/AgendaContext'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <SettingsProvider>
       <I18nProvider>
         <AccountProvider>
-          <App />
+          <AgendaProvider>
+            <App />
+          </AgendaProvider>
         </AccountProvider>
       </I18nProvider>
     </SettingsProvider>

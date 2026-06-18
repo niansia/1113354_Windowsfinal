@@ -35,7 +35,7 @@ exports.FUSION_APPS = [
         color: '#ff6a9e',
         category: 'system',
         tags: ['啟動器', '應用程式', '入口'],
-        status: '22 個應用程式',
+        status: '23 個應用程式',
         launchMode: 'overlay',
         featured: true
     },
@@ -275,6 +275,19 @@ exports.FUSION_APPS = [
         category: 'creative',
         tags: ['古典詩詞', '星圖', '搜尋', '朗讀'],
         status: '互動星圖',
+        launchMode: 'overlay',
+        featured: true
+    },
+    {
+        id: 'notes',
+        title: '記事本與日曆',
+        subtitle: '備忘錄與行事曆',
+        description: '記錄備忘事項、在行事曆上標註待辦，並透過語音助理新增提醒，立即顯示在日曆上。',
+        glyph: 'CAL',
+        color: '#ffb259',
+        category: 'utilities',
+        tags: ['記事本', '日曆', '提醒', '待辦'],
+        status: '本機儲存',
         launchMode: 'overlay',
         featured: true
     },

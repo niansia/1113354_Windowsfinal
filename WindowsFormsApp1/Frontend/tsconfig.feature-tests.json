@@ -20,6 +20,8 @@
     "src/i18n/localeFormatting.ts",
     "src/assistant/microphoneSelection.ts",
     "src/assistant/wakeWords.ts",
+    "src/assistant/agendaParse.ts",
+    "src/assistant/nlu.ts",
     "src/circuit/**/*.ts",
     "src/devlab/**/*.ts",
     "src/math/**/*.ts",
@@ -46,6 +48,7 @@
     "tests/sportsIntelligence.test.ts",
     "tests/sportsSimulation.test.ts",
     "tests/styleEngine.test.ts",
-    "tests/wakeWords.test.ts"
+    "tests/wakeWords.test.ts",
+    "tests/agendaParse.test.ts"
   ]
 }

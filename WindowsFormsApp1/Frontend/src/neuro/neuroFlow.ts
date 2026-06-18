@@ -52,6 +52,7 @@ export interface InferenceTrace {
   nodes: number;
   connections: number;
   estimatedLatencyMs: number;
+  promptSeed: number;
 }
 
 type LocalDocument = {
@@ -226,21 +227,143 @@ export const buildInferenceTrace = (prompt: string, architecture: NeuroArchitect
     stages,
     nodes,
     connections,
-    estimatedLatencyMs: stages.reduce((sum, stage) => sum + stage.durationMs, 0)
+    estimatedLatencyMs: stages.reduce((sum, stage) => sum + stage.durationMs, 0),
+    promptSeed: hashString(`${architecture}:${prompt}`)
   };
 };
 
 export const getInferencePlaybackMs = (stageCount: number, speed: number) =>
   Math.max(1200, Math.round(Math.max(1, stageCount) * 340 / Math.max(0.5, speed)));
 
+export type PromptIntent = 'compare' | 'explain' | 'define' | 'reason' | 'general';
+
+// Multi-language cue lists so the same question typed in any supported language is
+// routed to the same answer shape. Order of evaluation = specificity priority.
+const INTENT_CUES: Record<Exclude<PromptIntent, 'general'>, string[]> = {
+  compare: ['差異', '差別', '差别', '不同', '比較', '比较', 'versus', ' vs', 'difference', 'differ', '違い', '比べ', '차이', '비교'],
+  define: ['是什麼', '是什么', '什麼是', '什么是', '定義', '定义', 'what is', 'what are', 'definition', 'define', 'とは', '何ですか', '무엇', '정의', '뭐야'],
+  reason: ['為什麼', '为什么', '為何', '影響', '影响', '原因', 'why', 'affect', 'impact', 'reason', 'なぜ', '理由', '왜', '영향', '이유'],
+  explain: ['如何', '怎麼', '怎么', '解釋', '解释', '說明', '说明', '流程', '步驟', '步骤', 'how', 'explain', 'process', 'step', 'どのように', '仕組み', '어떻게', '설명', '과정']
+};
+
+// Read the question's intent + salient tokens so the visualization and answer can react
+// differently to different prompts (compare vs explain vs define vs reason).
+export const analyzePrompt = (prompt: string, lang: Lang): { intent: PromptIntent; focus: string[] } => {
+  const lower = prompt.toLocaleLowerCase();
+  let intent: PromptIntent = 'general';
+  for (const candidate of ['compare', 'define', 'reason', 'explain'] as Array<Exclude<PromptIntent, 'general'>>) {
+    if (INTENT_CUES[candidate].some((cue) => lower.includes(cue.toLocaleLowerCase()))) { intent = candidate; break; }
+  }
+  const focus = tokenizePrompt(prompt)
+    .filter((token) => token.text.length > 1 || /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(token.text))
+    .map((token) => token.text);
+  return { intent, focus };
+};
+
+// Split a generated answer into small reveal units (Latin words stay whole, CJK reveals
+// per glyph) so the decoder can stream tokens like an autoregressive model.
+export const streamChunks = (text: string): string[] => {
+  const pieces = text.match(/[A-Za-z0-9]+|[^A-Za-z0-9]/gu) ?? [];
+  const chunks: string[] = [];
+  for (const piece of pieces) {
+    if (/^\s+$/u.test(piece) && chunks.length > 0) chunks[chunks.length - 1] += piece;
+    else chunks.push(piece);
+  }
+  return chunks;
+};
+
+interface AnswerCopy {
+  intro: Record<PromptIntent, string>;
+  connectors: string[];
+  join: string;
+  providerSep: string;
+  closing: string;
+  fallback: string;
+}
+
+const ANSWER_COPY: Record<Lang, AnswerCopy> = {
+  'zh-TW': {
+    intro: {
+      compare: '關於「{q}」，可以從幾個面向來比較：',
+      explain: '要理解「{q}」，可以拆成幾個重點：',
+      define: '先給「{q}」一個簡單的說明：',
+      reason: '針對「{q}」，關鍵在於它的運作方式與影響：',
+      general: '針對「{q}」，目前彙整到的重點如下：'
+    },
+    connectors: ['首先，', '其次，', '此外，'],
+    join: '',
+    providerSep: '、',
+    closing: '（以上整理自 {src}，屬本機教學模擬，並非真實模型的即時訓練。）',
+    fallback: '我已在本機完成「{q}」的推論流程，但目前沒有足夠證據可形成可靠摘要，可改用連網模式或加入工作區知識再試一次。'
+  },
+  'zh-CN': {
+    intro: {
+      compare: '关于“{q}”，可以从几个方面来比较：',
+      explain: '要理解“{q}”，可以拆成几个重点：',
+      define: '先给“{q}”一个简单的说明：',
+      reason: '针对“{q}”，关键在于它的运作方式与影响：',
+      general: '针对“{q}”，目前汇整到的重点如下：'
+    },
+    connectors: ['首先，', '其次，', '此外，'],
+    join: '',
+    providerSep: '、',
+    closing: '（以上整理自 {src}，属本机教学模拟，并非真实模型的实时训练。）',
+    fallback: '我已在本机完成“{q}”的推理流程，但目前没有足够证据形成可靠摘要，可改用联网模式或加入工作区知识再试一次。'
+  },
+  en: {
+    intro: {
+      compare: 'Here is how “{q}” compares across a few angles: ',
+      explain: 'To understand “{q}”, break it into a few key points: ',
+      define: 'Here is a simple way to define “{q}”: ',
+      reason: 'For “{q}”, the key lies in how it works and what it affects: ',
+      general: 'Here are the main points gathered for “{q}”: '
+    },
+    connectors: ['First, ', 'Next, ', 'Also, '],
+    join: ' ',
+    providerSep: ', ',
+    closing: ' (Synthesized from {src}; this is a local educational simulation, not real-time model training.)',
+    fallback: 'The local pipeline finished for “{q}”, but there is not enough evidence for a reliable summary — try online mode or add workspace knowledge.'
+  },
+  ja: {
+    intro: {
+      compare: '「{q}」について、いくつかの観点から比較します。',
+      explain: '「{q}」を理解するために、要点を分けて説明します。',
+      define: 'まず「{q}」を簡単に説明します。',
+      reason: '「{q}」については、その仕組みと影響が鍵になります。',
+      general: '「{q}」についてまとめた要点は次のとおりです。'
+    },
+    connectors: ['まず、', '次に、', 'さらに、'],
+    join: '',
+    providerSep: '、',
+    closing: '（以上は {src} を基にしたローカル教育用シミュレーションで、実際のモデル学習ではありません。）',
+    fallback: '「{q}」のローカル推論は完了しましたが、信頼できる要約に十分な根拠がありません。オンラインモードを使うか、ワークスペース知識を追加してください。'
+  },
+  ko: {
+    intro: {
+      compare: '“{q}”을(를) 몇 가지 측면에서 비교하면 다음과 같습니다. ',
+      explain: '“{q}”을(를) 이해하기 위해 핵심을 나눠 설명합니다. ',
+      define: '먼저 “{q}”을(를) 간단히 설명합니다. ',
+      reason: '“{q}”의 핵심은 작동 방식과 그 영향에 있습니다. ',
+      general: '“{q}”에 대해 정리한 핵심은 다음과 같습니다. '
+    },
+    connectors: ['먼저, ', '다음으로, ', '또한, '],
+    join: ' ',
+    providerSep: ', ',
+    closing: ' (위 내용은 {src} 기반의 로컬 교육용 시뮬레이션이며 실제 모델 학습이 아닙니다.)',
+    fallback: '“{q}”에 대한 로컬 추론은 끝났지만 신뢰할 요약을 만들 근거가 부족합니다. 온라인 모드를 쓰거나 작업 공간 지식을 추가해 보세요.'
+  }
+};
+
+// Build a grounded answer that reflects the detected intent and stitches together the
+// retrieved evidence, so different questions visibly produce different responses.
 export const composeGroundedAnswer = (prompt: string, lang: Lang, evidence: KnowledgeHit[]): string => {
-  const lead = evidence[0];
-  const templates: Record<Lang, string> = {
-    'zh-TW': lead ? `根據目前取得的證據，「${prompt}」可先這樣理解：${lead.content}` : `我已在本機完成「${prompt}」的推論流程，但目前沒有足夠證據可形成可靠摘要。`,
-    'zh-CN': lead ? `根据目前取得的证据，“${prompt}”可以先这样理解：${lead.content}` : `我已在本机完成“${prompt}”的推理流程，但目前没有足够证据形成可靠摘要。`,
-    en: lead ? `Based on the available evidence, a useful starting point for “${prompt}” is: ${lead.content}` : `The local pipeline completed for “${prompt}”, but there is not enough evidence for a reliable summary.`,
-    ja: lead ? `取得した根拠から「${prompt}」は次のように理解できます。${lead.content}` : `「${prompt}」のローカル推論は完了しましたが、信頼できる要約に十分な根拠がありません。`,
-    ko: lead ? `확보한 근거를 바탕으로 “${prompt}”은 다음과 같이 이해할 수 있습니다. ${lead.content}` : `“${prompt}”에 대한 로컬 추론은 완료됐지만 신뢰할 요약을 만들 근거가 부족합니다.`
-  };
-  return templates[lang];
+  const copy = ANSWER_COPY[lang];
+  const top = evidence.filter((hit) => hit.content && hit.content.trim()).slice(0, 3);
+  if (top.length === 0) return copy.fallback.replace('{q}', prompt);
+  const { intent } = analyzePrompt(prompt, lang);
+  const body = top
+    .map((hit, index) => `${copy.connectors[Math.min(index, copy.connectors.length - 1)]}${hit.content.trim()}`)
+    .join(copy.join);
+  const providers = Array.from(new Set(top.map((hit) => hit.provider))).join(copy.providerSep);
+  return `${copy.intro[intent].replace('{q}', prompt)}${body}${copy.closing.replace('{src}', providers)}`;
 };

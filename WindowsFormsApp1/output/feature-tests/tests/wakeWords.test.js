@@ -32,3 +32,16 @@ const wakeWords_js_1 = require("../src/assistant/wakeWords.js");
         command: ''
     });
 });
+(0, node_test_1.default)('drops repeated wake-phrase hallucinations to an empty command', () => {
+    // The exact silence-hallucination the user saw.
+    strict_1.default.equal((0, wakeWords_js_1.sanitizeVoiceCommand)('嗨 Fusion.嗨 Fusion.嗨 Fusion.嗨 Fusion.嗨 Fusion.'), '');
+    strict_1.default.equal((0, wakeWords_js_1.sanitizeVoiceCommand)('嗨 Fusion 嗨 Fusion 嗨 Fusion'), '');
+    strict_1.default.equal((0, wakeWords_js_1.sanitizeVoiceCommand)('Fusion. Fusion. Fusion.'), '');
+    strict_1.default.equal((0, wakeWords_js_1.sanitizeVoiceCommand)('   '), '');
+});
+(0, node_test_1.default)('keeps a real command and strips its leading wake phrase', () => {
+    strict_1.default.equal((0, wakeWords_js_1.sanitizeVoiceCommand)('嗨 Fusion，現在幾點？'), '現在幾點？');
+    strict_1.default.equal((0, wakeWords_js_1.sanitizeVoiceCommand)('打開系統設定'), '打開系統設定');
+    // Collapses a hallucinated repeat tail but keeps the spoken command.
+    strict_1.default.equal((0, wakeWords_js_1.sanitizeVoiceCommand)('現在幾點？現在幾點？'), '現在幾點？');
+});

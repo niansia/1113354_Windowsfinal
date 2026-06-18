@@ -307,7 +307,10 @@
 .neuro-answer-head { justify-content: space-between; gap: 14px; }
 .neuro-answer-head > div { display: flex; align-items: center; gap: 8px; }
 .neuro-answer-head span { color: var(--neuro-muted); font-size: .7rem; }
-.neuro-answer-panel p { margin: 9px 0 0; color: rgba(227, 245, 255, .8); line-height: 1.7; }
+.neuro-answer-panel p { margin: 9px 0 0; color: rgba(227, 245, 255, .8); line-height: 1.7; min-height: 1.7em; }
+.neuro-intent-badge { padding: 3px 9px; border: 1px solid rgba(104, 232, 207, .24); border-radius: 999px; color: #7df2cc; background: rgba(72, 215, 181, .1); font-size: .65rem; font-weight: 800; }
+.neuro-caret { display: inline-block; width: 7px; height: 1.05em; margin-left: 2px; vertical-align: -2px; border-radius: 1px; background: #7df2cc; box-shadow: 0 0 8px rgba(125, 242, 204, .7); animation: neuro-caret-blink 1s steps(2, start) infinite; }
+@keyframes neuro-caret-blink { 50% { opacity: 0; } }
 .neuro-citation-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .neuro-citation-row span { padding: 5px 8px; border-radius: 7px; color: #9feadf; background: rgba(72, 215, 181, .09); font-size: .67rem; }
 

@@ -88,6 +88,10 @@ const LazyFusionNeuroFlow = React.lazy(() =>
   import('./FusionNeuroFlow').then((module) => ({ default: module.FusionNeuroFlow }))
 );
 
+const LazyFusionNotebook = React.lazy(() =>
+  import('./FusionNotebook').then((module) => ({ default: module.FusionNotebook }))
+);
+
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
 const CARD_W = 208;
 const CARD_GAP = 16;
@@ -226,6 +230,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       app.id === 'medical' ||
       app.id === 'signal' ||
       app.id === 'neuro' ||
+      app.id === 'notes' ||
       app.id === 'toolbox'
     ) {
       setOverlayApp(app.id);
@@ -922,6 +927,15 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
             open
             onClose={() => setOverlayApp('tool')}
             accent="#72e6ff"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'notes' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionNotebook
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#ffb259"
           />
         </React.Suspense>
       )}
