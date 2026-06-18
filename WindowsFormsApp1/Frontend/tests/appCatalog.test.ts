@@ -12,6 +12,7 @@ import { FEATURE_TRANSLATIONS } from '../src/i18n/featureTranslations.js';
 import { TRANSLATIONS } from '../src/i18n/strings.js';
 import { STYLE_TRANSLATIONS } from '../src/style/styleText.js';
 import { SPORTS_TRANSLATIONS } from '../src/sports/sportsText.js';
+import { NEURO_TRANSLATIONS } from '../src/neuro/neuroText.js';
 
 test('keeps the primary dock focused on shell-level destinations', () => {
   assert.deepEqual(
@@ -140,6 +141,25 @@ test('registers SignalForge as an integrated communication systems overlay', () 
   }
 });
 
+test('registers NeuroFlow AI as a translated online-first neural intelligence studio', () => {
+  const neuro = getAppById('neuro');
+
+  assert.equal(neuro?.title, 'NeuroFlow AI');
+  assert.equal(neuro?.subtitle, '智慧推論與神經動態工作室');
+  assert.equal(neuro?.category, 'development');
+  assert.equal(neuro?.launchMode, 'overlay');
+  assert.equal(neuro?.featured, true);
+  assert.equal(APP_CENTER_APPS.some((app) => app.id === 'neuro'), true);
+
+  for (const key of ['NeuroFlow AI', '智慧推論與神經動態工作室', '把連網檢索、本機推論、Transformer、RL 與液態神經網路整合成可操作的 AI 實驗室。']) {
+    const translation = NEURO_TRANSLATIONS[key];
+    assert.ok(translation, `missing NeuroFlow translation for "${key}"`);
+    for (const lang of ['zh-CN', 'en', 'ja', 'ko'] as const) {
+      assert.ok(translation[lang], `missing ${lang} NeuroFlow translation for "${key}"`);
+    }
+  }
+});
+
 test('wires Global Sports Center into the React overlay shell', () => {
   const repositoryRoot = resolve(process.cwd(), '..');
   const shellSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
@@ -178,6 +198,19 @@ test('wires SignalForge into the React overlay shell', () => {
   assert.match(shellSource, /FusionSignalForge/);
   assert.match(shellSource, /overlayApp === 'signal'/);
   assert.match(entrySource, /fusionSignalForge\.css/);
+});
+
+test('wires NeuroFlow AI and its Three.js visualization into the React overlay shell', () => {
+  const repositoryRoot = resolve(process.cwd(), '..');
+  const shellSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
+  const entrySource = readFileSync(resolve(repositoryRoot, 'Frontend/src/main.tsx'), 'utf8');
+  const neuroSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/FusionNeuroFlow.tsx'), 'utf8');
+
+  assert.match(shellSource, /FusionNeuroFlow/);
+  assert.match(shellSource, /overlayApp === 'neuro'/);
+  assert.match(entrySource, /fusionNeuroFlow\.css/);
+  assert.match(neuroSource, /NeuralFlow3D/);
+  assert.match(neuroSource, /searchPublicKnowledge/);
 });
 
 test('wires event dossiers, prediction evidence, and player matchups into Sports Center', () => {
@@ -262,7 +295,7 @@ test('uses Traditional Chinese source keys for the default app catalog', () => {
 test('provides every app catalog field in all selectable languages', () => {
   for (const app of FUSION_APPS) {
     for (const source of [app.title, app.subtitle, app.description, app.status, ...app.tags]) {
-      const translation = SPORTS_TRANSLATIONS[source] ?? STYLE_TRANSLATIONS[source] ?? FEATURE_TRANSLATIONS[source] ?? TRANSLATIONS[source];
+      const translation = NEURO_TRANSLATIONS[source] ?? SPORTS_TRANSLATIONS[source] ?? STYLE_TRANSLATIONS[source] ?? FEATURE_TRANSLATIONS[source] ?? TRANSLATIONS[source];
       assert.ok(translation, `missing translation entry for "${source}"`);
       for (const lang of ['zh-CN', 'en', 'ja', 'ko'] as const) {
         assert.ok(translation[lang], `missing ${lang} translation for "${source}"`);

@@ -61,7 +61,7 @@ export const FUSION_APPS: FusionApp[] = [
     color: '#ff6a9e',
     category: 'system',
     tags: ['啟動器', '應用程式', '入口'],
-    status: '21 個應用程式',
+    status: '22 個應用程式',
     launchMode: 'overlay',
     featured: true
   },
@@ -275,6 +275,19 @@ export const FUSION_APPS: FusionApp[] = [
     category: 'development',
     tags: ['資料鏈路', '處理器', '物理通道', '封包分析'],
     status: '系統實驗',
+    launchMode: 'overlay',
+    featured: true
+  },
+  {
+    id: 'neuro',
+    title: 'NeuroFlow AI',
+    subtitle: '智慧推論與神經動態工作室',
+    description: '把連網檢索、本機推論、Transformer、RL 與液態神經網路整合成可操作的 AI 實驗室。',
+    glyph: 'AI',
+    color: '#72e6ff',
+    category: 'development',
+    tags: ['人工智慧', '神經網路', 'LNN', '本機推論'],
+    status: '3D 推論引擎',
     launchMode: 'overlay',
     featured: true
   },

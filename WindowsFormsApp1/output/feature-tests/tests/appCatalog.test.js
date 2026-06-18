@@ -12,6 +12,7 @@ const featureTranslations_js_1 = require("../src/i18n/featureTranslations.js");
 const strings_js_1 = require("../src/i18n/strings.js");
 const styleText_js_1 = require("../src/style/styleText.js");
 const sportsText_js_1 = require("../src/sports/sportsText.js");
+const neuroText_js_1 = require("../src/neuro/neuroText.js");
 (0, node_test_1.default)('keeps the primary dock focused on shell-level destinations', () => {
     strict_1.default.deepEqual(fusionApps_js_1.PRIMARY_SHELL_APPS.map((app) => app.id), ['pc', 'dir', 'tool', 'web', 'game', 'set']);
 });
@@ -113,6 +114,22 @@ const sportsText_js_1 = require("../src/sports/sportsText.js");
         }
     }
 });
+(0, node_test_1.default)('registers NeuroFlow AI as a translated online-first neural intelligence studio', () => {
+    const neuro = (0, fusionApps_js_1.getAppById)('neuro');
+    strict_1.default.equal(neuro?.title, 'NeuroFlow AI');
+    strict_1.default.equal(neuro?.subtitle, '智慧推論與神經動態工作室');
+    strict_1.default.equal(neuro?.category, 'development');
+    strict_1.default.equal(neuro?.launchMode, 'overlay');
+    strict_1.default.equal(neuro?.featured, true);
+    strict_1.default.equal(fusionApps_js_1.APP_CENTER_APPS.some((app) => app.id === 'neuro'), true);
+    for (const key of ['NeuroFlow AI', '智慧推論與神經動態工作室', '把連網檢索、本機推論、Transformer、RL 與液態神經網路整合成可操作的 AI 實驗室。']) {
+        const translation = neuroText_js_1.NEURO_TRANSLATIONS[key];
+        strict_1.default.ok(translation, `missing NeuroFlow translation for "${key}"`);
+        for (const lang of ['zh-CN', 'en', 'ja', 'ko']) {
+            strict_1.default.ok(translation[lang], `missing ${lang} NeuroFlow translation for "${key}"`);
+        }
+    }
+});
 (0, node_test_1.default)('wires Global Sports Center into the React overlay shell', () => {
     const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
     const shellSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
@@ -144,6 +161,17 @@ const sportsText_js_1 = require("../src/sports/sportsText.js");
     strict_1.default.match(shellSource, /FusionSignalForge/);
     strict_1.default.match(shellSource, /overlayApp === 'signal'/);
     strict_1.default.match(entrySource, /fusionSignalForge\.css/);
+});
+(0, node_test_1.default)('wires NeuroFlow AI and its Three.js visualization into the React overlay shell', () => {
+    const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
+    const shellSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
+    const entrySource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/main.tsx'), 'utf8');
+    const neuroSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/FusionNeuroFlow.tsx'), 'utf8');
+    strict_1.default.match(shellSource, /FusionNeuroFlow/);
+    strict_1.default.match(shellSource, /overlayApp === 'neuro'/);
+    strict_1.default.match(entrySource, /fusionNeuroFlow\.css/);
+    strict_1.default.match(neuroSource, /NeuralFlow3D/);
+    strict_1.default.match(neuroSource, /searchPublicKnowledge/);
 });
 (0, node_test_1.default)('wires event dossiers, prediction evidence, and player matchups into Sports Center', () => {
     const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
@@ -220,7 +248,7 @@ const sportsText_js_1 = require("../src/sports/sportsText.js");
 (0, node_test_1.default)('provides every app catalog field in all selectable languages', () => {
     for (const app of fusionApps_js_1.FUSION_APPS) {
         for (const source of [app.title, app.subtitle, app.description, app.status, ...app.tags]) {
-            const translation = sportsText_js_1.SPORTS_TRANSLATIONS[source] ?? styleText_js_1.STYLE_TRANSLATIONS[source] ?? featureTranslations_js_1.FEATURE_TRANSLATIONS[source] ?? strings_js_1.TRANSLATIONS[source];
+            const translation = neuroText_js_1.NEURO_TRANSLATIONS[source] ?? sportsText_js_1.SPORTS_TRANSLATIONS[source] ?? styleText_js_1.STYLE_TRANSLATIONS[source] ?? featureTranslations_js_1.FEATURE_TRANSLATIONS[source] ?? strings_js_1.TRANSLATIONS[source];
             strict_1.default.ok(translation, `missing translation entry for "${source}"`);
             for (const lang of ['zh-CN', 'en', 'ja', 'ko']) {
                 strict_1.default.ok(translation[lang], `missing ${lang} translation for "${source}"`);

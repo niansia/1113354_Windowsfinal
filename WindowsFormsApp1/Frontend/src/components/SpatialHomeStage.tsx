@@ -5,6 +5,7 @@ import {
   AudioWaveform,
   Bluetooth,
   BookOpenText,
+  BrainCircuit,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -83,6 +84,10 @@ const LazyFusionSignalForge = React.lazy(() =>
   import('./FusionSignalForge').then((module) => ({ default: module.FusionSignalForge }))
 );
 
+const LazyFusionNeuroFlow = React.lazy(() =>
+  import('./FusionNeuroFlow').then((module) => ({ default: module.FusionNeuroFlow }))
+);
+
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
 const CARD_W = 208;
 const CARD_GAP = 16;
@@ -125,6 +130,7 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   poetry: BookOpenText,
   medical: Stethoscope,
   signal: RadioTower,
+  neuro: BrainCircuit,
   db: Database,
   web: Globe2,
   game: Gamepad2,
@@ -219,6 +225,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       app.id === 'poetry' ||
       app.id === 'medical' ||
       app.id === 'signal' ||
+      app.id === 'neuro' ||
       app.id === 'toolbox'
     ) {
       setOverlayApp(app.id);
@@ -906,6 +913,15 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
             open
             onClose={() => setOverlayApp('tool')}
             accent="#4bdcff"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'neuro' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionNeuroFlow
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#72e6ff"
           />
         </React.Suspense>
       )}
