@@ -28,6 +28,34 @@
       "runtimeArgs": ["server.py", "--port", "8791"],
       "cwd": "IntegratedApps/MetroPulse",
       "port": 8791
+    },
+    {
+      "name": "iot-nexus",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["server.py", "--port", "8793"],
+      "cwd": "IntegratedApps/IoTNexus",
+      "port": 8793
+    },
+    {
+      "name": "verilens",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["server.py", "--port", "8794"],
+      "cwd": "IntegratedApps/VeriLens",
+      "port": 8794
+    },
+    {
+      "name": "cultura",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["server.py", "--port", "8795"],
+      "cwd": "IntegratedApps/CulturaGlobe",
+      "port": 8795
+    },
+    {
+      "name": "sports-scout",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["server.py", "--port", "8796"],
+      "cwd": "IntegratedApps/SportsScout",
+      "port": 8796
     }
   ]
 }

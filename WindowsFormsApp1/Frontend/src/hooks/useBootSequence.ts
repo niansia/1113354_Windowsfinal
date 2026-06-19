@@ -7,6 +7,7 @@ export interface BootState extends BootSnapshot {
   allowSkip: boolean;
   reducedMotion: boolean;
   tier: string;
+  skippedVisual: boolean;   // ?boot=0 -- dev short-circuit, boot overlay never mounts
   skip: () => void;
 }
 
@@ -16,6 +17,7 @@ function flag(name: string): boolean {
     if (name === 'skip') { if (params.get('boot') === '0') return true; }
     if (name === 'debug') { if (params.get('bootDebug') === '1') return true; }
     if (name === 'force') { if (params.get('bootFull') === '1') return true; }
+    if (name === 'hold') { return params.get('bootHold') === '1'; }
     const map: Record<string, string> = { skip: 'fusionSkipBoot', debug: 'fusionBootDebug', force: 'fusionForceFullBoot' };
     return window.localStorage?.getItem(map[name]) === '1';
   } catch {
@@ -51,8 +53,35 @@ export function useBootSequence(): BootState {
     if (startedRef.current) return; // run exactly once (survives StrictMode double-mount)
     startedRef.current = true;
 
-    const skipVisual = flag('skip');
-    if (skipVisual) skipRef.current = true;
+    // DEV: ?bootHold=1 freezes on the boot screen (progress gently breathes) so the
+    // boot core animation can be inspected. Never completes -> never reveals home.
+    if (flag('hold')) {
+      const t0 = performance.now();
+      let raf = 0;
+      const loop = () => {
+        const t = (performance.now() - t0) / 1000;
+        setSnap((s) => ({ ...s, taskLabel: 'Boot hold (dev)', done: false,
+          progress: 0.55 + 0.4 * Math.sin(t * 0.5) }));
+        raf = requestAnimationFrame(loop);
+      };
+      raf = requestAnimationFrame(loop);
+      return () => cancelAnimationFrame(raf);
+    }
+
+    // DEV: ?boot=0 short-circuits boot entirely — no warm-up pipeline, no rAF
+    // dependence, and App never mounts the WebGL boot scene (which can wedge the
+    // compositor on headless/iGPU dev environments).
+    if (flag('skip')) {
+      setSnap({
+        phase: 'reveal',
+        phaseLabel: PHASE_LABELS.reveal,
+        taskLabel: 'FusionOS Ready',
+        progress: 1,
+        modules: [],
+        done: true
+      });
+      return;
+    }
 
     runBoot({
       shouldSkip: () => skipRef.current,
@@ -68,6 +97,7 @@ export function useBootSequence(): BootState {
     allowSkip,
     reducedMotion,
     tier: profile.current.tier,
+    skippedVisual: flag('skip'),
     skip: () => { if (allowSkip) skipRef.current = true; }
   };
 }

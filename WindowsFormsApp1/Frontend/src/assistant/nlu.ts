@@ -13,6 +13,7 @@ export type IntentKind =
   | 'date'
   | 'setting'
   | 'search'
+  | 'add_note'
   | 'help'
   | 'greeting'
   | 'thanks'
@@ -58,6 +59,10 @@ const APP_ALIASES: Array<{ id: AppId; words: string[] }> = [
   { id: 'wav', words: ['音訊工作室', '音频工作室', '音訊', '音频', 'wav', 'audio', 'waveform', 'オーディオ', '오디오'] },
   { id: 'cosmic', words: ['宇宙手勢', '宇宙手势', '宇宙', '星空', '星圖', 'cosmic', 'gesture', 'コズミック', '코스믹', '우주'] },
   { id: 'metro', words: ['metropulse', '智慧交通', '交通', '地圖', '地图', '捷運', 'map', 'metro', 'traffic', 'マップ', '交通', '교통', '지도'] },
+  { id: 'iot', words: ['物聯網', '物联网', '物聯網中樞', '智慧建築', '智能建筑', 'iot', 'nexus', 'mqtt', '感測器', '传感器', 'sensor', 'モノのインターネット', 'スマートビル', '사물인터넷', '스마트 빌딩'] },
+  { id: 'verify', words: ['真偽', '真伪', '假新聞', '假新闻', '鑑識', '鉴识', '查證', '查证', 'verilens', 'verify', 'fake news', 'fakenews', 'misinformation', 'yolo', '偽ニュース', 'フェイク', '가짜뉴스', '팩트체크'] },
+  { id: 'cultura', words: ['文化', '世界文化', '世界文化星球', '地球', '地球儀', '地球仪', 'cultura', 'culture', 'cultures', 'globe', 'world', '世界', '문화', '지구본', '文化星球', '各國文化'] },
+  { id: 'notes', words: ['記事本', '记事本', '日曆', '日历', '行事曆', '行事历', '備忘錄', '备忘录', '日程表', 'notes', 'notepad', 'calendar', 'カレンダー', 'メモ帳', '캘린더', '메모장'] },
   { id: 'dev', words: ['開發實驗室', '开发实验室', '開發', '开发', 'dev', 'code', 'ide', '程式碼', '代码', '開発', '개발', '코드'] },
   { id: 'db', words: ['資料庫', '数据库', 'database', 'sql', 'データベース', '데이터베이스'] },
   { id: 'toolbox', words: ['工具箱', '工具', 'toolbox', 'tools', '計算機', '计算器', 'calculator', 'ツール', '도구함', '계산기'] },
@@ -67,6 +72,10 @@ const APP_ALIASES: Array<{ id: AppId; words: string[] }> = [
 ];
 
 const OPEN_VERBS = ['打開', '開啟', '啟動', '執行', '進入', '開一下', '幫我開', '叫出', '呼叫', '打开', '开启', '启动', '运行', 'open', 'launch', 'start', 'run', 'go to', 'show me', '開いて', '起動', 'ひらいて', '立ち上げ', '열어', '켜', '실행', '시작', '띄워'];
+
+// Verbs that clearly mean "create a reminder / note" (distinct from the app name itself,
+// which only opens the app). Used to route an utterance to the calendar.
+const NOTE_ACTIONS = ['標註', '标注', '标註', '提醒', '記得', '记得', '記下', '记下', '寫下', '写下', '備註', '备注', '備忘', '备忘', '記一下', '记一下', '幫我記', '帮我记', '待辦', '待办', '安排', '排程', 'remind', 'reminder', 'remember to', 'set a reminder', 'add a reminder', 'add an event', 'add event', 'schedule', 'メモして', 'リマインド', '覚えて', '予定', '알림', '기억해', '메모해'];
 
 const ON_WORDS = ['打開', '開啟', '開', '啟用', '打开', '开启', '开', '启用', 'on', 'enable', 'turn on', 'オン', 'つけて', 'オンに', '켜', '활성', '켜줘'];
 const OFF_WORDS = ['關閉', '關掉', '關', '取消', '停用', '別', '不要', '关闭', '关掉', '关', '停用', 'off', 'disable', 'turn off', 'オフ', '切って', 'オフに', '꺼', '끄', '비활성', '해제'];
@@ -216,6 +225,11 @@ export function parseIntent(raw: string): ParsedIntent {
   // date
   if (hasAny(text, ['幾號', '几号', '日期', '今天星期', '今天禮拜', '星期幾', '礼拜几', 'what day', 'date today', "today's date", '何日', '何曜日', '날짜', '며칠', '무슨 요일'])) {
     return { kind: 'date' };
+  }
+
+  // add a reminder / calendar note — but "打開記事本" (open the app) stays an app launch
+  if (hasAny(text, NOTE_ACTIONS) && !(hasAny(text, OPEN_VERBS) && matchApp(text) === 'notes')) {
+    return { kind: 'add_note', query: raw.trim() };
   }
 
   // settings

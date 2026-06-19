@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Cultura — 世界文化星球</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <canvas id="globe"></canvas>
+
+  <!-- centered museum masthead with the culture/birds page tabs -->
+  <header class="masthead">
+    <nav class="mast-tabs">
+      <a id="tabCulture" href="index.html" class="is-active" data-i18n="文化星球">文化星球</a>
+      <a id="tabBirds" href="birds.html" data-i18n="鳥類星球">鳥類星球</a>
+    </nav>
+    <h1 class="mast-title" data-i18n="世界文化星球">世界文化星球</h1>
+    <div class="mast-stats" id="counts"></div>
+  </header>
+
+  <!-- left catalog panel: country list <-> country detail -->
+  <aside class="panel" id="panel">
+    <div class="panel-view" id="panelList">
+      <input id="search" class="panel-search" type="text" />
+      <div class="panel-sec" data-i18n="地區">地區</div>
+      <div class="chip-row" id="legendRegions"></div>
+      <div class="panel-sec" data-i18n="類別">類別</div>
+      <div class="chip-row cats" id="legendCats"></div>
+      <div class="panel-sec" data-i18n="國家清單">國家清單</div>
+      <div class="country-list" id="countryList"></div>
+    </div>
+
+    <div class="panel-view" id="panelDetail" hidden>
+      <div class="detail-head">
+        <div class="detail-name" id="detailName">—</div>
+        <button class="back-btn" id="detailBack">← <span data-i18n="返回">返回</span></button>
+      </div>
+      <div class="detail-stats">
+        <div class="stat"><b id="statItems">0</b><span data-i18n="文化項目">文化項目</span></div>
+        <div class="stat"><b id="statRegion">—</b><span data-i18n="地區">地區</span></div>
+      </div>
+      <div class="detail-greet" id="detailGreet"></div>
+      <div class="detail-items" id="detailItems"></div>
+    </div>
+  </aside>
+
+  <!-- bottom toolbar -->
+  <div class="toolbar">
+    <button class="tb-btn on" id="tbSpin" data-i18n="旋轉">旋轉</button>
+    <button class="tb-btn on" id="tbLabels" data-i18n="標籤">標籤</button>
+    <button class="tb-btn on" id="tbImages" data-i18n="圖片">圖片</button>
+    <span class="tb-hint" data-i18n="拖曳旋轉地球 · 滾輪縮放">拖曳旋轉地球 · 滾輪縮放</span>
+  </div>
+
+  <div class="tip" id="tip" hidden></div>
+
+  <section class="card" id="card" hidden>
+    <button class="card-close" id="cardClose" data-i18n="關閉">關閉</button>
+    <img class="card-img" id="cardImg" alt="" hidden />
+    <div class="card-flag" id="cardFlag">🌐</div>
+    <div class="card-country" id="cardCountry">—</div>
+    <div class="card-region" id="cardRegion">—</div>
+    <div class="card-cat" id="cardCat"></div>
+    <h3 class="card-title" id="cardTitle">—</h3>
+    <p class="card-desc" id="cardDesc">—</p>
+    <p class="card-native" id="cardNative" hidden></p>
+    <div class="card-greet" id="cardGreet"></div>
+    <div class="card-note" data-i18n="點擊標記即以當地語言朗讀簡介">點擊標記即以當地語言朗讀簡介</div>
+  </section>
+
+  <div class="splash" id="splash"><span data-i18n="載入中…">載入中…</span></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

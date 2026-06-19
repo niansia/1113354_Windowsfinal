@@ -1,0 +1,475 @@
+.signal-forge-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: clamp(14px, 2vw, 28px);
+  background:
+    radial-gradient(circle at 12% 12%, rgba(64, 224, 255, 0.2), transparent 34%),
+    radial-gradient(circle at 82% 18%, rgba(150, 111, 255, 0.17), transparent 34%),
+    linear-gradient(135deg, rgba(1, 8, 24, 0.74), rgba(2, 9, 31, 0.9) 48%, rgba(9, 4, 26, 0.82));
+  backdrop-filter: blur(18px) saturate(1.18);
+}
+
+.signal-forge-shell {
+  --signal-panel: rgba(7, 17, 42, 0.78);
+  --signal-line: rgba(132, 219, 255, 0.19);
+  --signal-text: #eaf8ff;
+  --signal-muted: rgba(213, 236, 255, 0.68);
+  position: relative;
+  width: min(1680px, 96vw);
+  height: min(920px, 92vh);
+  overflow: hidden;
+  color: var(--signal-text);
+  border: 1px solid rgba(118, 217, 255, 0.28);
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(88, 231, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 88% 22%, rgba(180, 107, 255, 0.13), transparent 30%),
+    linear-gradient(145deg, rgba(5, 14, 34, 0.96), rgba(3, 8, 29, 0.95) 44%, rgba(8, 5, 30, 0.96));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.signal-grid-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(124, 221, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 221, 255, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 50% 20%, rgba(105, 231, 255, 0.12), transparent 42%);
+  background-size: 60px 60px, 60px 60px, auto;
+  mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 84%);
+}
+
+.signal-topbar {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--signal-line);
+  background: linear-gradient(180deg, rgba(15, 29, 62, 0.64), rgba(9, 16, 41, 0.2));
+}
+
+.signal-brand,
+.signal-section-title,
+.signal-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.signal-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 17px;
+  color: #071527;
+  background: linear-gradient(135deg, #81f6ff, #63c4ff 56%, #a891ff);
+  box-shadow: 0 0 34px rgba(102, 232, 255, 0.32);
+}
+
+.signal-brand strong {
+  display: block;
+  font-size: 1.28rem;
+  letter-spacing: 0.08em;
+}
+
+.signal-brand small,
+.signal-time span,
+.signal-time small,
+.signal-section-title span,
+.signal-hero-card span,
+.signal-frame-grid span,
+.signal-physics-grid span,
+.signal-register-grid span,
+.signal-register-grid small,
+.signal-next span {
+  color: var(--signal-muted);
+}
+
+.signal-time {
+  min-width: 210px;
+  padding: 10px 14px;
+  border: 1px solid var(--signal-line);
+  border-radius: 18px;
+  background: rgba(5, 13, 34, 0.6);
+  text-align: right;
+}
+
+.signal-time strong {
+  display: block;
+  font-size: 1.15rem;
+}
+
+.signal-close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(159, 218, 255, 0.18);
+  border-radius: 16px;
+  color: #d9f5ff;
+  background: rgba(8, 16, 38, 0.72);
+}
+
+.signal-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr) 300px;
+  gap: 18px;
+  height: calc(100% - 93px);
+  padding: 18px;
+}
+
+.signal-control-panel,
+.signal-main-panel,
+.signal-right-panel {
+  min-height: 0;
+}
+
+.signal-control-panel,
+.signal-card,
+.signal-side-card,
+.signal-hero-card {
+  border: 1px solid var(--signal-line);
+  background: var(--signal-panel);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055), 0 20px 50px rgba(0, 0, 0, 0.22);
+}
+
+.signal-control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: auto;
+  border-radius: 26px;
+  padding: 16px;
+}
+
+.signal-section-title strong {
+  display: block;
+  line-height: 1.45;
+}
+
+.signal-payload-box {
+  display: grid;
+  gap: 8px;
+}
+
+.signal-payload-box textarea {
+  min-height: 118px;
+  resize: vertical;
+  padding: 12px;
+  border: 1px solid rgba(123, 211, 255, 0.2);
+  border-radius: 16px;
+  color: #eefbff;
+  background: rgba(4, 11, 29, 0.62);
+  outline: 0;
+}
+
+.signal-mediums {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.signal-mediums button,
+.signal-range input {
+  min-width: 0;
+}
+
+.signal-mediums button {
+  padding: 10px;
+  border: 1px solid rgba(122, 211, 255, 0.16);
+  border-radius: 16px;
+  color: #d9f5ff;
+  background: rgba(9, 19, 46, 0.7);
+  font-weight: 800;
+}
+
+.signal-mediums button.active {
+  color: #05162a;
+  border-color: transparent;
+  background: linear-gradient(135deg, #86f4ff, #8ebaff);
+  box-shadow: 0 0 24px rgba(102, 232, 255, 0.24);
+}
+
+.signal-range {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(125, 216, 255, 0.14);
+  border-radius: 17px;
+  background: rgba(5, 14, 36, 0.58);
+}
+
+.signal-range span {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--signal-muted);
+}
+
+.signal-range b {
+  color: #eaf8ff;
+}
+
+.signal-range input {
+  accent-color: var(--signal-accent);
+}
+
+.signal-main-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.signal-hero-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  border-radius: 28px;
+  padding: 22px;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(102, 232, 255, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(12, 35, 74, 0.82), rgba(8, 15, 43, 0.82));
+}
+
+.signal-hero-card h2 {
+  margin: 6px 0 8px;
+  font-size: clamp(1.55rem, 2.6vw, 2.25rem);
+}
+
+.signal-hero-card p,
+.signal-side-card li {
+  color: rgba(224, 244, 255, 0.78);
+  line-height: 1.7;
+}
+
+.signal-hero-metrics {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  min-width: 178px;
+}
+
+.signal-hero-metrics span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(3, 10, 28, 0.52);
+}
+
+.signal-card,
+.signal-side-card {
+  border-radius: 24px;
+  padding: 16px;
+}
+
+.signal-card-head {
+  margin-bottom: 14px;
+}
+
+.signal-frame-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.signal-frame-grid article,
+.signal-physics-grid article,
+.signal-register-grid article,
+.signal-instruction-list article {
+  border: 1px solid rgba(125, 216, 255, 0.15);
+  border-radius: 18px;
+  background: rgba(5, 14, 36, 0.62);
+}
+
+.signal-frame-grid article,
+.signal-register-grid article {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.signal-frame-grid strong,
+.signal-register-grid strong {
+  overflow-wrap: anywhere;
+}
+
+.signal-binary-preview {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 17px;
+  background: rgba(3, 10, 28, 0.54);
+}
+
+.signal-binary-preview code,
+.signal-instruction-list code {
+  color: #96f0ff;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  overflow-wrap: anywhere;
+}
+
+.signal-physics-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.signal-physics-grid article {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.signal-register-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.signal-instruction-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.signal-instruction-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 70px minmax(120px, 0.6fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.signal-instruction-list span {
+  color: var(--signal-muted);
+}
+
+.signal-level.level-steady,
+.level-steady {
+  color: #8dffd9;
+}
+
+.signal-level.level-watch,
+.level-watch {
+  color: #f7d77b;
+}
+
+.signal-level.level-review,
+.level-review {
+  color: #ff92ae;
+}
+
+.signal-right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.signal-side-card ul {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.signal-side-card li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.signal-side-card li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.7em;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--signal-accent);
+  box-shadow: 0 0 14px var(--signal-accent);
+}
+
+.signal-next p {
+  margin: 8px 0 2px;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+@media (max-width: 1280px) {
+  .signal-layout {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+
+  .signal-right-panel {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+  }
+
+  .signal-frame-grid,
+  .signal-register-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .signal-physics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 920px) {
+  .signal-forge-shell {
+    height: 94vh;
+    border-radius: 24px;
+  }
+
+  .signal-topbar,
+  .signal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .signal-time {
+    text-align: left;
+  }
+
+  .signal-layout {
+    height: calc(100% - 170px);
+    overflow: auto;
+  }
+
+  .signal-control-panel,
+  .signal-main-panel,
+  .signal-right-panel {
+    overflow: visible;
+  }
+
+  .signal-hero-card,
+  .signal-right-panel {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .signal-frame-grid,
+  .signal-physics-grid,
+  .signal-register-grid,
+  .signal-instruction-list article {
+    grid-template-columns: 1fr;
+  }
+}

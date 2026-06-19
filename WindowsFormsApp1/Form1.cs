@@ -58,12 +58,19 @@ namespace WindowsFormsApp1
         private AccountStore AccountDb { get { return accountStore ?? (accountStore = new AccountStore()); } }
         private Process cosmicServerProcess;
         private Process metroPulseServerProcess;
+        private Process iotNexusServerProcess;
+        private Process veriLensServerProcess;
+        private Process culturaServerProcess;
+        private Process finWebServerProcess;
         private Process voiceServerProcess;
         private int cameraAppWindowCount = 0;
         private bool nativeWarmupStarted;
         private Task<CoreWebView2Environment> fusionBrowserEnvironmentTask;
         private CoreWebView2Environment fusionBrowserEnvironment;
         private Task metroPulseWarmupTask;
+        private Task iotNexusWarmupTask;
+        private Task veriLensWarmupTask;
+        private Task<bool> finWebWarmupTask;
         private Task voiceServiceWarmupTask;
         private string terminalWorkingDirectoryCache;
         private Font terminalOutputFont;
@@ -374,6 +381,9 @@ namespace WindowsFormsApp1
             ScheduleWarmTerminalControls();
             WarmFusionBrowserEnvironment();
             WarmMetroPulseEngine();
+            WarmIoTNexusEngine();
+            WarmVeriLensEngine();
+            WarmFinWebService();
             WarmFusionVoiceService();
 
             Task.Run(delegate
@@ -436,6 +446,86 @@ namespace WindowsFormsApp1
                 try { EnsureMetroPulseEngineBuilt(); }
                 catch (Exception ex) { Debug.WriteLine("[MetroPulse] warmup failed: " + ex.Message); }
             });
+        }
+
+        private void WarmIoTNexusEngine()
+        {
+            if (iotNexusWarmupTask != null) return;
+            iotNexusWarmupTask = Task.Run(delegate
+            {
+                try { EnsureIoTNexusEngineBuilt(); }
+                catch (Exception ex) { Debug.WriteLine("[IoTNexus] warmup failed: " + ex.Message); }
+            });
+        }
+
+        private void EnsureIoTNexusEngineBuilt()
+        {
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "IoTNexus"));
+            if (appRoot == null) return;
+            string source = Path.Combine(appRoot, "engine", "edge_core.cpp");
+            string buildDir = Path.Combine(appRoot, "build");
+            string exe = Path.Combine(buildDir, "EdgeCore.exe");
+            if (!File.Exists(source)) return;
+            if (File.Exists(exe) && File.GetLastWriteTimeUtc(exe) >= File.GetLastWriteTimeUtc(source)) return;
+
+            string compiler = FindGppCommand();
+            if (compiler == null) return; // server falls back to its pure-Python engine
+            Directory.CreateDirectory(buildDir);
+            using (var process = new Process())
+            {
+                process.StartInfo.FileName = compiler;
+                process.StartInfo.Arguments = "-std=c++17 -O2 \"" + source + "\" -o \"" + exe + "\"";
+                process.StartInfo.WorkingDirectory = appRoot;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.Start();
+                if (!process.WaitForExit(20000) || process.ExitCode != 0)
+                {
+                    Debug.WriteLine("[IoTNexus] g++ compile failed: " + process.StandardError.ReadToEnd());
+                }
+            }
+        }
+
+        private void WarmVeriLensEngine()
+        {
+            if (veriLensWarmupTask != null) return;
+            veriLensWarmupTask = Task.Run(delegate
+            {
+                try { EnsureVeriLensEngineBuilt(); }
+                catch (Exception ex) { Debug.WriteLine("[VeriLens] warmup failed: " + ex.Message); }
+            });
+        }
+
+        private void EnsureVeriLensEngineBuilt()
+        {
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "VeriLens"));
+            if (appRoot == null) return;
+            string source = Path.Combine(appRoot, "engine", "forensics_core.cpp");
+            string buildDir = Path.Combine(appRoot, "build");
+            string exe = Path.Combine(buildDir, "ForensicsCore.exe");
+            if (!File.Exists(source)) return;
+            if (File.Exists(exe) && File.GetLastWriteTimeUtc(exe) >= File.GetLastWriteTimeUtc(source)) return;
+
+            string compiler = FindGppCommand();
+            if (compiler == null) return; // server falls back to its pure-Python fusion
+            Directory.CreateDirectory(buildDir);
+            using (var process = new Process())
+            {
+                process.StartInfo.FileName = compiler;
+                process.StartInfo.Arguments = "-std=c++17 -O2 \"" + source + "\" -o \"" + exe + "\"";
+                process.StartInfo.WorkingDirectory = appRoot;
+                process.StartInfo.UseShellExecute = false;
+                process.StartInfo.CreateNoWindow = true;
+                process.StartInfo.RedirectStandardOutput = true;
+                process.StartInfo.RedirectStandardError = true;
+                process.Start();
+                if (!process.WaitForExit(20000) || process.ExitCode != 0)
+                {
+                    Debug.WriteLine("[VeriLens] g++ compile failed: " + process.StandardError.ReadToEnd());
+                }
+            }
         }
 
         private void WarmFusionVoiceService()
@@ -1045,10 +1135,14 @@ namespace WindowsFormsApp1
             AddDesktopIcon(L("ThisPC"), "PC", L("ThisPCDesc"), accent3);
             AddDesktopIcon(L("ProjectFiles"), "DIR", L("ProjectFilesDesc"), Color.FromArgb(90, 212, 255));
             AddDesktopIcon(L("PianoStudio"), "88", L("PianoStudioDesc"), Color.FromArgb(205, 95, 255), LaunchPianoStudio);
+            AddDesktopIcon(L("EnglishFlashcards"), "ABC", L("EnglishFlashcardsDesc"), Color.FromArgb(121, 230, 255), LaunchEnglishFlashcards);
             AddDesktopIcon(L("MultimediaStudio"), "VID", L("MultimediaStudioDesc"), Color.FromArgb(88, 220, 255), LaunchMultimediaStudio);
             AddDesktopIcon(L("WaveStudio"), "WAV", L("WaveStudioDesc"), Color.FromArgb(120, 235, 218), LaunchWaveStudio);
             AddDesktopIcon(L("CosmicGesture"), "COS", L("CosmicGestureDesc"), Color.FromArgb(103, 125, 255), LaunchCosmicGesture);
             AddDesktopIcon(L("MetroPulse"), "MAP", L("MetroPulseDesc"), Color.FromArgb(94, 224, 184), LaunchMetroPulse);
+            AddDesktopIcon(L("IoTNexus"), "IOT", L("IoTNexusDesc"), Color.FromArgb(70, 224, 255), LaunchIoTNexus);
+            AddDesktopIcon(L("VeriLens"), "FND", L("VeriLensDesc"), Color.FromArgb(255, 93, 158), LaunchVeriLens);
+            AddDesktopIcon(L("Cultura"), "WCG", L("CulturaDesc"), Color.FromArgb(90, 200, 160), LaunchCulturaGlobe);
             AddDesktopIcon(L("UserFiles"), "USR", L("UserFilesDesc"), Color.FromArgb(86, 214, 255));
             AddDesktopIcon(L("AddFile"), "+", L("AddFileDesc"), Color.FromArgb(130, 165, 255), AddUserFile);
             AddDesktopIcon(L("LanguageLab"), "DEV", L("LanguageLabDesc"), accent);
@@ -1198,10 +1292,14 @@ namespace WindowsFormsApp1
             apps.Controls.Add(StartItem(L("FileManager"), L("FileManagerDesc"), accent));
             apps.Controls.Add(StartItem(L("AppRegistry"), L("AppRegistryDesc"), Color.FromArgb(255, 196, 96)));
             apps.Controls.Add(StartItem(L("PianoStudio"), L("StartPianoDesc"), accent2));
+            apps.Controls.Add(StartItem(L("EnglishFlashcards"), L("StartEnglishFlashcardsDesc"), Color.FromArgb(121, 230, 255)));
             apps.Controls.Add(StartItem(L("MultimediaStudio"), L("StartMultimediaDesc"), Color.FromArgb(88, 220, 255)));
             apps.Controls.Add(StartItem(L("WaveStudio"), L("StartWaveDesc"), Color.FromArgb(120, 235, 218)));
             apps.Controls.Add(StartItem(L("CosmicGesture"), L("StartCosmicDesc"), accent3));
             apps.Controls.Add(StartItem(L("MetroPulse"), L("StartMetroPulseDesc"), Color.FromArgb(94, 224, 184)));
+            apps.Controls.Add(StartItem(L("IoTNexus"), L("StartIoTNexusDesc"), Color.FromArgb(70, 224, 255)));
+            apps.Controls.Add(StartItem(L("VeriLens"), L("StartVeriLensDesc"), Color.FromArgb(255, 93, 158)));
+            apps.Controls.Add(StartItem(L("Cultura"), L("StartCulturaDesc"), Color.FromArgb(90, 200, 160)));
             apps.Controls.Add(StartItem(L("GameRoom"), L("StartGameDesc"), accent2));
             apps.Controls.Add(StartItem(L("LanguageLab"), L("StartLanguageDesc"), accent));
             apps.Controls.Add(StartItem(L("SystemSettings"), L("SystemSettingsDesc"), Color.FromArgb(163, 133, 255)));
@@ -1229,7 +1327,12 @@ namespace WindowsFormsApp1
                 );
                 Debug.WriteLine($"[FusionOS WebView2] userDataFolder={userDataFolder}");
                 
-                var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
+                // Allow the boot chime to play without a user gesture (Chromium autoplay policy).
+                var envOptions = new CoreWebView2EnvironmentOptions
+                {
+                    AdditionalBrowserArguments = "--autoplay-policy=no-user-gesture-required"
+                };
+                var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder, envOptions);
                 await carouselWebView.EnsureCoreWebView2Async(env);
 
                 // Dark default background so the boot screen never flashes white before React paints.
@@ -1611,13 +1714,24 @@ namespace WindowsFormsApp1
                     return;
                 }
 
+                if (lower.Contains("fusion_system_action"))
+                {
+                    HandleFusionSystemAction(message);
+                    return;
+                }
+
                 if (lower.Contains("launch_app"))
                 {
                     if (lower.Contains("\"piano\"") || lower.Contains("\"88\"")) LaunchPianoStudio();
+                    else if (lower.Contains("\"flashcards\"") || lower.Contains("\"abc\"")) LaunchEnglishFlashcards();
                     else if (lower.Contains("\"media\"") || lower.Contains("\"vid\"")) LaunchMultimediaStudio();
                     else if (lower.Contains("\"wav\"") || lower.Contains("\"wave\"")) LaunchWaveStudio();
                     else if (lower.Contains("\"cosmic\"") || lower.Contains("\"cos\"")) LaunchCosmicGesture();
                     else if (lower.Contains("\"metro\"") || lower.Contains("\"traffic\"")) LaunchMetroPulse();
+                    else if (lower.Contains("\"iot\"") || lower.Contains("\"nexus\"")) LaunchIoTNexus();
+                    else if (lower.Contains("\"verify\"") || lower.Contains("\"verilens\"") || lower.Contains("\"news\"")) LaunchVeriLens();
+                    else if (lower.Contains("\"cultura\"") || lower.Contains("\"culture\"") || lower.Contains("\"globe\"")) LaunchCulturaGlobe();
+                    else if (lower.Contains("\"finweb\"") || lower.Contains("\"finance\"") || lower.Contains("\"stocks\"")) LaunchFinWeb();
                     else if (lower.Contains("\"game\"") || lower.Contains("\"fusionrpg\"") || lower.Contains("\"rpg\"")) LaunchFusionRPG();
                     else if (lower.Contains("\"cmd\"") || lower.Contains("\"terminal\"")) OpenFusionTerminal();
                     else if (lower.Contains("\"settings\"") || lower.Contains("\"set\"")) OpenSettingsWindow();
@@ -1643,6 +1757,9 @@ namespace WindowsFormsApp1
         // Handles the SQLite-backed account messages and the live language/time switch.
         // Returns true when the message was an account/language message (so the main
         // receiver stops processing it).
+        // The user this session is signed in as (0 = none yet / pre-login).
+        private long currentAccountUserId;
+
         private bool HandleAccountBridgeMessage(string json, string lower)
         {
             if (!(lower.Contains("fusion_account") || lower.Contains("fusion_set_language"))) return false;
@@ -1662,6 +1779,8 @@ namespace WindowsFormsApp1
                         return true;
                     case "FUSION_ACCOUNT_SETUP":
                     {
+                        // first-run setup AND "add another user" share this op: it creates a
+                        // new row and signs the session in as that user.
                         string dn = Field(msg, "displayName");
                         string em = Field(msg, "email");
                         string pw = Field(msg, "password");
@@ -1669,7 +1788,8 @@ namespace WindowsFormsApp1
                         if (string.IsNullOrWhiteSpace(dn)) dn = "Fusion User";
                         if (string.IsNullOrEmpty(lang)) lang = currentLanguage;
                         lang = NormalizeLang(lang);
-                        AccountDb.CreateUser(dn, em, pw, lang);
+                        FusionUser created = AccountDb.CreateUser(dn, em, pw, lang);
+                        currentAccountUserId = created != null ? created.Id : 0;
                         ApplyHostLocaleSettings(lang, Field(msg, "timezone"), BoolField(msg, "clock24"));
                         PostAccountResult("setup", true, null);
                         PostAccountState();
@@ -1677,25 +1797,36 @@ namespace WindowsFormsApp1
                     }
                     case "FUSION_ACCOUNT_VERIFY":
                     {
-                        bool ok = AccountDb.VerifyPassword(Field(msg, "password"));
+                        long userId = LongField(msg, "userId");
+                        bool ok = AccountDb.VerifyPassword(userId, Field(msg, "password"));
+                        if (ok)
+                        {
+                            FusionUser u = userId > 0 ? AccountDb.GetUser(userId) : AccountDb.GetPrimaryUser();
+                            currentAccountUserId = u != null ? u.Id : 0;
+                            // switch the host locale to the signed-in user's language
+                            if (u != null && !string.IsNullOrEmpty(u.Language))
+                                ApplyHostLocaleSettings(u.Language, null, null);
+                        }
                         PostAccountResult("verify", ok, ok ? null : "INVALID_PASSWORD");
+                        if (ok) PostAccountState();
                         return true;
                     }
                     case "FUSION_ACCOUNT_UPDATE_PROFILE":
                     {
-                        bool ok = AccountDb.UpdateProfile(Field(msg, "displayName"), Field(msg, "email"));
+                        bool ok = AccountDb.UpdateProfile(currentAccountUserId, Field(msg, "displayName"), Field(msg, "email"));
                         PostAccountResult("updateProfile", ok, null);
                         PostAccountState();
                         return true;
                     }
                     case "FUSION_ACCOUNT_CHANGE_PASSWORD":
                     {
-                        bool ok = AccountDb.ChangePassword(Field(msg, "current"), Field(msg, "next"));
+                        bool ok = AccountDb.ChangePassword(currentAccountUserId, Field(msg, "current"), Field(msg, "next"));
                         PostAccountResult("changePassword", ok, ok ? null : "INVALID_PASSWORD");
                         return true;
                     }
                     case "FUSION_ACCOUNT_RESET":
                         AccountDb.ResetAll();
+                        currentAccountUserId = 0;
                         PostAccountResult("reset", true, null);
                         PostAccountState();
                         return true;
@@ -1703,7 +1834,7 @@ namespace WindowsFormsApp1
                     {
                         string lang = NormalizeLang(Field(msg, "language"));
                         ApplyHostLocaleSettings(lang, Field(msg, "timezone"), BoolField(msg, "clock24"));
-                        try { AccountDb.SetLanguage(lang); } catch { }
+                        try { AccountDb.SetLanguage(currentAccountUserId, lang); } catch { }
                         PostAccountResult("setLanguage", true, null);
                         return true;
                     }
@@ -1724,6 +1855,15 @@ namespace WindowsFormsApp1
             object v;
             if (d != null && d.TryGetValue(key, out v) && v != null) return Convert.ToString(v);
             return null;
+        }
+
+        private static long LongField(Dictionary<string, object> d, string key)
+        {
+            object v;
+            if (d == null || !d.TryGetValue(key, out v) || v == null) return 0;
+            long parsed;
+            if (long.TryParse(Convert.ToString(v), out parsed)) return parsed;
+            return 0;
         }
 
         private static bool? BoolField(Dictionary<string, object> d, string key)
@@ -1762,12 +1902,30 @@ namespace WindowsFormsApp1
         private void PostAccountState()
         {
             if (carouselWebView == null || carouselWebView.CoreWebView2 == null) return;
-            FusionUser user = null;
-            try { user = AccountDb.GetPrimaryUser(); } catch { }
-            bool exists = user != null;
-            string dn = exists ? user.DisplayName : string.Empty;
-            string em = exists ? (user.Email ?? string.Empty) : string.Empty;
-            string lang = exists && !string.IsNullOrEmpty(user.Language) ? user.Language : currentLanguage;
+            System.Collections.Generic.List<FusionUser> users = null;
+            try { users = AccountDb.ListUsers(); } catch { }
+            if (users == null) users = new System.Collections.Generic.List<FusionUser>();
+            bool exists = users.Count > 0;
+            // the profile fields describe the signed-in user (or the primary before login)
+            FusionUser current = null;
+            if (currentAccountUserId > 0)
+            {
+                foreach (FusionUser u in users) { if (u.Id == currentAccountUserId) { current = u; break; } }
+            }
+            if (current == null && exists) current = users[0];
+            string dn = current != null ? current.DisplayName : string.Empty;
+            string em = current != null ? (current.Email ?? string.Empty) : string.Empty;
+            string lang = current != null && !string.IsNullOrEmpty(current.Language) ? current.Language : currentLanguage;
+            var usersJson = new StringBuilder("[");
+            for (int i = 0; i < users.Count; i++)
+            {
+                if (i > 0) usersJson.Append(",");
+                usersJson.Append("{\"id\":").Append(users[i].Id)
+                    .Append(",\"displayName\":\"").Append(JsonEscape(users[i].DisplayName ?? "")).Append("\"")
+                    .Append(",\"email\":\"").Append(JsonEscape(users[i].Email ?? "")).Append("\"")
+                    .Append(",\"language\":\"").Append(JsonEscape(users[i].Language ?? "")).Append("\"}");
+            }
+            usersJson.Append("]");
             string jsonOut =
                 "{\"type\":\"FUSION_ACCOUNT_STATE\",\"payload\":{" +
                 "\"exists\":" + (exists ? "true" : "false") + "," +
@@ -1775,6 +1933,8 @@ namespace WindowsFormsApp1
                 "\"displayName\":\"" + JsonEscape(dn) + "\"," +
                 "\"email\":\"" + JsonEscape(em) + "\"," +
                 "\"language\":\"" + JsonEscape(lang) + "\"," +
+                "\"users\":" + usersJson + "," +
+                "\"currentUserId\":" + (current != null ? current.Id : 0) + "," +
                 "\"timezone\":\"" + JsonEscape(currentTimezone) + "\"," +
                 "\"clock24\":" + (currentClock24 ? "true" : "false") +
                 "}}";
@@ -2047,6 +2207,11 @@ namespace WindowsFormsApp1
                     LaunchPianoStudio();
                     return;
                 }
+                if (name == L("EnglishFlashcards"))
+                {
+                    LaunchEnglishFlashcards();
+                    return;
+                }
                 if (name == L("MultimediaStudio"))
                 {
                     LaunchMultimediaStudio();
@@ -2065,6 +2230,21 @@ namespace WindowsFormsApp1
                 if (name == L("MetroPulse"))
                 {
                     LaunchMetroPulse();
+                    return;
+                }
+                if (name == L("IoTNexus"))
+                {
+                    LaunchIoTNexus();
+                    return;
+                }
+                if (name == L("VeriLens"))
+                {
+                    LaunchVeriLens();
+                    return;
+                }
+                if (name == L("Cultura"))
+                {
+                    LaunchCulturaGlobe();
                     return;
                 }
                 if (name == L("GameRoom"))
@@ -2413,6 +2593,51 @@ namespace WindowsFormsApp1
             }
         }
 
+        private void HandleFusionSystemAction(string json)
+        {
+            Dictionary<string, object> message;
+            try
+            {
+                message = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json);
+            }
+            catch
+            {
+                return;
+            }
+
+            string action = Field(message, "action");
+            if (!string.Equals(action, "shutdown", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(action, "restart", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            Action execute = delegate
+            {
+                try
+                {
+                    if (string.Equals(action, "restart", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = Application.ExecutablePath,
+                            UseShellExecute = true
+                        });
+                    }
+
+                    Application.Exit();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[FusionOS Power] " + ex);
+                    ShowToast("Unable to complete the power action.", Color.FromArgb(255, 148, 168));
+                }
+            };
+
+            if (InvokeRequired) BeginInvoke(execute);
+            else execute();
+        }
+
         private string GetFusionDesktopDirectory()
         {
             string projectFile = FindProjectFile("WindowsFormsApp1.csproj");
@@ -2587,6 +2812,11 @@ namespace WindowsFormsApp1
             LaunchIntegratedExeApp("piano", "PianoStudio", "PianoStudio", accent2);
         }
 
+        private void LaunchEnglishFlashcards()
+        {
+            LaunchIntegratedExeApp("flashcards", "EnglishFlashcards", "EnglishFlashcards", Color.FromArgb(121, 230, 255));
+        }
+
         private void LaunchMultimediaStudio()
         {
             LaunchIntegratedExeApp("media", "MultimediaStudio", "MultimediaStudio", Color.FromArgb(88, 220, 255));
@@ -2595,6 +2825,147 @@ namespace WindowsFormsApp1
         private void LaunchWaveStudio()
         {
             LaunchIntegratedExeApp("wav", "WaveStudio", "WaveStudio", Color.FromArgb(120, 235, 218));
+        }
+
+        private void WarmFinWebService()
+        {
+            if (finWebWarmupTask != null) return;
+            finWebWarmupTask = EnsureFinWebServiceReadyAsync();
+            finWebWarmupTask.ContinueWith(delegate (Task<bool> task)
+            {
+                if (task.IsFaulted && task.Exception != null)
+                {
+                    Debug.WriteLine("[FinWeb] warmup failed: " + task.Exception.GetBaseException().Message);
+                }
+            });
+        }
+
+        private async Task<bool> EnsureFinWebServiceReadyAsync()
+        {
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "FinWeb"));
+            string appPath = appRoot == null ? null : Path.Combine(appRoot, "app.py");
+            if (appPath == null || !File.Exists(appPath))
+            {
+                Debug.WriteLine("[FinWeb] app.py was not found.");
+                return false;
+            }
+
+            bool serverReady = await IsFinWebServerReadyAsync();
+            if (serverReady) return true;
+
+            string python = FindPythonCommand();
+            if (python == null)
+            {
+                Debug.WriteLine("[FinWeb] Python was not found.");
+                return false;
+            }
+
+            if (finWebServerProcess == null || finWebServerProcess.HasExited)
+            {
+                try
+                {
+                    // FinWeb ships with Talisman(force_https=True), which 302-redirects every
+                    // request to https://. The embedded WebView2 (and our readiness probe) talk
+                    // plain HTTP to the dev server, so that redirect leaves the window stuck on
+                    // "服務尚未就緒". We keep IntegratedApps/FinWeb untouched and disable HTTPS
+                    // enforcement here, in the launcher, by patching Talisman before importing app.
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = python,
+                        Arguments = "-c \"import flask_talisman as _t; _o = _t.Talisman.init_app; _t.Talisman.init_app = lambda s, a, **k: _o(s, a, **dict(k, force_https=False)); import app; app.socketio.run(app.app, debug=False, use_reloader=False, host='127.0.0.1', port=5000)\"",
+                        WorkingDirectory = appRoot,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+                    startInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
+                    startInfo.EnvironmentVariables["PYTHONUNBUFFERED"] = "1";
+                    finWebServerProcess = Process.Start(startInfo);
+                    if (finWebServerProcess != null)
+                    {
+                        try { finWebServerProcess.PriorityClass = ProcessPriorityClass.BelowNormal; } catch { }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[FinWeb] server launch failed: " + ex.Message);
+                    return false;
+                }
+            }
+
+            return await WaitForFinWebServerAsync();
+        }
+
+        private void LaunchFinWeb()
+        {
+            Color finWebColor = Color.FromArgb(98, 217, 183);
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "FinWeb"));
+            string appPath = appRoot == null ? null : Path.Combine(appRoot, "app.py");
+            if (appPath == null || !File.Exists(appPath))
+            {
+                ShowToast(L("FinWebServerMissing"), finWebColor);
+                PostAppLaunchStatus("finweb", "error", L("FinWebServerMissing"));
+                return;
+            }
+
+            if (FindPythonCommand() == null)
+            {
+                ShowToast(L("FinWebPythonMissing"), finWebColor);
+                PostAppLaunchStatus("finweb", "error", L("FinWebPythonMissing"));
+                return;
+            }
+
+            if (finWebWarmupTask == null || finWebWarmupTask.IsCanceled || finWebWarmupTask.IsFaulted)
+            {
+                finWebWarmupTask = null;
+                WarmFinWebService();
+            }
+
+            Task<bool> finWebReadyTask = finWebWarmupTask ?? EnsureFinWebServiceReadyAsync();
+            PostAppLaunchStatus("finweb", "open", L("FinWebPreparing"));
+            OpenWebAppWindow(
+                L("FinWeb"),
+                "http://127.0.0.1:5000/",
+                finWebColor,
+                ownsCamera: false,
+                kind: "finweb",
+                readyTask: finWebReadyTask,
+                readyMessage: L("FinWebPreparing"),
+                readyErrorMessage: L("FinWebNotReady"));
+        }
+
+        private async Task<bool> WaitForFinWebServerAsync()
+        {
+            for (int i = 0; i < 120; i++)
+            {
+                if (await IsFinWebServerReadyAsync()) return true;
+                if (finWebServerProcess != null && finWebServerProcess.HasExited) return false;
+                await Task.Delay(250);
+            }
+            return false;
+        }
+
+        private Task<bool> IsFinWebServerReadyAsync()
+        {
+            return Task.Run(delegate
+            {
+                try
+                {
+                    var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:5000/login");
+                    request.Timeout = 900;
+                    using (var response = (HttpWebResponse)request.GetResponse())
+                    using (var reader = new StreamReader(response.GetResponseStream()))
+                    {
+                        string body = reader.ReadToEnd();
+                        return response.StatusCode == HttpStatusCode.OK &&
+                            body.IndexOf("FinWeb", StringComparison.OrdinalIgnoreCase) >= 0;
+                    }
+                }
+                catch
+                {
+                    return false;
+                }
+            });
         }
 
         private async void LaunchMetroPulse()
@@ -2663,6 +3034,235 @@ namespace WindowsFormsApp1
                 "&clock24=" + (currentClock24 ? "true" : "false");
             PostAppLaunchStatus("metro", "open", L("MetroPulseOpening"));
             OpenWebAppWindow(L("MetroPulse"), url, metroColor, ownsCamera: false, kind: "metro");
+        }
+
+        private async void LaunchIoTNexus()
+        {
+            Color iotColor = Color.FromArgb(70, 224, 255);
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "IoTNexus"));
+            string serverPath = appRoot == null ? null : Path.Combine(appRoot, "server.py");
+            if (serverPath == null || !File.Exists(serverPath))
+            {
+                ShowToast(L("IoTNexusServerMissing"), iotColor);
+                PostAppLaunchStatus("iot", "error", L("IoTNexusServerMissing"));
+                return;
+            }
+
+            try
+            {
+                if (iotNexusWarmupTask != null) await iotNexusWarmupTask;
+            }
+            catch
+            {
+            }
+
+            bool serverReady = await IsIoTNexusServerReadyAsync();
+            if (!serverReady)
+            {
+                string python = FindPythonCommand();
+                if (python == null)
+                {
+                    ShowToast(L("IoTNexusPythonMissing"), iotColor);
+                    PostAppLaunchStatus("iot", "error", L("IoTNexusPythonMissing"));
+                    return;
+                }
+
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = python,
+                        Arguments = "\"" + serverPath + "\" --host 127.0.0.1 --port 8793",
+                        WorkingDirectory = appRoot,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    startInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
+                    iotNexusServerProcess = Process.Start(startInfo);
+                    serverReady = await WaitForIoTNexusServerAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[IoTNexus] server launch failed: " + ex.Message);
+                    ShowToast(L("IoTNexusBrokerFailed"), iotColor);
+                    PostAppLaunchStatus("iot", "error", L("IoTNexusBrokerFailed"));
+                    return;
+                }
+            }
+
+            if (!serverReady)
+            {
+                ShowToast(L("IoTNexusBrokerNotReady"), iotColor);
+                PostAppLaunchStatus("iot", "error", L("IoTNexusBrokerNotReady"));
+                return;
+            }
+
+            string url = "http://127.0.0.1:8793/?host=fusionos" +
+                "&lang=" + Uri.EscapeDataString(currentLanguage) +
+                "&timezone=" + Uri.EscapeDataString(currentTimezone) +
+                "&clock24=" + (currentClock24 ? "true" : "false");
+            PostAppLaunchStatus("iot", "open", L("IoTNexusOpening"));
+            OpenWebAppWindow(L("IoTNexus"), url, iotColor, ownsCamera: false, kind: "iot");
+        }
+
+        private async void LaunchVeriLens()
+        {
+            Color veriColor = Color.FromArgb(255, 93, 158);
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "VeriLens"));
+            string serverPath = appRoot == null ? null : Path.Combine(appRoot, "server.py");
+            if (serverPath == null || !File.Exists(serverPath))
+            {
+                ShowToast(L("VeriLensServerMissing"), veriColor);
+                PostAppLaunchStatus("verify", "error", L("VeriLensServerMissing"));
+                return;
+            }
+
+            try
+            {
+                if (veriLensWarmupTask != null) await veriLensWarmupTask;
+            }
+            catch
+            {
+            }
+
+            bool serverReady = await IsVeriLensServerReadyAsync();
+            if (!serverReady)
+            {
+                string python = FindPythonCommand();
+                if (python == null)
+                {
+                    ShowToast(L("VeriLensPythonMissing"), veriColor);
+                    PostAppLaunchStatus("verify", "error", L("VeriLensPythonMissing"));
+                    return;
+                }
+
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = python,
+                        Arguments = "\"" + serverPath + "\" --host 127.0.0.1 --port 8794",
+                        WorkingDirectory = appRoot,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    startInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
+                    veriLensServerProcess = Process.Start(startInfo);
+                    serverReady = await WaitForVeriLensServerAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[VeriLens] server launch failed: " + ex.Message);
+                    ShowToast(L("VeriLensBrokerFailed"), veriColor);
+                    PostAppLaunchStatus("verify", "error", L("VeriLensBrokerFailed"));
+                    return;
+                }
+            }
+
+            if (!serverReady)
+            {
+                ShowToast(L("VeriLensBrokerNotReady"), veriColor);
+                PostAppLaunchStatus("verify", "error", L("VeriLensBrokerNotReady"));
+                return;
+            }
+
+            string url = "http://127.0.0.1:8794/?host=fusionos" +
+                "&lang=" + Uri.EscapeDataString(currentLanguage) +
+                "&timezone=" + Uri.EscapeDataString(currentTimezone) +
+                "&clock24=" + (currentClock24 ? "true" : "false");
+            PostAppLaunchStatus("verify", "open", L("VeriLensOpening"));
+            OpenWebAppWindow(L("VeriLens"), url, veriColor, ownsCamera: false, kind: "verify");
+        }
+
+        private async void LaunchCulturaGlobe()
+        {
+            Color culColor = Color.FromArgb(90, 200, 160);
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "CulturaGlobe"));
+            string serverPath = appRoot == null ? null : Path.Combine(appRoot, "server.py");
+            if (serverPath == null || !File.Exists(serverPath))
+            {
+                ShowToast(L("CulturaServerMissing"), culColor);
+                PostAppLaunchStatus("cultura", "error", L("CulturaServerMissing"));
+                return;
+            }
+
+            bool serverReady = await IsCulturaServerReadyAsync();
+            if (!serverReady)
+            {
+                string python = FindPythonCommand();
+                if (python == null)
+                {
+                    ShowToast(L("CulturaPythonMissing"), culColor);
+                    PostAppLaunchStatus("cultura", "error", L("CulturaPythonMissing"));
+                    return;
+                }
+
+                try
+                {
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = python,
+                        Arguments = "\"" + serverPath + "\" --host 127.0.0.1 --port 8795",
+                        WorkingDirectory = appRoot,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+                    startInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
+                    culturaServerProcess = Process.Start(startInfo);
+                    serverReady = await WaitForCulturaServerAsync();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[Cultura] server launch failed: " + ex.Message);
+                    ShowToast(L("CulturaBrokerFailed"), culColor);
+                    PostAppLaunchStatus("cultura", "error", L("CulturaBrokerFailed"));
+                    return;
+                }
+            }
+
+            if (!serverReady)
+            {
+                ShowToast(L("CulturaBrokerNotReady"), culColor);
+                PostAppLaunchStatus("cultura", "error", L("CulturaBrokerNotReady"));
+                return;
+            }
+
+            string url = "http://127.0.0.1:8795/?host=fusionos" +
+                "&lang=" + Uri.EscapeDataString(currentLanguage) +
+                "&timezone=" + Uri.EscapeDataString(currentTimezone) +
+                "&clock24=" + (currentClock24 ? "true" : "false");
+            PostAppLaunchStatus("cultura", "open", L("CulturaOpening"));
+            OpenWebAppWindow(L("Cultura"), url, culColor, ownsCamera: false, kind: "cultura");
+        }
+
+        private async Task<bool> WaitForCulturaServerAsync()
+        {
+            for (int i = 0; i < 40; i++)
+            {
+                if (await IsCulturaServerReadyAsync()) return true;
+                await Task.Delay(200);
+            }
+            return false;
+        }
+
+        private Task<bool> IsCulturaServerReadyAsync()
+        {
+            return Task.Run(delegate
+            {
+                try
+                {
+                    var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8795/api/health");
+                    request.Timeout = 700;
+                    using (var response = (HttpWebResponse)request.GetResponse())
+                    {
+                        return response.StatusCode == HttpStatusCode.OK;
+                    }
+                }
+                catch
+                {
+                    return false;
+                }
+            });
         }
 
         private void LaunchFusionRPG()
@@ -2877,6 +3477,74 @@ namespace WindowsFormsApp1
                 try
                 {
                     var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8791/health");
+                    request.Timeout = 700;
+                    using (var response = (HttpWebResponse)request.GetResponse())
+                    {
+                        return response.StatusCode == HttpStatusCode.OK;
+                    }
+                }
+                catch
+                {
+                    return false;
+                }
+            });
+        }
+
+        private async Task<bool> WaitForIoTNexusServerAsync()
+        {
+            for (int i = 0; i < 48; i++)
+            {
+                if (await IsIoTNexusServerReadyAsync())
+                {
+                    return true;
+                }
+                await Task.Delay(200);
+            }
+
+            return false;
+        }
+
+        private Task<bool> IsIoTNexusServerReadyAsync()
+        {
+            return Task.Run(delegate
+            {
+                try
+                {
+                    var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8793/api/health");
+                    request.Timeout = 700;
+                    using (var response = (HttpWebResponse)request.GetResponse())
+                    {
+                        return response.StatusCode == HttpStatusCode.OK;
+                    }
+                }
+                catch
+                {
+                    return false;
+                }
+            });
+        }
+
+        private async Task<bool> WaitForVeriLensServerAsync()
+        {
+            for (int i = 0; i < 60; i++)
+            {
+                if (await IsVeriLensServerReadyAsync())
+                {
+                    return true;
+                }
+                await Task.Delay(250);
+            }
+
+            return false;
+        }
+
+        private Task<bool> IsVeriLensServerReadyAsync()
+        {
+            return Task.Run(delegate
+            {
+                try
+                {
+                    var request = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:8794/api/health");
                     request.Timeout = 700;
                     using (var response = (HttpWebResponse)request.GetResponse())
                     {
@@ -4100,7 +4768,15 @@ namespace WindowsFormsApp1
             output.ScrollToCaret();
         }
 
-        private async void OpenWebAppWindow(string title, string url, Color color, bool ownsCamera = false, string kind = "webview")
+        private async void OpenWebAppWindow(
+            string title,
+            string url,
+            Color color,
+            bool ownsCamera = false,
+            string kind = "webview",
+            Task<bool> readyTask = null,
+            string readyMessage = null,
+            string readyErrorMessage = null)
         {
             windowOffset = (windowOffset + 28) % 168;
             Rectangle area = AppWorkArea(false);
@@ -4171,7 +4847,7 @@ namespace WindowsFormsApp1
             var loading = new Label
             {
                 Dock = DockStyle.Fill,
-                Text = L("WebSurfaceLoading"),
+                Text = string.IsNullOrEmpty(readyMessage) ? L("WebSurfaceLoading") : readyMessage,
                 ForeColor = muted,
                 BackColor = Color.FromArgb(2, 4, 13),
                 Font = new Font(Font.FontFamily, 12F, FontStyle.Bold),
@@ -4192,13 +4868,7 @@ namespace WindowsFormsApp1
 
             try
             {
-                string userDataFolder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "FusionOS",
-                    "WebView2");
-                Directory.CreateDirectory(userDataFolder);
-
-                var environment = await CoreWebView2Environment.CreateAsync(null, userDataFolder, null);
+                var environment = await GetFusionBrowserEnvironmentAsync();
                 if (webView.IsDisposed)
                 {
                     return;
@@ -4232,6 +4902,20 @@ namespace WindowsFormsApp1
                         loading.Text = string.Format(CultureInfo.InvariantCulture, L("WebSurfaceLoadError"), args.WebErrorStatus);
                     }
                 };
+
+                if (readyTask != null)
+                {
+                    bool isReady = false;
+                    try { isReady = await readyTask; }
+                    catch (Exception ex) { Debug.WriteLine("[Fusion Web] deferred service failed: " + ex.Message); }
+                    if (webView.IsDisposed) return;
+                    if (!isReady)
+                    {
+                        loading.Visible = true;
+                        loading.Text = string.IsNullOrEmpty(readyErrorMessage) ? L("WebSurfaceLoadError") : readyErrorMessage;
+                        return;
+                    }
+                }
 
                 loading.Visible = false;
                 webView.Visible = true;
@@ -4820,6 +5504,10 @@ namespace WindowsFormsApp1
         {
             StopOwnedServerProcess(cosmicServerProcess);
             StopOwnedServerProcess(metroPulseServerProcess);
+            StopOwnedServerProcess(iotNexusServerProcess);
+            StopOwnedServerProcess(veriLensServerProcess);
+            StopOwnedServerProcess(culturaServerProcess);
+            StopOwnedServerProcess(finWebServerProcess);
             StopOwnedServerProcess(voiceServerProcess);
             base.OnFormClosing(e);
         }
@@ -5024,10 +5712,14 @@ namespace WindowsFormsApp1
                 case "ThisPC": return zh ? "本機" : "This PC";
                 case "ProjectFiles": return zh ? "專案檔案" : "Project Files";
                 case "PianoStudio": return zh ? "鋼琴工作室" : "Piano Studio";
+                case "EnglishFlashcards": return zh ? "英文單字卡" : "English Flashcards";
                 case "MultimediaStudio": return zh ? "影音中心" : "AURORA Cinema";
                 case "WaveStudio": return zh ? "音訊工作室" : "Wave Studio";
                 case "CosmicGesture": return zh ? "宇宙手勢" : "Cosmic Gesture";
                 case "MetroPulse": return zh ? "MetroPulse 智慧交通" : "MetroPulse";
+                case "IoTNexus": return zh ? "物聯網中樞" : "IoT Nexus";
+                case "VeriLens": return zh ? "真偽鑑識中心" : "VeriLens";
+                case "Cultura": return zh ? "世界文化星球" : "Cultura";
                 case "UserFiles": return zh ? "使用者檔案" : "User Files";
                 case "AddFile": return zh ? "新增檔案" : "Add File";
                 case "LanguageLab": return zh ? "語言實驗室" : "Language Lab";
@@ -5041,6 +5733,14 @@ namespace WindowsFormsApp1
                 case "ThisPCDesc": return zh ? "系統檔案管理與電腦資訊入口。" : "System file manager and computer information.";
                 case "ProjectFilesDesc": return zh ? "存放舊作品與新作品的預設資料夾。" : "Default folder for all old and new school projects.";
                 case "PianoStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/PianoStudio。啟動鋼琴學習與音樂工具。" : "Integrated app package: IntegratedApps/PianoStudio.";
+                case "FinWeb": return "FinWeb";
+                case "FinWebServerMissing": return zh ? "找不到 FinWeb 的 app.py。" : "FinWeb app.py was not found.";
+                case "FinWebPythonMissing": return zh ? "找不到可用的 Python，無法啟動 FinWeb。" : "Python was not found; FinWeb cannot start.";
+                case "FinWebStartFailed": return zh ? "FinWeb 服務啟動失敗。" : "FinWeb failed to start.";
+                case "FinWebNotReady": return zh ? "FinWeb 服務尚未就緒。" : "FinWeb is not ready.";
+                case "FinWebOpening": return zh ? "正在開啟 FinWeb。" : "Opening FinWeb.";
+                case "FinWebPreparing": return zh ? "FinWeb 正在背景載入市場與分析模組，視窗會在服務就緒後自動開啟。" : "FinWeb is loading market and analysis modules in the background. This window will open automatically when ready.";
+                case "EnglishFlashcardsDesc": return zh ? "內建英文單字查詢、語音練習、測驗與學習報表。" : "Vocabulary lookup, speech practice, quizzes, and learning reports.";
                 case "MultimediaStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/MultimediaStudio。啟動 AURORA Cinema 多媒體播放器。" : "Integrated app package: IntegratedApps/MultimediaStudio.";
                 case "WaveStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/WaveStudio。啟動 WAV 與音訊播放工具。" : "Integrated app package: IntegratedApps/WaveStudio.";
                 case "CosmicGestureDesc": return zh ? "內建應用程式套件：IntegratedApps/CosmicGesture。啟動 Python + JavaScript 的 WebGL 宇宙手勢系統。" : "Integrated app package: IntegratedApps/CosmicGesture.";
@@ -5060,6 +5760,7 @@ namespace WindowsFormsApp1
                 case "AppRegistry": return zh ? "應用登錄" : "App Registry";
                 case "AppRegistryDesc": return zh ? "保留每個作品模組的登錄清單。" : "Reserved list for every project module.";
                 case "StartPianoDesc": return zh ? "從系統啟動 1113354_piano。" : "Launch 1113354_piano from the system.";
+                case "StartEnglishFlashcardsDesc": return zh ? "開啟英文單字學習、測驗與報表工具。" : "Open the vocabulary learning, quiz, and reporting tools.";
                 case "StartMultimediaDesc": return zh ? "從系統啟動 1113354_multimedia。" : "Launch 1113354_multimedia from the system.";
                 case "StartWaveDesc": return zh ? "從系統啟動 1113354_wav。" : "Launch 1113354_wav from the system.";
                 case "StartCosmicDesc": return zh ? "啟動手勢控制的 3D 宇宙。" : "Launch the gesture-controlled 3D universe.";
@@ -5069,6 +5770,27 @@ namespace WindowsFormsApp1
                 case "MetroPulseBrokerFailed": return zh ? "MetroPulse 即時資料 broker 啟動失敗。" : "MetroPulse realtime data broker could not start.";
                 case "MetroPulseBrokerNotReady": return zh ? "MetroPulse 伺服器尚未就緒。" : "MetroPulse server is not ready yet.";
                 case "MetroPulseOpening": return zh ? "MetroPulse 正在開啟。" : "MetroPulse is opening.";
+                case "IoTNexusDesc": return zh ? "智慧建築物聯網指揮中心：手寫 MQTT broker、C++ 邊緣運算引擎、數位孿生與即時遙測儀表板。" : "Smart-building IoT command center: a hand-rolled MQTT broker, a C++ edge-compute engine, a digital twin, and a realtime telemetry dashboard.";
+                case "StartIoTNexusDesc": return zh ? "開啟智慧建築物聯網指揮中心。" : "Open the smart-building IoT command center.";
+                case "IoTNexusServerMissing": return zh ? "物聯網中樞伺服器檔案不存在。" : "IoT Nexus server file is missing.";
+                case "IoTNexusPythonMissing": return zh ? "物聯網中樞需要 Python 才能啟動。" : "IoT Nexus needs Python to start.";
+                case "IoTNexusBrokerFailed": return zh ? "物聯網中樞伺服器啟動失敗。" : "IoT Nexus server could not start.";
+                case "IoTNexusBrokerNotReady": return zh ? "物聯網中樞伺服器尚未就緒。" : "IoT Nexus server is not ready yet.";
+                case "IoTNexusOpening": return zh ? "物聯網中樞正在開啟。" : "IoT Nexus is opening.";
+                case "VeriLensDesc": return zh ? "多模態假新聞鑑識中心：YOLO 影像物件偵測、ELA 影像竄改鑑識、NLP 文字分析與 C++ 多模態可信度融合。" : "Multimodal fake-news forensics: YOLO object detection, ELA image-tamper forensics, NLP text analysis, and C++ multimodal credibility fusion.";
+                case "StartVeriLensDesc": return zh ? "開啟多模態假新聞鑑識中心。" : "Open the multimodal misinformation forensics lab.";
+                case "VeriLensServerMissing": return zh ? "真偽鑑識中心伺服器檔案不存在。" : "VeriLens server file is missing.";
+                case "VeriLensPythonMissing": return zh ? "真偽鑑識中心需要 Python 才能啟動。" : "VeriLens needs Python to start.";
+                case "VeriLensBrokerFailed": return zh ? "真偽鑑識中心伺服器啟動失敗。" : "VeriLens server could not start.";
+                case "VeriLensBrokerNotReady": return zh ? "真偽鑑識中心伺服器尚未就緒（AI 模型載入中）。" : "VeriLens server is not ready yet (AI models loading).";
+                case "VeriLensOpening": return zh ? "真偽鑑識中心正在開啟。" : "VeriLens is opening.";
+                case "CulturaDesc": return zh ? "擬真 3D 地球上探索世界各國文化：點擊文化標記聆聽程序化合成的在地音樂與語言問候。" : "Explore world cultures on a realistic 3D globe — click markers to hear procedurally synthesised local music and spoken greetings.";
+                case "StartCulturaDesc": return zh ? "開啟世界文化擬真地球。" : "Open the world-cultures 3D globe.";
+                case "CulturaServerMissing": return zh ? "世界文化星球伺服器檔案不存在。" : "Cultura server file is missing.";
+                case "CulturaPythonMissing": return zh ? "世界文化星球需要 Python 才能啟動。" : "Cultura needs Python to start.";
+                case "CulturaBrokerFailed": return zh ? "世界文化星球伺服器啟動失敗。" : "Cultura server could not start.";
+                case "CulturaBrokerNotReady": return zh ? "世界文化星球伺服器尚未就緒。" : "Cultura server is not ready yet.";
+                case "CulturaOpening": return zh ? "世界文化星球正在開啟。" : "Cultura is opening.";
                 case "WebSurfaceLoading": return zh ? "正在準備系統應用表面..." : "Preparing application surface...";
                 case "WebSurfaceLoadError": return zh ? "應用表面載入失敗：{0}" : "Application surface could not finish loading: {0}";
                 case "WebViewStartError": return zh ? "WebView2 無法啟動。" : "WebView2 could not start.";
@@ -5473,9 +6195,6 @@ namespace WindowsFormsApp1
         private static TimeZoneInfo ResolveTimeZone(string timezone)
         {
             string id = NormalizeTimezone(timezone);
-            try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
-            catch { }
-
             string windowsId = null;
             switch (id)
             {
@@ -5491,6 +6210,9 @@ namespace WindowsFormsApp1
                 try { return TimeZoneInfo.FindSystemTimeZoneById(windowsId); }
                 catch { }
             }
+
+            try { return TimeZoneInfo.FindSystemTimeZoneById(id); }
+            catch { }
 
             return TimeZoneInfo.Local;
         }

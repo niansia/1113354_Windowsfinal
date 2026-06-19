@@ -5,6 +5,16 @@ import { ACCOUNT_TEXT } from '../settings/settingsText';
 // over the bridge to the SQLite-backed AccountStore. In a plain browser (dev preview),
 // a localStorage + Web Crypto mock implements the exact same contract so the login,
 // setup, and password flows stay fully testable without the host.
+//
+// Multi-user: the state carries EVERY account on the device; the login screen lets the
+// user pick one (verify targets a userId) or create another (setup signs in as it).
+
+export interface AccountUser {
+  id: number;
+  displayName: string;
+  email: string;
+  language: string;
+}
 
 export interface AccountState {
   exists: boolean;
@@ -12,6 +22,8 @@ export interface AccountState {
   displayName: string;
   email: string;
   language: string;
+  users: AccountUser[];
+  currentUserId: number;
 }
 
 export interface AccountResult {
@@ -22,14 +34,38 @@ export interface AccountResult {
 export interface AccountClient {
   getState(): Promise<AccountState>;
   setup(input: { displayName: string; email: string; password: string; language: string }): Promise<AccountResult>;
-  verify(password: string): Promise<AccountResult>;
+  verify(userId: number, password: string): Promise<AccountResult>;
   updateProfile(input: { displayName: string; email: string }): Promise<AccountResult>;
   changePassword(input: { current: string; next: string }): Promise<AccountResult>;
   reset(): Promise<AccountResult>;
   onState(cb: (state: AccountState) => void): () => void;
 }
 
-const EMPTY_STATE: AccountState = { exists: false, needsSetup: true, displayName: '', email: '', language: 'zh-TW' };
+const EMPTY_STATE: AccountState = {
+  exists: false, needsSetup: true, displayName: '', email: '', language: 'zh-TW', users: [], currentUserId: 0
+};
+
+function parseUsers(payload: any): AccountUser[] {
+  if (!Array.isArray(payload)) return [];
+  return payload.map((u: any) => ({
+    id: Number(u?.id ?? 0),
+    displayName: String(u?.displayName ?? ''),
+    email: String(u?.email ?? ''),
+    language: String(u?.language ?? '')
+  }));
+}
+
+function parseState(payload: any): AccountState {
+  return {
+    exists: Boolean(payload.exists),
+    needsSetup: Boolean(payload.needsSetup),
+    displayName: String(payload.displayName ?? ''),
+    email: String(payload.email ?? ''),
+    language: String(payload.language ?? 'zh-TW'),
+    users: parseUsers(payload.users),
+    currentUserId: Number(payload.currentUserId ?? 0)
+  };
+}
 
 /* ---------------- Bridge client (talks to the WinForms host) ---------------- */
 
@@ -61,15 +97,7 @@ function waitForResult(op: string): Promise<AccountResult> {
 
 function waitForState(): Promise<AccountState> {
   return waitForMessage<AccountState>((type, payload) => {
-    if (type === 'FUSION_ACCOUNT_STATE' && payload) {
-      return {
-        exists: Boolean(payload.exists),
-        needsSetup: Boolean(payload.needsSetup),
-        displayName: String(payload.displayName ?? ''),
-        email: String(payload.email ?? ''),
-        language: String(payload.language ?? 'zh-TW')
-      };
-    }
+    if (type === 'FUSION_ACCOUNT_STATE' && payload) return parseState(payload);
     return undefined;
   }).catch(() => EMPTY_STATE);
 }
@@ -85,9 +113,9 @@ const bridgeClient: AccountClient = {
     sendMessageToHost('FUSION_ACCOUNT_SETUP', input);
     return pending;
   },
-  verify(password) {
+  verify(userId, password) {
     const pending = waitForResult('verify');
-    sendMessageToHost('FUSION_ACCOUNT_VERIFY', { password });
+    sendMessageToHost('FUSION_ACCOUNT_VERIFY', { userId, password });
     return pending;
   },
   updateProfile(input) {
@@ -108,14 +136,7 @@ const bridgeClient: AccountClient = {
   onState(cb) {
     return addHostMessageListener((message) => {
       if (message.type === 'FUSION_ACCOUNT_STATE' && message.payload) {
-        const p = message.payload as any;
-        cb({
-          exists: Boolean(p.exists),
-          needsSetup: Boolean(p.needsSetup),
-          displayName: String(p.displayName ?? ''),
-          email: String(p.email ?? ''),
-          language: String(p.language ?? 'zh-TW')
-        });
+        cb(parseState(message.payload as any));
       }
     });
   }
@@ -123,16 +144,24 @@ const bridgeClient: AccountClient = {
 
 /* ---------------- Mock client (browser dev — localStorage + Web Crypto) ---------------- */
 
-const MOCK_KEY = 'fusionAccount.v1';
+const MOCK_KEY = 'fusionAccount.v2';
+const LEGACY_MOCK_KEY = 'fusionAccount.v1';
 const MOCK_ITERATIONS = 100000;
 
-interface MockRecord {
+interface MockUser {
+  id: number;
   displayName: string;
   email: string;
   language: string;
   salt: string; // base64
   hash: string; // base64
   iterations: number;
+}
+
+interface MockDb {
+  users: MockUser[];
+  nextId: number;
+  currentUserId: number;
 }
 
 function toB64(bytes: Uint8Array): string {
@@ -158,66 +187,106 @@ async function pbkdf2(password: string, salt: Uint8Array<ArrayBuffer>, iteration
   return toB64(new Uint8Array(bits));
 }
 
-function readMock(): MockRecord | null {
+function readMockDb(): MockDb {
   try {
     const raw = window.localStorage?.getItem(MOCK_KEY);
-    return raw ? (JSON.parse(raw) as MockRecord) : null;
+    if (raw) return JSON.parse(raw) as MockDb;
+    // migrate the old single-account record into a one-user db
+    const legacy = window.localStorage?.getItem(LEGACY_MOCK_KEY);
+    if (legacy) {
+      const r = JSON.parse(legacy);
+      const db: MockDb = {
+        users: [{ id: 1, displayName: r.displayName, email: r.email || '', language: r.language || 'zh-TW', salt: r.salt, hash: r.hash, iterations: r.iterations }],
+        nextId: 2,
+        currentUserId: 1
+      };
+      writeMockDb(db);
+      window.localStorage?.removeItem(LEGACY_MOCK_KEY);
+      return db;
+    }
   } catch {
-    return null;
+    /* fall through */
   }
+  return { users: [], nextId: 1, currentUserId: 0 };
 }
-function writeMock(record: MockRecord | null) {
+function writeMockDb(db: MockDb) {
   try {
-    if (record) window.localStorage?.setItem(MOCK_KEY, JSON.stringify(record));
-    else window.localStorage?.removeItem(MOCK_KEY);
+    window.localStorage?.setItem(MOCK_KEY, JSON.stringify(db));
   } catch {
     /* ignore */
   }
 }
 
+function mockState(db: MockDb): AccountState {
+  const current = db.users.find((u) => u.id === db.currentUserId) ?? db.users[0];
+  return {
+    exists: db.users.length > 0,
+    needsSetup: db.users.length === 0,
+    displayName: current?.displayName ?? '',
+    email: current?.email ?? '',
+    language: current?.language ?? 'zh-TW',
+    users: db.users.map(({ id, displayName, email, language }) => ({ id, displayName, email, language })),
+    currentUserId: current?.id ?? 0
+  };
+}
+
 const mockClient: AccountClient = {
   async getState() {
-    const r = readMock();
-    if (!r) return EMPTY_STATE;
-    return { exists: true, needsSetup: false, displayName: r.displayName, email: r.email, language: r.language };
+    return mockState(readMockDb());
   },
   async setup(input) {
+    const db = readMockDb();
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const hash = await pbkdf2(input.password, salt, MOCK_ITERATIONS);
-    writeMock({
+    const user: MockUser = {
+      id: db.nextId,
       displayName: input.displayName || ACCOUNT_TEXT.fusionUser,
       email: input.email || '',
       language: input.language || 'zh-TW',
       salt: toB64(salt),
       hash,
       iterations: MOCK_ITERATIONS
-    });
+    };
+    db.users.push(user);
+    db.nextId += 1;
+    db.currentUserId = user.id;
+    writeMockDb(db);
     return { ok: true };
   },
-  async verify(password) {
-    const r = readMock();
-    if (!r) return { ok: false, message: 'NO_ACCOUNT' };
-    const hash = await pbkdf2(password, fromB64(r.salt), r.iterations);
-    return hash === r.hash ? { ok: true } : { ok: false, message: 'INVALID_PASSWORD' };
+  async verify(userId, password) {
+    const db = readMockDb();
+    const user = (userId > 0 ? db.users.find((u) => u.id === userId) : db.users[0]) ?? null;
+    if (!user) return { ok: false, message: 'NO_ACCOUNT' };
+    const hash = await pbkdf2(password, fromB64(user.salt), user.iterations);
+    if (hash !== user.hash) return { ok: false, message: 'INVALID_PASSWORD' };
+    db.currentUserId = user.id;
+    writeMockDb(db);
+    return { ok: true };
   },
   async updateProfile(input) {
-    const r = readMock();
-    if (!r) return { ok: false };
-    writeMock({ ...r, displayName: input.displayName || r.displayName, email: input.email });
+    const db = readMockDb();
+    const user = db.users.find((u) => u.id === db.currentUserId) ?? db.users[0];
+    if (!user) return { ok: false };
+    user.displayName = input.displayName || user.displayName;
+    user.email = input.email;
+    writeMockDb(db);
     return { ok: true };
   },
   async changePassword(input) {
-    const r = readMock();
-    if (!r) return { ok: false };
-    const currentHash = await pbkdf2(input.current, fromB64(r.salt), r.iterations);
-    if (currentHash !== r.hash) return { ok: false, message: 'INVALID_PASSWORD' };
+    const db = readMockDb();
+    const user = db.users.find((u) => u.id === db.currentUserId) ?? db.users[0];
+    if (!user) return { ok: false };
+    const currentHash = await pbkdf2(input.current, fromB64(user.salt), user.iterations);
+    if (currentHash !== user.hash) return { ok: false, message: 'INVALID_PASSWORD' };
     const salt = crypto.getRandomValues(new Uint8Array(16));
-    const hash = await pbkdf2(input.next, salt, MOCK_ITERATIONS);
-    writeMock({ ...r, salt: toB64(salt), hash, iterations: MOCK_ITERATIONS });
+    user.hash = await pbkdf2(input.next, salt, MOCK_ITERATIONS);
+    user.salt = toB64(salt);
+    user.iterations = MOCK_ITERATIONS;
+    writeMockDb(db);
     return { ok: true };
   },
   async reset() {
-    writeMock(null);
+    writeMockDb({ users: [], nextId: 1, currentUserId: 0 });
     return { ok: true };
   },
   onState() {

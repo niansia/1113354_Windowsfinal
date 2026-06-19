@@ -75,3 +75,32 @@ export const formatFusionDateTime = (
   second: '2-digit',
   hour12: !clock24
 }).format(date);
+
+export const fusionCalendarKey = (
+  date: Date,
+  timezone: string
+): string => {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: normalizeTimezone(timezone),
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+};
+
+export const formatFusionEventDateTime = (
+  date: Date,
+  lang: Lang,
+  timezone: string,
+  clock24: boolean
+) => new Intl.DateTimeFormat(localeForLanguage(lang), {
+  timeZone: normalizeTimezone(timezone),
+  month: 'short',
+  day: 'numeric',
+  weekday: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: !clock24
+}).format(date);

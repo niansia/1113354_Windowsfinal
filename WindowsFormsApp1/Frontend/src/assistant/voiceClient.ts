@@ -60,6 +60,13 @@ const EMPTY_AUDIO: VoiceServerAudioInfo = {
   lastError: ''
 };
 
+// A final transcript is only trusted if speech-level audio was heard within this window.
+// Silence (e.g. a muted/idle mic at ~-120 dBFS) makes Whisper-style engines hallucinate
+// repeated phrases ("嗨 Fusion.嗨 Fusion…"); gating on real audio drops those entirely.
+const SPEECH_RMS_DBFS = -60;
+const SPEECH_PEAK_DBFS = -48;
+const SPEECH_RECENCY_MS = 2600;
+
 const parseHost = (serverUrl: string): string => {
   try {
     return new URL(serverUrl).hostname || 'localhost';
@@ -194,6 +201,8 @@ export class VoiceSession {
   private stopped = false;
   private packetCount = 0;
   private lastDiagnosticsAt = 0;
+  private audioActive = false;
+  private lastSpeechAt = 0;
   private diagnostics: VoiceDiagnostics = {
     deviceLabel: '',
     deviceId: '',
@@ -273,6 +282,7 @@ export class VoiceSession {
         return;
       }
       if (data.event === 'audio_level') {
+        if (Boolean(data.speech)) this.markSpeech();
         this.emitDiagnostics({
           rmsDbfs: numberOr(data.rms_dbfs, this.diagnostics.rmsDbfs),
           peakDbfs: numberOr(data.peak_dbfs, this.diagnostics.peakDbfs),
@@ -280,13 +290,14 @@ export class VoiceSession {
           packets: numberOr(data.packets, this.diagnostics.packets)
         }, true);
       } else if (data.event === 'speech_start') {
+        this.markSpeech();
         this.emitDiagnostics({ speechActive: true }, true);
       } else if (data.event === 'speech_end') {
         this.emitDiagnostics({ speechActive: false }, true);
       }
       if (data.error) this.cb.onError?.(data.error);
       if (typeof data.partial === 'string' && data.partial) this.cb.onPartial?.(data.partial);
-      if (typeof data.text === 'string' && data.text) this.cb.onFinal?.(data.text);
+      if (typeof data.text === 'string' && data.text && this.acceptFinal()) this.cb.onFinal?.(data.text);
     };
     this.ws.onerror = () => this.cb.onError?.('ws: connection error');
     this.ws.onclose = () => {
@@ -320,6 +331,17 @@ export class VoiceSession {
     }
   }
 
+  private markSpeech() {
+    this.lastSpeechAt = Date.now();
+  }
+
+  // Trust a final transcript only when real audio flowed AND speech-level audio was heard
+  // recently. With no audio pipeline (legacy/unknown), stay permissive so nothing breaks.
+  private acceptFinal(): boolean {
+    if (!this.audioActive) return true;
+    return this.lastSpeechAt > 0 && Date.now() - this.lastSpeechAt <= SPEECH_RECENCY_MS;
+  }
+
   private emitDiagnostics(
     next: Partial<Pick<VoiceDiagnostics, 'rmsDbfs' | 'peakDbfs' | 'speechActive' | 'packets'>>,
     force = false
@@ -345,12 +367,15 @@ export class VoiceSession {
     this.source = this.audioCtx.createMediaStreamSource(this.stream);
     this.processor = this.audioCtx.createScriptProcessor(4096, 1, 1);
     const rate = this.audioCtx.sampleRate;
+    this.audioActive = true;
     this.processor.onaudioprocess = (event) => {
       if (this.stopped || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
       const channel = event.inputBuffer.getChannelData(0);
       const resampled = downsampleTo16k(channel, rate);
       this.packetCount += 1;
       const level = floatDbfs(resampled);
+      // Client-side speech detection — always available, independent of the server VAD.
+      if (level.rms > SPEECH_RMS_DBFS || level.peak > SPEECH_PEAK_DBFS) this.markSpeech();
       this.emitDiagnostics({
         rmsDbfs: level.rms,
         peakDbfs: level.peak,

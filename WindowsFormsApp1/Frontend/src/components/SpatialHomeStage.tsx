@@ -4,6 +4,8 @@ import {
   AppWindow,
   AudioWaveform,
   Bluetooth,
+  BookOpenText,
+  BrainCircuit,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -17,14 +19,23 @@ import {
   Gamepad2,
   Globe2,
   Home,
+  Lock,
   LucideIcon,
   Map as MapIcon,
   Menu,
+  Moon,
   Music,
   Plus,
+  Power,
+  RadioTower,
+  RotateCcw,
+  Scale,
   Settings,
+  Shirt,
   Sparkles,
+  Stethoscope,
   Terminal,
+  Trophy,
   Volume2,
   Wrench,
   Wifi
@@ -41,6 +52,7 @@ import { FusionToolbox } from './FusionToolbox';
 import { FusionDatabase } from './FusionDatabase';
 import { FusionAppCenter } from './FusionAppCenter';
 import { FusionCircuitStudio } from './FusionCircuitStudio';
+import { FusionDevelopmentLab } from './FusionDevelopmentLab';
 import { FusionAssistant } from './FusionAssistant';
 import { DesktopPet } from './DesktopPet';
 import { WALLPAPERS } from '../hooks/useFusionSettings';
@@ -49,8 +61,43 @@ import { useI18n } from '../i18n/I18nContext';
 import { useAccount } from '../account/AccountContext';
 import { getPerformanceProfile } from '../utils/performanceProfile';
 import { addHostMessageListener, launchApp, sendMessageToHost } from '../utils/bridge';
+import { playAppCue, startAppAmbient, stopAppAmbient } from '../audio/appSounds';
+import { setMasterLevel } from '../audio/engine';
 import { ACCOUNT_TEXT } from '../settings/settingsText';
 import { formatFusionDate, formatFusionTime } from '../i18n/localeFormatting';
+import { POWER_ACTIONS, toHostSystemAction, type PowerAction } from '../system/powerActions';
+
+const LazyFusionStyleStudio = React.lazy(() =>
+  import('./FusionStyleStudio').then((module) => ({ default: module.FusionStyleStudio }))
+);
+
+const LazyFusionSportsCenter = React.lazy(() =>
+  import('./FusionSportsCenter').then((module) => ({ default: module.FusionSportsCenter }))
+);
+
+const LazyFusionPoetryCloud = React.lazy(() =>
+  import('./FusionPoetryCloud').then((module) => ({ default: module.FusionPoetryCloud }))
+);
+
+const LazyFusionMedicalHub = React.lazy(() =>
+  import('./FusionMedicalHub').then((module) => ({ default: module.FusionMedicalHub }))
+);
+
+const LazyFusionSignalForge = React.lazy(() =>
+  import('./FusionSignalForge').then((module) => ({ default: module.FusionSignalForge }))
+);
+
+const LazyFusionNeuroFlow = React.lazy(() =>
+  import('./FusionNeuroFlow').then((module) => ({ default: module.FusionNeuroFlow }))
+);
+
+const LazyFusionNotebook = React.lazy(() =>
+  import('./FusionNotebook').then((module) => ({ default: module.FusionNotebook }))
+);
+
+const LazyFusionLegalNavigator = React.lazy(() =>
+  import('./FusionLegalNavigator').then((module) => ({ default: module.FusionLegalNavigator }))
+);
 
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
 const CARD_W = 208;
@@ -78,6 +125,7 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   pc: Cpu,
   dir: Folder,
   piano: Music,
+  flashcards: BookOpenText,
   media: Clapperboard,
   wav: AudioWaveform,
   cosmic: Sparkles,
@@ -88,6 +136,13 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   tool: AppWindow,
   toolbox: Wrench,
   circuit: CircuitBoard,
+  style: Shirt,
+  sports: Trophy,
+  poetry: BookOpenText,
+  medical: Stethoscope,
+  signal: RadioTower,
+  neuro: BrainCircuit,
+  legal: Scale,
   db: Database,
   web: Globe2,
   game: Gamepad2,
@@ -133,10 +188,13 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   // Voice assistant overlay (summoned by orb / Alt+V / wake word).
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [desktopContextMenu, setDesktopContextMenu] = useState<DesktopContextMenuState | null>(null);
+  const [powerMenuOpen, setPowerMenuOpen] = useState(false);
+  const [sleeping, setSleeping] = useState(false);
   const [viewportW, setViewportW] = useState(0);
   const [dragDX, setDragDX] = useState(0);
   const runViewportRef = useRef<HTMLDivElement>(null);
   const dockRailRef = useRef<HTMLDivElement>(null);
+  const powerControlRef = useRef<HTMLDivElement>(null);
   const selectedDockBtnRef = useRef<HTMLButtonElement>(null);
   const dragStartXRef = useRef<number | null>(null);
   const dragMovedRef = useRef(false);
@@ -146,7 +204,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   // Sandboxed FusionOS preferences (localStorage only — never touches the host OS).
   const { settings, update } = useSettings();
   const { t, tf, lang } = useI18n();
-  const { profile: userProfile } = useAccount();
+  const { profile: userProfile, signOut } = useAccount();
 
   const profile = useMemo(() => getPerformanceProfile(), []);
   const selectedApp = apps[selectedIndex] ?? apps[0] ?? FUSION_APPS[0];
@@ -164,6 +222,9 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   }, [apps.length, onIndexChange, onQueueChange]);
 
   const launchFusionApp = useCallback((app: FusionApp) => {
+    // Signature "open" cue — fired here so it covers both in-shell overlays and
+    // host-window apps from a single place (no-op for the excluded audio/imported apps).
+    playAppCue(app.id);
     // Native shell workspaces open inside React; external applications keep
     // their stable WinForms launch ids.
     if (
@@ -173,6 +234,15 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       app.id === 'tool' ||
       app.id === 'db' ||
       app.id === 'circuit' ||
+      app.id === 'dev' ||
+      app.id === 'style' ||
+      app.id === 'sports' ||
+      app.id === 'poetry' ||
+      app.id === 'medical' ||
+      app.id === 'signal' ||
+      app.id === 'neuro' ||
+      app.id === 'legal' ||
+      app.id === 'notes' ||
       app.id === 'toolbox'
     ) {
       setOverlayApp(app.id);
@@ -214,6 +284,18 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  // Keep the app-sound master in sync with the FusionOS volume / mute settings.
+  useEffect(() => {
+    setMasterLevel((settings.volume ?? 48) / 100, settings.muted);
+  }, [settings.volume, settings.muted]);
+
+  // Soft ambient bed for immersive overlay apps — starts/stops as the active overlay
+  // changes (and pauses while the OS is sleeping). No-op for apps without a bed.
+  useEffect(() => {
+    startAppAmbient(sleeping ? null : overlayApp);
+    return () => stopAppAmbient();
+  }, [overlayApp, sleeping]);
 
   // Measure the running-carousel viewport so the selected card can be centred.
   useEffect(() => {
@@ -274,6 +356,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   const homeClassName = [
     'fusion-stage',
     'fusion-os-home',
+    sleeping ? 'fusion-is-sleeping' : '',
     settings.transparency ? '' : 'fusion-no-glass',
     settings.animations ? '' : 'fusion-reduce-motion',
     settings.highContrast ? 'fusion-high-contrast' : '',
@@ -289,6 +372,50 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   } as React.CSSProperties;
 
   const veilOpacity = Math.max(0, Math.min(0.62, (100 - settings.brightness) / 100));
+
+  const runPowerAction = useCallback((action: PowerAction) => {
+    setPowerMenuOpen(false);
+
+    if (action === 'lock') {
+      signOut();
+      return;
+    }
+
+    if (action === 'sleep') {
+      setSleeping(true);
+      return;
+    }
+
+    const message = toHostSystemAction(action);
+    if (message) sendMessageToHost(message.type, message.data);
+  }, [signOut]);
+
+  useEffect(() => {
+    if (!powerMenuOpen) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!powerControlRef.current?.contains(event.target as Node)) {
+        setPowerMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPowerMenuOpen(false);
+    };
+
+    window.addEventListener('pointerdown', closeOnOutsidePointer);
+    window.addEventListener('keydown', closeOnEscape);
+    return () => {
+      window.removeEventListener('pointerdown', closeOnOutsidePointer);
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [powerMenuOpen]);
+
+  useEffect(() => {
+    if (!sleeping) return;
+    const wakeOnKey = () => setSleeping(false);
+    window.addEventListener('keydown', wakeOnKey);
+    return () => window.removeEventListener('keydown', wakeOnKey);
+  }, [sleeping]);
 
   useEffect(() => {
     return addHostMessageListener((message) => {
@@ -328,7 +455,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (overlayApp) return;
+      if (overlayApp || sleeping || powerMenuOpen) return;
       const target = event.target as HTMLElement | null;
       const tag = target?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
@@ -355,7 +482,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [apps, launchSelectedApp, selectApp, selectIndex, selectedIndex, overlayApp]);
+  }, [apps, launchSelectedApp, selectApp, selectIndex, selectedIndex, overlayApp, powerMenuOpen, sleeping]);
 
   const openDesktopContextMenu = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -397,7 +524,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
 
   return (
     <div className={homeClassName} style={homeStyle} onContextMenu={openDesktopContextMenu}>
-      <FusionDepthBackground handX={handX} profile={profile} />
+      <FusionDepthBackground handX={handX} profile={profile} active={!overlayApp && !sleeping} />
       <div className="fusion-stage-aurora" />
       <div className="fusion-stage-grid" />
 
@@ -605,6 +732,46 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
         <button type="button" className="dock-step" onClick={() => selectIndex(selectedIndex + 1)} title={t('下一個應用程式')}>
           <ChevronRight size={21} />
         </button>
+        <div className="fusion-power-control" ref={powerControlRef}>
+          {powerMenuOpen && (
+            <div className="fusion-power-menu" id="fusion-power-menu" role="menu" aria-label={t('電源選項')}>
+              {POWER_ACTIONS.map((action) => {
+                const Icon =
+                  action.id === 'lock'
+                    ? Lock
+                    : action.id === 'sleep'
+                      ? Moon
+                      : action.id === 'restart'
+                        ? RotateCcw
+                        : Power;
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    role="menuitem"
+                    className={action.id === 'shutdown' ? 'is-danger' : ''}
+                    onClick={() => runPowerAction(action.id)}
+                  >
+                    <Icon size={18} strokeWidth={1.8} />
+                    <span>{t(action.label)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <button
+            type="button"
+            className={`fusion-power-button ${powerMenuOpen ? 'is-open' : ''}`}
+            title={t('電源選項')}
+            aria-label={t('電源選項')}
+            aria-haspopup="menu"
+            aria-expanded={powerMenuOpen}
+            aria-controls={powerMenuOpen ? 'fusion-power-menu' : undefined}
+            onClick={() => setPowerMenuOpen((open) => !open)}
+          >
+            <Power size={23} strokeWidth={1.8} />
+          </button>
+        </div>
       </nav>
 
       {desktopContextMenu && (
@@ -669,6 +836,23 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       <div className="fusion-night-veil" style={{ opacity: settings.nightLight ? 1 : 0 }} aria-hidden="true" />
       <DesktopPet settings={settings} onChange={update} />
 
+      {sleeping && (
+        <button
+          type="button"
+          className="fusion-sleep-surface"
+          onPointerDown={() => setSleeping(false)}
+          aria-label={t('按任意鍵或點一下以喚醒')}
+        >
+          <span className="fusion-sleep-orb" aria-hidden="true">
+            <Moon size={28} strokeWidth={1.5} />
+          </span>
+          <strong>{formatFusionTime(now, lang, settings.timezone, settings.clock24)}</strong>
+          <span>{formatFusionDate(now, lang, settings.timezone)}</span>
+          <small>{t('Fusion OS 正在睡眠')}</small>
+          <em>{t('按任意鍵或點一下以喚醒')}</em>
+        </button>
+      )}
+
       <FusionSettings
         open={overlayApp === 'set'}
         onClose={() => setOverlayApp(null)}
@@ -711,6 +895,83 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
         onClose={() => setOverlayApp('tool')}
         accent={settings.accent}
       />
+      <FusionDevelopmentLab
+        open={overlayApp === 'dev'}
+        onClose={() => setOverlayApp('tool')}
+        accent="#4bdcff"
+      />
+      {overlayApp === 'style' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionStyleStudio
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#ff75bd"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'sports' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionSportsCenter
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#55e6ff"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'poetry' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionPoetryCloud
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#ffc857"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'medical' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionMedicalHub
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#66e8ff"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'signal' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionSignalForge
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#4bdcff"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'neuro' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionNeuroFlow
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#72e6ff"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'notes' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionNotebook
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#ffb259"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'legal' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionLegalNavigator
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#69d4c5"
+          />
+        </React.Suspense>
+      )}
 
       <FusionAssistant
         enabled={settings.assistantEnabled}

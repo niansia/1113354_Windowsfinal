@@ -84,11 +84,10 @@ function buildTasks(): BootTask[] {
     { id: 'registry', label: 'App registry indexing', phase: 'shell', weight: 2, timeoutMs: 4000, run: async () => { fusionRuntimeCache.appRegistry = buildAppRegistry(); return `Registry ${fusionRuntimeCache.appRegistry.apps.length} apps`; } },
     { id: 'shell', label: 'Spatial layout precompute', phase: 'shell', weight: 1, timeoutMs: 4000, run: warmShellLayout },
     { id: 'gesture', label: 'Gesture state gate', phase: 'gesture', weight: 1, timeoutMs: 4000, run: async () => { fusionRuntimeCache.gestureConfig = buildGestureConfig(); return 'Safe gesture gate armed'; } },
-    // The real heavy load: download + compile the MediaPipe hand model now so the Home
-    // shell doesn't freeze on first mount. Heavily weighted so the progress bar dwells
-    // here in proportion to the actual work. Optional: a timeout/failure falls back to a
-    // cold init in the gesture hook rather than blocking the desktop.
-    { id: 'gesture-engine', label: 'Gesture engine warm-up', phase: 'gesture', weight: 4, timeoutMs: 12000, optional: true, run: warmGestureModel },
+    // NOTE: the heavy MediaPipe hand-model download+compile (~24MB WASM) is NOT run as a
+    // blocking boot step any more — compiling WASM on the main thread stutters the boot
+    // animation. It is scheduled as a background idle warm-up *after* the desktop reveals
+    // (see runBoot), so the boot stays perfectly smooth while the engine still pre-warms.
     {
       id: 'starfield',
       label: 'Starfield node generation',
@@ -134,52 +133,94 @@ function buildTasks(): BootTask[] {
   ];
 }
 
+// Like a real OS, the boot dwells for a readable minimum while it genuinely
+// pre-warms subsystems. Progress is *time-gated* and smoothed so the bar eases up
+// instead of snapping per task; it can never run ahead of either the real work or
+// the minimum duration.
+const MIN_BOOT_MS = 6200;
+
+function scheduleIdle(fn: () => void): void {
+  const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void }).requestIdleCallback;
+  if (typeof ric === 'function') ric(fn, { timeout: 2500 });
+  else window.setTimeout(fn, 800);
+}
+
 export async function runBoot(opts: RunBootOptions): Promise<void> {
   const tasks = buildTasks();
   const totalWeight = tasks.reduce((a, t) => a + t.weight, 0);
   const modules: BootModuleStatus[] = tasks.map((t) => ({ id: t.id, label: t.label, phase: t.phase, detail: '', state: 'pending' }));
   const diag: { id: string; ok: boolean; ms: number; optional: boolean; error?: string }[] = [];
   const startedAt = performance.now();
+
   let doneWeight = 0;
+  let tasksDone = false;
+  let skipped = false;
+  let currentLabel = tasks[0]?.label ?? 'FusionOS';
+  let currentPhase: BootPhase = tasks[0]?.phase ?? 'firmware';
 
-  const emit = (taskLabel: string, phase: BootPhase) => {
-    opts.onUpdate({
-      phase,
-      phaseLabel: PHASE_LABELS[phase],
-      taskLabel,
-      progress: Math.min(0.99, doneWeight / totalWeight),
-      modules: modules.map((m) => ({ ...m })),
-      done: false
-    });
-  };
-
-  for (let i = 0; i < tasks.length; i += 1) {
-    if (opts.shouldSkip?.()) break;
-
-    const task = tasks[i];
-    const mod = modules[i];
-    mod.state = 'running';
-    emit(task.label, task.phase);
-
-    const tStart = performance.now();
-    try {
-      const detail = await withTimeout(task.run(), task.timeoutMs);
-      mod.detail = detail || 'Ready';
-      mod.state = 'ok';
-      diag.push({ id: task.id, ok: true, ms: Math.round(performance.now() - tStart), optional: !!task.optional });
-    } catch (e) {
-      mod.detail = task.optional ? 'Skipped (timeout/offline)' : 'Fallback';
-      mod.state = 'fallback';
-      diag.push({ id: task.id, ok: false, ms: Math.round(performance.now() - tStart), optional: !!task.optional, error: e instanceof Error ? e.message : String(e) });
+  // Run the real warm-up tasks sequentially in the background. The smooth emit
+  // loop below reads the shared progress/labels — it is never blocked waiting on
+  // a single task, so a slow async warm cannot freeze the animation.
+  const runner = (async () => {
+    for (let i = 0; i < tasks.length; i += 1) {
+      if (opts.shouldSkip?.()) { skipped = true; break; }
+      const task = tasks[i];
+      const mod = modules[i];
+      mod.state = 'running';
+      currentLabel = task.label;
+      currentPhase = task.phase;
+      const tStart = performance.now();
+      try {
+        const detail = await withTimeout(task.run(), task.timeoutMs);
+        mod.detail = detail || 'Ready';
+        mod.state = 'ok';
+        diag.push({ id: task.id, ok: true, ms: Math.round(performance.now() - tStart), optional: !!task.optional });
+      } catch (e) {
+        mod.detail = task.optional ? 'Skipped (timeout/offline)' : 'Fallback';
+        mod.state = 'fallback';
+        diag.push({ id: task.id, ok: false, ms: Math.round(performance.now() - tStart), optional: !!task.optional, error: e instanceof Error ? e.message : String(e) });
+      }
+      doneWeight += task.weight;
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
     }
+    tasksDone = true;
+  })();
 
-    doneWeight += task.weight;
-    emit(task.label, task.phase);
-    await new Promise<void>((r) => requestAnimationFrame(() => r()));
-  }
+  // Smooth, time-gated progress driven by rAF (decoupled from task timing).
+  let displayed = 0;
+  await new Promise<void>((resolve) => {
+    const tick = () => {
+      const elapsed = performance.now() - startedAt;
+      const timeFrac = skipped ? 1 : Math.min(1, elapsed / MIN_BOOT_MS);
+      const taskFrac = skipped ? 1 : tasksDone ? 1 : Math.min(0.985, doneWeight / totalWeight);
+      const target = Math.min(taskFrac, timeFrac);
+      displayed += (target - displayed) * (skipped ? 0.22 : 0.1);
+      const finished = skipped
+        ? displayed > 0.99
+        : tasksDone && elapsed >= MIN_BOOT_MS && displayed > 0.985;
+      const phase = finished ? 'reveal' : currentPhase;
+      opts.onUpdate({
+        phase,
+        phaseLabel: PHASE_LABELS[phase],
+        taskLabel: finished ? 'FusionOS Ready' : currentLabel,
+        progress: finished ? 1 : Math.min(0.995, displayed),
+        modules: modules.map((m) => ({ ...m })),
+        done: false
+      });
+      if (finished) { resolve(); return; }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  await runner.catch(() => undefined);
 
   fusionRuntimeCache.bootDiagnostics = { durationMs: Math.round(performance.now() - startedAt), tasks: diag };
   fusionRuntimeCache.bootCompleted = true;
+
+  // Heavy MediaPipe hand-model warm-up runs AFTER reveal, on idle time, so it
+  // never stutters the boot or the first desktop frames. Still pre-warms the
+  // engine so the first real gesture is responsive.
+  scheduleIdle(() => { warmGestureModel().catch(() => undefined); });
 
   opts.onUpdate({
     phase: 'reveal',

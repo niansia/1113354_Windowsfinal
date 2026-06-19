@@ -4,6 +4,7 @@ import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import { KernelSize } from 'postprocessing';
 import type { PerfTier } from '../../utils/performanceProfile';
 import { FusionCoreLoop } from './FusionCoreLoop';
+import { BootParticleField } from './BootParticleField';
 
 interface FusionBootScene3DProps {
   progress: number;
@@ -35,6 +36,7 @@ export function FusionBootScene3D({ progress, tier, reducedMotion }: FusionBootS
       <pointLight position={[2.8, 1.4, 2.2]} color="#865cff" intensity={1.05} distance={9} />
       <Suspense fallback={null}>
         <FusionCoreLoop progress={progress} tier={tier} />
+        <BootParticleField progress={progress} tier={tier} />
       </Suspense>
       {!reducedMotion && (
         <EffectComposer multisampling={0} enableNormalPass={false}>

@@ -1,0 +1,567 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Connection attempt to the License Client on channel: "LicenseClient-User" failed because channel doesn't exist; code: "0x80000002"
+[Licensing::Module] Successfully launched the LicensingClient (PId: 44968)
+[Licensing::IpcConnector] Successfully connected to the License Client on channel: "LicenseClient-User" at "2026-06-05T22:56:32.3686932Z"
+[Licensing::Client] Error: Code 10 while verifying Licensing Client signature (process Id: 44968, path: "C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] Error: LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.16.0+1c867a9
+  Session Id:              93d537dc2b834362b02b07e0dd0aa072
+  Correlation Id:          46872a5a8d3b53c90f82d60b987eaa17
+  External correlation Id: 4133354181731943025
+  Machine Id:              UCvTKMwdbppK7rxJ2kTSx7rB6wI=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-User" (connect: 0.56s, validation: 0.06s, handshake: 0.02s)
+[Licensing::IpcConnector] Successfully connected to the License Notification on channel: "LicenseClient-User-notifications" at "2026-06-05T22:56:32.4452923Z"
+[Licensing::Module] Connected to LicensingClient (PId: 44968, launch time: 0.00, total connection time: 0.64s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Error: Code 500 while processing request (status: Unable to update licenses. Errors: No ULF license found.,Token not found in cache)
+[Licensing::Client] Error: Code 500 while updating license in client (status: Unable to update licenses. Errors: No ULF license found.,Token not found in cache)
+Built from '6000.0/staging' branch; Version is '6000.0.32f1 (b2e806cf271c) revision 11724806'; Using compiler version '193933523'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) 64bit Core' Language: 'zh' Physical Memory: 16002 MB
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Serial number assigned to: "ewogICJzdWJzR3JvdXAiIDogInVuaXR5IGVkaXRvciIsCiAgIm5hbWVzcGFjZSIgOiAidW5pdHlfZWRpdG9yIiwKICAidHlwZSIgOiAiRURJVE9SIiwKICAidGFnIiA6ICJVbml0eVBlcnNvbmFsXXXX"
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1, IsPro: 0
+[Licensing::Client] Successfully resolved entitlement details
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.0.32f1\Editor\Unity.exe
+-batchmode
+-quit
+-projectPath
+C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG
+-executeMethod
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder.BuildPrototypeScene
+-logFile
+C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\output\fusion-scene-build.log
+Successfully changed project path to: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG
+C:/Users/User/OneDrive/桌面/視窗/視窗期末/WindowsFormsApp1/WindowsFormsApp1/IntegratedApps/FusionRPG
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gfx=262144"
+Player connection [40588]  Target information:
+
+Player connection [40588]  * "[IP] 10.228.122.197 [Port] 55504 [Flags] 2 [Guid] 2224453634 [EditorId] 2224453634 [Version] 1048832 [Id] WindowsEditor(7,LAPTOP-349SRUR9) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [40588] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [40588] Host joined alternative multi-casting on [225.0.0.222:34997]...
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Package Manager] Connected to IPC stream "Upm-20352" after 0.2 seconds.
+Library Redirect Path: Library/
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 35 packages:
+  Packages from [https://package.openupm.com]:
+    com.ivanmurzak.unity.mcp@0.77.1 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.ivanmurzak.unity.mcp)
+    extensions.unity.playerprefsex@2.1.5 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\extensions.unity.playerprefsex)
+  Packages from [https://packages.unity.com]:
+    com.unity.cloud.gltfast@6.19.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.cloud.gltfast)
+    com.unity.collab-proxy@2.5.2 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.collab-proxy)
+    com.unity.ide.visualstudio@2.0.22 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.ide.visualstudio)
+    com.unity.timeline@1.8.7 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.timeline)
+    com.unity.ext.nunit@2.0.5 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.ext.nunit)
+    com.unity.ide.rider@3.0.31 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.ide.rider)
+    com.unity.editorcoroutines@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.editorcoroutines)
+    com.unity.performance.profile-analyzer@1.2.2 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.performance.profile-analyzer)
+    com.unity.testtools.codecoverage@1.2.6 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.testtools.codecoverage)
+    com.unity.burst@1.8.29 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.burst)
+    com.unity.collections@2.6.6 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.collections)
+    com.unity.mathematics@1.3.3 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.mathematics)
+    com.unity.nuget.newtonsoft-json@3.2.1 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.nuget.newtonsoft-json)
+    com.unity.settings-manager@2.0.1 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.settings-manager)
+    com.unity.test-framework@1.4.6 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.test-framework)
+    com.unity.nuget.mono-cecil@1.11.6 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.nuget.mono-cecil)
+    com.unity.test-framework.performance@3.0.3 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.test-framework.performance)
+  Built-in packages:
+    com.unity.feature.development@1.0.2 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.feature.development)
+    com.unity.textmeshpro@3.0.9 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.textmeshpro)
+    com.unity.ugui@2.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.ugui)
+    com.unity.modules.ai@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.ai)
+    com.unity.modules.animation@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.animation)
+    com.unity.modules.audio@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.audio)
+    com.unity.modules.imgui@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.particlesystem@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.ui@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.hierarchycore@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.modules.director@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.director)
+    com.unity.modules.unitywebrequest@1.0.0 (location: C:\Users\User\OneDrive\桌面\視窗\視窗期末\WindowsFormsApp1\WindowsFormsApp1\IntegratedApps\FusionRPG\Library\PackageCache\com.unity.modules.unitywebrequest)
+  Local packages:
+    com.besty.unity-skills@file:C:\Users\User\Downloads\Unity-Skills-main\Unity-Skills-main\SkillsForUnity (location: C:\Users\User\Downloads\Unity-Skills-main\Unity-Skills-main\SkillsForUnity)
+[Package Manager] com.unity.textmeshpro is deprecated: This package is no longer supported. TextMeshPro functionalities are now included in the com.unity.ugui package. To continue using them, consider adding it to your project dependencies.
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+[Subsystems] No new subsystems found in resolved package list.
+Package Manager log level set to [2]
+[Package Manager] Done registering packages in 0.34 seconds
+Artifact Garbage Collection - Removed 3 unused hashed content filesRefreshing native plugins compatible for Editor in 0.69 ms, found 2 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Initialize engine version: 6000.0.32f1 (b2e806cf271c)
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/Users/User/OneDrive/桌面/視窗/視窗期末/WindowsFormsApp1/WindowsFormsApp1/IntegratedApps/FusionRPG/Assets
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: NVIDIA GeForce RTX 4060 Laptop GPU (ID=0x28e0)
+    Vendor:   NVIDIA
+    VRAM:     7957 MB
+    Driver:   32.0.15.5597
+[Licensing::Client] Successfully resolved entitlement details
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56352
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.0.32f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+Registered in 0.001899 seconds.
+- Loaded All Assemblies, in  0.238 seconds
+Native extension for WindowsStandalone target not found
+Native extension for WebGL target not found
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  0.197 seconds
+Domain Reload Profiling: 435ms
+	BeginReloadAssembly (83ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (0ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (1ms)
+	RebuildCommonClasses (23ms)
+	RebuildNativeTypeToScriptingClass (7ms)
+	initialDomainReloadingComplete (29ms)
+	LoadAllAssembliesAndSetupDomain (94ms)
+		LoadAssemblies (82ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (93ms)
+			TypeCache.Refresh (92ms)
+				TypeCache.ScanAssembly (83ms)
+			BuildScriptInfoCaches (0ms)
+			ResolveRequiredComponents (0ms)
+	FinalizeReload (198ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (178ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (15ms)
+			SetLoadedEditorAssemblies (3ms)
+			BeforeProcessingInitializeOnLoad (33ms)
+			ProcessInitializeOnLoadAttributes (90ms)
+			ProcessInitializeOnLoadMethodAttributes (37ms)
+			AfterProcessingInitializeOnLoad (0ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (0ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[ScriptCompilation] Requested script compilation because: Assetdatabase observed changes in script compilation related files
+Starting: C:\Program Files\Unity\Hub\Editor\6000.0.32f1\Editor\Data\bee_backend.exe --dont-print-to-structured-log --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: C:/Users/User/OneDrive/桌面/視窗/視窗期末/WindowsFormsApp1/WindowsFormsApp1/IntegratedApps/FusionRPG
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 4s44ms
+[357/606    0s] WriteResponseFile Library/Bee/artifacts/rsp/4747638433968585886.rsp
+[484/606    0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+[602/606    1s] Csc Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp-Editor.dll (+2 others)
+[603/606    0s] ILPostProcess Library/Bee/artifacts/1900b0aE.dag/post-processed/Assembly-CSharp-Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/1900b0aE.dag/Assembly-CSharp-Editor.dll, with 126 defines and 327 references
+
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+
+running zzzUnity.Burst.CodeGen.BurstILPostProcessor
+[604/606    0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor.pdb
+[605/606    0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor.dll
+*** Tundra build success (4.01 seconds), 6 items updated, 606 evaluated
+AssetDatabase: script compilation time: 4.367450s
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  1.537 seconds
+Refreshing native plugins compatible for Editor in 0.70 ms, found 2 plugins.
+Native extension for WindowsStandalone target not found
+Native extension for WebGL target not found
+<color=#ffaa00>warn:</color> [06:56:42:2347] <color=#B4FF32>[AI]</color> <color=#48C9B0><b>McpManagerClientHub</b></color> ConnectionManager[16ad37f7-43a8-46c3-ad90-1d0cca3784b6] EnsureConnection Connection not available and auto-reconnect disabled for endpoint: /hub/mcp-server
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+com.IvanMurzak.Unity.MCP.Utils.UnityLogger:Log<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.FormattedLogValues,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>) (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Runtime/Logger/UnityLogger.cs:125)
+Microsoft.Extensions.Logging.Logger:<Log>g__LoggerLog|14_0<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.ILogger,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>,System.Collections.Generic.List`1<System.Exception>&,Microsoft.Extensions.Logging.FormattedLogValues&)
+Microsoft.Extensions.Logging.Logger:Log<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.FormattedLogValues,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>)
+Microsoft.Extensions.Logging.Logger`1<com.IvanMurzak.McpPlugin.McpManagerClientHub>:Microsoft.Extensions.Logging.ILogger.Log<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.FormattedLogValues,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>)
+Microsoft.Extensions.Logging.LoggerExtensions:Log (Microsoft.Extensions.Logging.ILogger,Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,System.Exception,string,object[])
+Microsoft.Extensions.Logging.LoggerExtensions:Log (Microsoft.Extensions.Logging.ILogger,Microsoft.Extensions.Logging.LogLevel,string,object[])
+Microsoft.Extensions.Logging.LoggerExtensions:LogWarning (Microsoft.Extensions.Logging.ILogger,string,object[])
+com.IvanMurzak.McpPlugin.ConnectionManager/<EnsureConnection>d__3:MoveNext ()
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<bool>:Start<com.IvanMurzak.McpPlugin.ConnectionManager/<EnsureConnection>d__3> (com.IvanMurzak.McpPlugin.ConnectionManager/<EnsureConnection>d__3&)
+com.IvanMurzak.McpPlugin.ConnectionManager:EnsureConnection (System.Threading.CancellationToken)
+com.IvanMurzak.McpPlugin.ConnectionManager/<InvokeAsync>d__56`2<com.IvanMurzak.McpPlugin.Common.Model.RequestToolsUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData>:MoveNext ()
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<com.IvanMurzak.McpPlugin.Common.Model.ResponseData>:Start<com.IvanMurzak.McpPlugin.ConnectionManager/<InvokeAsync>d__56`2<com.IvanMurzak.McpPlugin.Common.Model.RequestToolsUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData>> (com.IvanMurzak.McpPlugin.ConnectionManager/<InvokeAsync>d__56`2<com.IvanMurzak.McpPlugin.Common.Model.RequestToolsUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData>&)
+com.IvanMurzak.McpPlugin.ConnectionManager:InvokeAsync<com.IvanMurzak.McpPlugin.Common.Model.RequestToolsUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData> (string,com.IvanMurzak.McpPlugin.Common.Model.RequestToolsUpdated,System.Threading.CancellationToken)
+com.IvanMurzak.McpPlugin.McpManagerClientHub:NotifyAboutUpdatedTools (com.IvanMurzak.McpPlugin.Common.Model.RequestToolsUpdated,System.Threading.CancellationToken)
+com.IvanMurzak.McpPlugin.McpManagerClientHub:NotifyAboutUpdatedTools (com.IvanMurzak.McpPlugin.Common.Model.RequestToolsUpdated)
+com.IvanMurzak.McpPlugin.McpPlugin/<<-ctor>b__29_4>d:MoveNext ()
+System.Runtime.CompilerServices.AsyncVoidMethodBuilder:Start<com.IvanMurzak.McpPlugin.McpPlugin/<<-ctor>b__29_4>d> (com.IvanMurzak.McpPlugin.McpPlugin/<<-ctor>b__29_4>d&)
+com.IvanMurzak.McpPlugin.McpPlugin:<.ctor>b__29_4 (R3.Unit)
+R3.AnonymousObserver`1<R3.Unit>:OnNextCore (R3.Unit)
+R3.Observer`1<R3.Unit>:OnNext (R3.Unit)
+R3.ThrottleFirst`1/_ThrottleFirst<R3.Unit>:OnNextCore (R3.Unit)
+R3.Observer`1<R3.Unit>:OnNext (R3.Unit)
+R3.Subject`1<R3.Unit>:OnNext (R3.Unit)
+com.IvanMurzak.McpPlugin.McpToolManager:SetToolEnabled (string,bool)
+com.IvanMurzak.Unity.MCP.UnityMcpPlugin:ApplyConfigToMcpPlugin (com.IvanMurzak.McpPlugin.IMcpPlugin) (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Runtime/UnityMcpPlugin.Build.cs:202)
+com.IvanMurzak.Unity.MCP.UnityMcpPluginEditor:BuildMcpPluginIfNeeded () (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Editor/Scripts/UnityMcpPluginEditor.Build.cs:60)
+com.IvanMurzak.Unity.MCP.Editor.Startup:.cctor () (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Editor/Scripts/Startup.cs:28)
+System.Runtime.CompilerServices.RuntimeHelpers:RunClassConstructor (System.RuntimeTypeHandle)
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[])
+
+(Filename: ./Library/PackageCache/com.ivanmurzak.unity.mcp/Runtime/UnityMcpPlugin.Build.cs Line: 202)
+
+<color=#ffaa00>warn:</color> [06:56:42:2448] <color=#B4FF32>[AI]</color> <color=#48C9B0><b>McpManagerClientHub</b></color> ConnectionManager[16ad37f7-43a8-46c3-ad90-1d0cca3784b6] EnsureConnection Connection not available and auto-reconnect disabled for endpoint: /hub/mcp-server
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+com.IvanMurzak.Unity.MCP.Utils.UnityLogger:Log<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.FormattedLogValues,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>) (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Runtime/Logger/UnityLogger.cs:125)
+Microsoft.Extensions.Logging.Logger:<Log>g__LoggerLog|14_0<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.ILogger,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>,System.Collections.Generic.List`1<System.Exception>&,Microsoft.Extensions.Logging.FormattedLogValues&)
+Microsoft.Extensions.Logging.Logger:Log<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.FormattedLogValues,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>)
+Microsoft.Extensions.Logging.Logger`1<com.IvanMurzak.McpPlugin.McpManagerClientHub>:Microsoft.Extensions.Logging.ILogger.Log<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.FormattedLogValues,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>)
+Microsoft.Extensions.Logging.LoggerExtensions:Log (Microsoft.Extensions.Logging.ILogger,Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,System.Exception,string,object[])
+Microsoft.Extensions.Logging.LoggerExtensions:Log (Microsoft.Extensions.Logging.ILogger,Microsoft.Extensions.Logging.LogLevel,string,object[])
+Microsoft.Extensions.Logging.LoggerExtensions:LogWarning (Microsoft.Extensions.Logging.ILogger,string,object[])
+com.IvanMurzak.McpPlugin.ConnectionManager/<EnsureConnection>d__3:MoveNext ()
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<bool>:Start<com.IvanMurzak.McpPlugin.ConnectionManager/<EnsureConnection>d__3> (com.IvanMurzak.McpPlugin.ConnectionManager/<EnsureConnection>d__3&)
+com.IvanMurzak.McpPlugin.ConnectionManager:EnsureConnection (System.Threading.CancellationToken)
+com.IvanMurzak.McpPlugin.ConnectionManager/<InvokeAsync>d__56`2<com.IvanMurzak.McpPlugin.Common.Model.RequestPromptsUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData>:MoveNext ()
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<com.IvanMurzak.McpPlugin.Common.Model.ResponseData>:Start<com.IvanMurzak.McpPlugin.ConnectionManager/<InvokeAsync>d__56`2<com.IvanMurzak.McpPlugin.Common.Model.RequestPromptsUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData>> (com.IvanMurzak.McpPlugin.ConnectionManager/<InvokeAsync>d__56`2<com.IvanMurzak.McpPlugin.Common.Model.RequestPromptsUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData>&)
+com.IvanMurzak.McpPlugin.ConnectionManager:InvokeAsync<com.IvanMurzak.McpPlugin.Common.Model.RequestPromptsUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData> (string,com.IvanMurzak.McpPlugin.Common.Model.RequestPromptsUpdated,System.Threading.CancellationToken)
+com.IvanMurzak.McpPlugin.McpManagerClientHub:NotifyAboutUpdatedPrompts (com.IvanMurzak.McpPlugin.Common.Model.RequestPromptsUpdated,System.Threading.CancellationToken)
+com.IvanMurzak.McpPlugin.McpManagerClientHub:NotifyAboutUpdatedPrompts (com.IvanMurzak.McpPlugin.Common.Model.RequestPromptsUpdated)
+com.IvanMurzak.McpPlugin.McpPlugin/<<-ctor>b__29_5>d:MoveNext ()
+System.Runtime.CompilerServices.AsyncVoidMethodBuilder:Start<com.IvanMurzak.McpPlugin.McpPlugin/<<-ctor>b__29_5>d> (com.IvanMurzak.McpPlugin.McpPlugin/<<-ctor>b__29_5>d&)
+com.IvanMurzak.McpPlugin.McpPlugin:<.ctor>b__29_5 (R3.Unit)
+R3.AnonymousObserver`1<R3.Unit>:OnNextCore (R3.Unit)
+R3.Observer`1<R3.Unit>:OnNext (R3.Unit)
+R3.ThrottleFirst`1/_ThrottleFirst<R3.Unit>:OnNextCore (R3.Unit)
+R3.Observer`1<R3.Unit>:OnNext (R3.Unit)
+R3.Subject`1<R3.Unit>:OnNext (R3.Unit)
+com.IvanMurzak.McpPlugin.McpPromptManager:SetPromptEnabled (string,bool)
+com.IvanMurzak.Unity.MCP.UnityMcpPlugin:ApplyConfigToMcpPlugin (com.IvanMurzak.McpPlugin.IMcpPlugin) (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Runtime/UnityMcpPlugin.Build.cs:217)
+com.IvanMurzak.Unity.MCP.UnityMcpPluginEditor:BuildMcpPluginIfNeeded () (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Editor/Scripts/UnityMcpPluginEditor.Build.cs:60)
+com.IvanMurzak.Unity.MCP.Editor.Startup:.cctor () (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Editor/Scripts/Startup.cs:28)
+System.Runtime.CompilerServices.RuntimeHelpers:RunClassConstructor (System.RuntimeTypeHandle)
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[])
+
+(Filename: ./Library/PackageCache/com.ivanmurzak.unity.mcp/Runtime/UnityMcpPlugin.Build.cs Line: 217)
+
+<color=#ffaa00>warn:</color> [06:56:42:2463] <color=#B4FF32>[AI]</color> <color=#48C9B0><b>McpManagerClientHub</b></color> ConnectionManager[16ad37f7-43a8-46c3-ad90-1d0cca3784b6] EnsureConnection Connection not available and auto-reconnect disabled for endpoint: /hub/mcp-server
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+com.IvanMurzak.Unity.MCP.Utils.UnityLogger:Log<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.FormattedLogValues,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>) (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Runtime/Logger/UnityLogger.cs:125)
+Microsoft.Extensions.Logging.Logger:<Log>g__LoggerLog|14_0<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.ILogger,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>,System.Collections.Generic.List`1<System.Exception>&,Microsoft.Extensions.Logging.FormattedLogValues&)
+Microsoft.Extensions.Logging.Logger:Log<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.FormattedLogValues,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>)
+Microsoft.Extensions.Logging.Logger`1<com.IvanMurzak.McpPlugin.McpManagerClientHub>:Microsoft.Extensions.Logging.ILogger.Log<Microsoft.Extensions.Logging.FormattedLogValues> (Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,Microsoft.Extensions.Logging.FormattedLogValues,System.Exception,System.Func`3<Microsoft.Extensions.Logging.FormattedLogValues, System.Exception, string>)
+Microsoft.Extensions.Logging.LoggerExtensions:Log (Microsoft.Extensions.Logging.ILogger,Microsoft.Extensions.Logging.LogLevel,Microsoft.Extensions.Logging.EventId,System.Exception,string,object[])
+Microsoft.Extensions.Logging.LoggerExtensions:Log (Microsoft.Extensions.Logging.ILogger,Microsoft.Extensions.Logging.LogLevel,string,object[])
+Microsoft.Extensions.Logging.LoggerExtensions:LogWarning (Microsoft.Extensions.Logging.ILogger,string,object[])
+com.IvanMurzak.McpPlugin.ConnectionManager/<EnsureConnection>d__3:MoveNext ()
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<bool>:Start<com.IvanMurzak.McpPlugin.ConnectionManager/<EnsureConnection>d__3> (com.IvanMurzak.McpPlugin.ConnectionManager/<EnsureConnection>d__3&)
+com.IvanMurzak.McpPlugin.ConnectionManager:EnsureConnection (System.Threading.CancellationToken)
+com.IvanMurzak.McpPlugin.ConnectionManager/<InvokeAsync>d__56`2<com.IvanMurzak.McpPlugin.Common.Model.RequestResourcesUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData>:MoveNext ()
+System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1<com.IvanMurzak.McpPlugin.Common.Model.ResponseData>:Start<com.IvanMurzak.McpPlugin.ConnectionManager/<InvokeAsync>d__56`2<com.IvanMurzak.McpPlugin.Common.Model.RequestResourcesUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData>> (com.IvanMurzak.McpPlugin.ConnectionManager/<InvokeAsync>d__56`2<com.IvanMurzak.McpPlugin.Common.Model.RequestResourcesUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData>&)
+com.IvanMurzak.McpPlugin.ConnectionManager:InvokeAsync<com.IvanMurzak.McpPlugin.Common.Model.RequestResourcesUpdated, com.IvanMurzak.McpPlugin.Common.Model.ResponseData> (string,com.IvanMurzak.McpPlugin.Common.Model.RequestResourcesUpdated,System.Threading.CancellationToken)
+com.IvanMurzak.McpPlugin.McpManagerClientHub:NotifyAboutUpdatedResources (com.IvanMurzak.McpPlugin.Common.Model.RequestResourcesUpdated,System.Threading.CancellationToken)
+com.IvanMurzak.McpPlugin.McpManagerClientHub:NotifyAboutUpdatedResources (com.IvanMurzak.McpPlugin.Common.Model.RequestResourcesUpdated)
+com.IvanMurzak.McpPlugin.McpPlugin/<<-ctor>b__29_6>d:MoveNext ()
+System.Runtime.CompilerServices.AsyncVoidMethodBuilder:Start<com.IvanMurzak.McpPlugin.McpPlugin/<<-ctor>b__29_6>d> (com.IvanMurzak.McpPlugin.McpPlugin/<<-ctor>b__29_6>d&)
+com.IvanMurzak.McpPlugin.McpPlugin:<.ctor>b__29_6 (R3.Unit)
+R3.AnonymousObserver`1<R3.Unit>:OnNextCore (R3.Unit)
+R3.Observer`1<R3.Unit>:OnNext (R3.Unit)
+R3.ThrottleFirst`1/_ThrottleFirst<R3.Unit>:OnNextCore (R3.Unit)
+R3.Observer`1<R3.Unit>:OnNext (R3.Unit)
+R3.Subject`1<R3.Unit>:OnNext (R3.Unit)
+com.IvanMurzak.McpPlugin.McpResourceManager:SetResourceEnabled (string,bool)
+com.IvanMurzak.Unity.MCP.UnityMcpPlugin:ApplyConfigToMcpPlugin (com.IvanMurzak.McpPlugin.IMcpPlugin) (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Runtime/UnityMcpPlugin.Build.cs:231)
+com.IvanMurzak.Unity.MCP.UnityMcpPluginEditor:BuildMcpPluginIfNeeded () (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Editor/Scripts/UnityMcpPluginEditor.Build.cs:60)
+com.IvanMurzak.Unity.MCP.Editor.Startup:.cctor () (at ./Library/PackageCache/com.ivanmurzak.unity.mcp/Editor/Scripts/Startup.cs:28)
+System.Runtime.CompilerServices.RuntimeHelpers:RunClassConstructor (System.RuntimeTypeHandle)
+UnityEditor.EditorAssemblies:ProcessInitializeOnLoadAttributes (System.Type[])
+
+(Filename: ./Library/PackageCache/com.ivanmurzak.unity.mcp/Runtime/UnityMcpPlugin.Build.cs Line: 231)
+
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  2.240 seconds
+Domain Reload Profiling: 3775ms
+	BeginReloadAssembly (213ms)
+		ExecutionOrderSort (0ms)
+		DisableScriptedObjects (8ms)
+		BackupInstance (0ms)
+		ReleaseScriptingObjects (0ms)
+		CreateAndSetChildDomain (120ms)
+	RebuildCommonClasses (21ms)
+	RebuildNativeTypeToScriptingClass (7ms)
+	initialDomainReloadingComplete (21ms)
+	LoadAllAssembliesAndSetupDomain (1272ms)
+		LoadAssemblies (1132ms)
+		RebuildTransferFunctionScriptingTraits (0ms)
+		AnalyzeDomain (200ms)
+			TypeCache.Refresh (177ms)
+				TypeCache.ScanAssembly (165ms)
+			BuildScriptInfoCaches (19ms)
+			ResolveRequiredComponents (2ms)
+	FinalizeReload (2240ms)
+		ReleaseScriptCaches (0ms)
+		RebuildScriptCaches (0ms)
+		SetupLoadedEditorAssemblies (2140ms)
+			LogAssemblyErrors (0ms)
+			InitializePlatformSupportModulesInManaged (12ms)
+			SetLoadedEditorAssemblies (2ms)
+			BeforeProcessingInitializeOnLoad (77ms)
+			ProcessInitializeOnLoadAttributes (1989ms)
+			ProcessInitializeOnLoadMethodAttributes (57ms)
+			AfterProcessingInitializeOnLoad (3ms)
+			EditorAssembliesLoaded (0ms)
+		ExecutionOrderSort2 (0ms)
+		AwakeInstancesAfterBackupRestoration (5ms)
+Refreshing native plugins compatible for Editor in 0.62 ms, found 2 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=c2938eb95a336cd47ae80b6a2ce31a61): Total: 8.513 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=0 (actual=0, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=2470 ms
+		Asset DB Callback time: managed=92 ms, native=3 ms
+		Scripting: domain reloads=1, domain reload time=1558 ms, compile time=4369 ms, other=19 ms
+		Project Asset Count: scripts=636, non-scripts=797
+		Asset File Changes: new=0, changed=1, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokeCustomDependenciesCallbacks: 0.001ms
+	InvokePackagesCallback: 3.181ms
+	ApplyChangesToAssetFolders: 0.203ms
+	Scan: 97.878ms
+	OnSourceAssetsModified: 0.705ms
+	CategorizeAssetsWithTransientArtifact: 23.504ms
+	ProcessAssetsWithTransientArtifactChanges: 25.878ms
+	CategorizeAssets: 9.194ms
+	ImportOutOfDateAssets: 2243.500ms (-2125.990ms without children)
+		CompileScripts: 4368.837ms
+		ReloadNativeAssets: 0.000ms
+		UnloadImportedAssets: 0.077ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.147ms
+		PostProcessAllAssetNotificationsAddChangedAssets: 0.000ms
+		OnDemandSchedulerStart: 0.429ms
+	PostProcessAllAssets: 92.966ms
+	Hotreload: 1.420ms
+	GatherAllCurrentPrimaryArtifactRevisions: 0.000ms
+	UnloadStreamsBegin: 0.165ms
+	PersistCurrentRevisions: 0.035ms
+	UnloadStreamsEnd: 0.001ms
+	GenerateScriptTypeHashes: 0.920ms
+	Untracked: 6013.877ms
+
+Application.AssetDatabase Initial Refresh End
+Scanning for USB devices : 1.592ms
+Initializing Unity extensions:
+[Licensing::Client] Successfully resolved entitlement details
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-FusionRPG
+Unloading 12 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 3159 unused Assets / (2.5 MB). Loaded Objects now: 3605.
+Memory consumption went from 123.9 MB to 121.4 MB.
+Total: 58.188000 ms (FindLiveObjects: 0.256300 ms CreateObjectMapping: 0.145700 ms MarkObjects: 56.533100 ms  DeleteObjects: 1.251600 ms)
+
+Asset Pipeline Refresh (id=edc6c81570fa34f42b49ae3144fee071): Total: 0.016 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Launched and connected shader compiler UnityShaderCompiler.exe after 0.01 seconds
+Render queue value outside of the allowed range (2501 - 3999) for selected Blend mode, resetting render queue to default
+Render queue value outside of the allowed range (2501 - 3999) for selected Blend mode, resetting render queue to default
+Render queue value outside of the allowed range (2501 - 3999) for selected Blend mode, resetting render queue to default
+Render queue value outside of the allowed range (2501 - 3999) for selected Blend mode, resetting render queue to default
+Unloading 39 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 2 unused Assets / (23.3 KB). Loaded Objects now: 3652.
+Memory consumption went from 216.1 MB to 216.1 MB.
+Total: 57.879500 ms (FindLiveObjects: 0.195100 ms CreateObjectMapping: 0.055300 ms MarkObjects: 57.577600 ms  DeleteObjects: 0.049400 ms)
+
+Source mesh has over 2,097,152 triangles in it, and is using the Fast Midphase option. This might cause certain collisions to not be detected correctly due to an issue in the physics engine. If you observe that in your project, a workaround could be to turn off the Fast Midphase option for this particular mesh. Source mesh name: meshes[0]
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.GameObject:Internal_AddComponentWithType (System.Type)
+UnityEngine.GameObject:AddComponent (System.Type)
+UnityEngine.GameObject:AddComponent<UnityEngine.MeshCollider> ()
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:AddMeshColliders (UnityEngine.Transform) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:763)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:TryBuildImportedTempleCourtyard (UnityEngine.Transform,UnityEngine.Material) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:684)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:BuildCourtyard (UnityEngine.Transform,System.Collections.Generic.Dictionary`2<string, UnityEngine.Material>) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:608)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:BuildPrototypeScene () (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:72)
+
+[Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs line 72]
+
+Added precise MeshCollider for imported mesh 'meshes[0]' (1939032 triangles).
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:AddMeshColliders (UnityEngine.Transform) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:770)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:TryBuildImportedTempleCourtyard (UnityEngine.Transform,UnityEngine.Material) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:684)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:BuildCourtyard (UnityEngine.Transform,System.Collections.Generic.Dictionary`2<string, UnityEngine.Material>) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:608)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:BuildPrototypeScene () (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:72)
+
+(Filename: Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs Line: 770)
+
+Using imported temple courtyard GLB for Sakura Academy terrain.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:TryBuildImportedTempleCourtyard (UnityEngine.Transform,UnityEngine.Material) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:687)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:BuildCourtyard (UnityEngine.Transform,System.Collections.Generic.Dictionary`2<string, UnityEngine.Material>) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:608)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:BuildPrototypeScene () (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:72)
+
+(Filename: Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs Line: 687)
+
+Asset Pipeline Refresh (id=9fb9a0f73d6262b4fa5218970285865f): Total: 0.017 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=3753d31d070251c4693c004b31ba257e): Total: 0.004 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=accc73212186d6b479c196945933d0a3): Total: 0.004 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=c45dd154749793f438316c67b2e725b0): Total: 0.004 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=b2a45120c6cbfa94b9f5e9a49aa31a00): Total: 0.004 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=3beed71594d80ae40b83d2bef4349444): Total: 0.004 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=9c3b8f990a751f649a318c104da3baed): Total: 0.004 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Imported player character normalized. Bounds size: (0.68, 1.12, 0.77), center: (-11.00, 0.64, 15.00), scale: (1.14, 1.14, 1.14)
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:NormalizePlayerCharacterVisual (UnityEngine.Transform,UnityEngine.Transform) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:1294)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:TryBuildImportedPlayerCharacter (UnityEngine.Transform,UnityEngine.Material) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:1263)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:BuildPlayer (UnityEngine.Transform,System.Collections.Generic.Dictionary`2<string, UnityEngine.Material>) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:1191)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:BuildPrototypeScene () (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:75)
+
+(Filename: Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs Line: 1294)
+
+Using imported pink fantasy character GLB for player visuals.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:TryBuildImportedPlayerCharacter (UnityEngine.Transform,UnityEngine.Material) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:1266)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:BuildPlayer (UnityEngine.Transform,System.Collections.Generic.Dictionary`2<string, UnityEngine.Material>) (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:1191)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:BuildPrototypeScene () (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:75)
+
+(Filename: Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs Line: 1266)
+
+Start importing Assets/FusionRPG/Materials/MAT_KatanaBlade.mat using Guid(7073c7b392e2efe48a07068ffe61349d) (NativeFormatImporter) -> (artifact id: '86efbd66c6fd94129755f77cc6519519') in 0.0080517 seconds
+Start importing Assets/FusionRPG/Materials/MAT_PinkFantasyCharacter.mat using Guid(22336343a8c2ffb43a92bf2e0160b2bc) (NativeFormatImporter) -> (artifact id: 'ead7d02e9e4142191f7425e1fc138087') in 0.0016557 seconds
+Start importing Assets/FusionRPG/Materials/MAT_SoftPetalPink.mat using Guid(821edbf268ae517449f4a84e0c336f9b) (NativeFormatImporter) -> (artifact id: '7467731e9bf557e007e5139f8955711b') in 0.0013552 seconds
+Start importing Assets/FusionRPG/Materials/MAT_SakuraFrostBurst.mat using Guid(e22a4773299d8b74ba7e67bfe6cf5369) (NativeFormatImporter) -> (artifact id: '74c1aeb5be19a02d13861cee935523ba') in 0.0014665 seconds
+Start importing Assets/FusionRPG/Materials/MAT_UniformWhite.mat using Guid(c33c72a714856d14db8400dd14a54125) (NativeFormatImporter) -> (artifact id: '142d6640142fb5ef930bc364d9b2475f') in 0.0012935 seconds
+Start importing Assets/FusionRPG/Materials/MAT_StockingBlack.mat using Guid(04932af8312189949ae0043a6d4d9011) (NativeFormatImporter) -> (artifact id: '809c88d893aa2b3daa2dd64959f2b4a5') in 0.0010882 seconds
+Start importing Assets/FusionRPG/Materials/MAT_GardenGreen.mat using Guid(64806dce7accc134197e55956996f5ba) (NativeFormatImporter) -> (artifact id: '9dd9063f8f1e634cd09419e69365bf96') in 0.0012181 seconds
+Start importing Assets/FusionRPG/Materials/MAT_AcademyPaintedBackdrop.mat using Guid(7417697396c9f3d489f03a48ae930c47) (NativeFormatImporter) -> (artifact id: '9d4c04e0a06c3dda15c1ff54c3615b72') in 0.0011099 seconds
+Start importing Assets/FusionRPG/Materials/MAT_IndigoRoof.mat using Guid(2642e0f4bc9e9654a85e60dd35a8ad26) (NativeFormatImporter) -> (artifact id: 'ed1be974d856dbd4b217b0eba5801352') in 0.0010595 seconds
+Start importing Assets/FusionRPG/Materials/MAT_LeafGreen.mat using Guid(264cd6fa27c7bdf49af279ec10710cd9) (NativeFormatImporter) -> (artifact id: '1d802550068d1abcbe920b871807d08b') in 0.0011557 seconds
+Start importing Assets/FusionRPG/Materials/MAT_ImagySakuraParticles.mat using Guid(57759f263baf5f54bbf32280d73aeb3e) (NativeFormatImporter) -> (artifact id: 'b93b843f50bb438995f0d0718f8b33c6') in 0.0010484 seconds
+Start importing Assets/FusionRPG/Materials/MAT_TargetSelection.mat using Guid(6781fd3338fd4394bae778c312cb651a) (NativeFormatImporter) -> (artifact id: '7288f80f0b9382ef10adedcbbc0a841e') in 0.0011467 seconds
+Start importing Assets/FusionRPG/Materials/MAT_WarmWood.mat using Guid(9760a1e9bd516754a974d2156de9164a) (NativeFormatImporter) -> (artifact id: '0ec1c21c0f7632009edcf3d96484ba00') in 0.0011284 seconds
+Start importing Assets/FusionRPG/Materials/MAT_GoldTrim.mat using Guid(e7a7594374371534f98b0250f44f1675) (NativeFormatImporter) -> (artifact id: '1c18c48112f4f19384535cbaee541211') in 0.0009556 seconds
+Start importing Assets/FusionRPG/Materials/MAT_LesserSakuraBeast.mat using Guid(083efbdbacd22e94c8c25b6957f7519b) (NativeFormatImporter) -> (artifact id: 'f37d3aa8df588d3965ab9c674720a796') in 0.0009485 seconds
+Start importing Assets/FusionRPG/Materials/MAT_PlaidRoseRed.mat using Guid(b91d1b2659e3bd140a5bcc96bd6017ef) (NativeFormatImporter) -> (artifact id: '50ca04e37fa5de2d9ae62ed12c2be8c3') in 0.0010396 seconds
+Start importing Assets/FusionRPG/Materials/MAT_IceBlue.mat using Guid(e9e01eef5fd91cd4a9d6629ff6056f73) (NativeFormatImporter) -> (artifact id: 'b174766fa75fe94358ebc55a7c4c80e1') in 0.0010437 seconds
+Start importing Assets/FusionRPG/Materials/MAT_Stone.mat using Guid(3b9153353df28094ea8bfa0f3da79485) (NativeFormatImporter) -> (artifact id: '7b3a071c7a98851595f5cf02df122406') in 0.0010251 seconds
+Start importing Assets/FusionRPG/Materials/MAT_PondWater.mat using Guid(ebfc4d4d4404b1746a6b9b72d258e096) (NativeFormatImporter) -> (artifact id: 'ee92a4d5afbf8b29851ec72e41021d8d') in 0.0011405 seconds
+Start importing Assets/FusionRPG/Materials/MAT_CrimsonSakuraBeast.mat using Guid(fbbf7d82b680782468922ea79e821528) (NativeFormatImporter) -> (artifact id: '878c23dcf3c44b1fa76b678ed0fd61bb') in 0.0010508 seconds
+Start importing Assets/FusionRPG/Materials/MAT_SoftMouth.mat using Guid(0c379fb8ff3b921439b40f21963fffa6) (NativeFormatImporter) -> (artifact id: 'a07bf25f569242964c25a8413ee3a5af') in 0.000994 seconds
+Start importing Assets/FusionRPG/Materials/MAT_ImportedTempleCourtyard.mat using Guid(3cad779f5d11ede47aaeb465f6861faa) (NativeFormatImporter) -> (artifact id: '086c475b6256d0d2a666bcb32abddcea') in 0.0013895 seconds
+Start importing Assets/FusionRPG/Materials/MAT_NavyGlass.mat using Guid(bcbd64728878c404e9046e3eb640f2c7) (NativeFormatImporter) -> (artifact id: 'b7ad73b2b5ac64afe975a4cac56738a0') in 0.0010684 seconds
+Start importing Assets/FusionRPG/Materials/MAT_BlackGoldTrim.mat using Guid(3de3027e676f2ef498e2e47cba4ec9fc) (NativeFormatImporter) -> (artifact id: '095686cf96a2c653dd2f9acdeaa8440a') in 0.0012241 seconds
+Start importing Assets/FusionRPG/Materials/MAT_PaleStone.mat using Guid(6db503372f01119428be9f880873469d) (NativeFormatImporter) -> (artifact id: '578548ab46bd9bb351051f28428599b4') in 0.0012377 seconds
+Start importing Assets/FusionRPG/Materials/MAT_SakuraEyes.mat using Guid(4ec85702f4f3a07419406a0da1922259) (NativeFormatImporter) -> (artifact id: '9e0056f27d5f0061a129f0f488bc5801') in 0.0011506 seconds
+Start importing Assets/FusionRPG/Materials/MAT_SheerSakuraFabric.mat using Guid(4ebc2f00424e4864f960ddeff884d167) (NativeFormatImporter) -> (artifact id: '28717b36374af240ff746abcb6ce5b77') in 0.0011297 seconds
+Start importing Assets/FusionRPG/Materials/MAT_SakuraPink.mat using Guid(9f5b2a809a70db04f90b55bc09cf7b5b) (NativeFormatImporter) -> (artifact id: '2dbe2474818c03540f8ccc5f0b25e3f4') in 0.0012129 seconds
+Refreshing native plugins compatible for Editor in 0.41 ms, found 2 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=9b56490c88fc7d04dbaca9f4d31f5edd): Total: 0.074 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Start importing Assets/FusionRPG/Scenes/SakuraAcademyPrototype.unity using Guid(4a235278a26c7024199f2df271f2205c) (DefaultImporter) -> (artifact id: 'd9e2abf464f14232a60591fd1d7261f3') in 0.001258 seconds
+Refreshing native plugins compatible for Editor in 0.43 ms, found 2 plugins.
+Preloading 0 native plugins for Editor in 0.00 ms.
+Asset Pipeline Refresh (id=1ec01f0933a5e0e4d8f795bc04b376f7): Total: 0.015 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Asset Pipeline Refresh (id=be04c854d71959b4f817bb8d77e8a036): Total: 0.006 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Fusion RPG prototype scene generated at Assets/FusionRPG/Scenes/SakuraAcademyPrototype.unity
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+FusionRPG.EditorTools.SakuraAcademyPrototypeBuilder:BuildPrototypeScene () (at Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs:130)
+
+(Filename: Assets/FusionRPG/Editor/SakuraAcademyPrototypeBuilder.cs Line: 130)
+
+Batchmode quit successfully invoked - shutting down!
+[Physics::Module] Cleanup current backned.
+[Physics::Module] Id: 0xf2b8ea05
+[Licensing::IpcConnector] License Notification channel disconnected successfully.
+[Licensing::IpcConnector] License Client channel disconnected successfully.
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+<color=#ffaa00>warn:</color> [06:56:54:4543] <color=#B4FF32>[AI]</color> <color=#48C9B0><b>McpManagerClientHub</b></color> ConnectionManager[16ad37f7-43a8-46c3-ad90-1d0cca3784b6] DisconnectImmediate Could not acquire gate within timeout. Proceeding without gate protection.
+<color=#ffaa00>warn:</color> [06:56:59:4583] <color=#B4FF32>[AI]</color> <color=#48C9B0><b>McpManagerClientHub</b></color> ConnectionManager[16ad37f7-43a8-46c3-ad90-1d0cca3784b6] Dispose Could not acquire gate within timeout during Dispose. Proceeding with cleanup anyway.
+<color=#ffaa00>warn:</color> [06:56:59:4593] <color=#B4FF32>[AI]</color> <color=#85C1E2><b>BufferedFileLogStorage</b></color> Flush called but already disposed, ignored.
+Exiting batchmode successfully now!
+Exiting without the bug reporter. Application will terminate with return code 0

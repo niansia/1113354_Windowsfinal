@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowRight,
+  BookOpenText,
+  ChartCandlestick,
   CircuitBoard,
   Clock3,
   Code2,
@@ -13,9 +15,12 @@ import {
   KeyboardMusic,
   Map,
   Play,
+  Scale,
   Search,
   Sparkles,
+  Stethoscope,
   Terminal,
+  Trophy,
   UserRound,
   Video,
   Wrench,
@@ -46,6 +51,7 @@ const CATEGORY_LABELS: Array<{ id: 'all' | AppCategory; label: string }> = [
 const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   circuit: CircuitBoard,
   piano: KeyboardMusic,
+  flashcards: BookOpenText,
   media: Video,
   wav: Headphones,
   cosmic: Hand,
@@ -56,7 +62,11 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   toolbox: Wrench,
   user: UserRound,
   add: FolderInput,
-  game: Gamepad2
+  game: Gamepad2,
+  sports: Trophy,
+  medical: Stethoscope,
+  finweb: ChartCandlestick,
+  legal: Scale
 };
 
 const RECENT_KEY = 'fusion-app-center-recent-v1';

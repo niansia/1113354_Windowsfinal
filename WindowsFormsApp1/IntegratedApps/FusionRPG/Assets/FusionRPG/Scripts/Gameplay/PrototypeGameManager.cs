@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FusionRPG
@@ -5,67 +6,147 @@ namespace FusionRPG
     public sealed class PrototypeGameManager : MonoBehaviour
     {
         [SerializeField] private Health playerHealth;
-        [SerializeField] private Health enemyHealth;
         [SerializeField] private PlayerCombat playerCombat;
+        [SerializeField] private TargetSelectionController targetSelection;
         [SerializeField] private GameHud hud;
+        [SerializeField] private GameObject[] waveOne;
+        [SerializeField] private GameObject[] waveTwo;
+        [SerializeField] private GameObject boss;
+
+        private readonly List<Health> subscribedEnemies = new List<Health>();
+        private EncounterProgress progress;
+        private Health bossHealth;
+
+        public int CurrentWave => progress != null ? progress.CurrentWaveNumber : 0;
+        public bool IsBossActive => progress != null && progress.IsBossUnlocked;
 
         private void Awake()
         {
-            if (playerHealth == null)
+            progress = new EncounterProgress(new[]
             {
-                var player = GameObject.Find("Sakuraba Sakura");
-                if (player != null) playerHealth = player.GetComponent<Health>();
+                Mathf.Max(1, waveOne != null ? waveOne.Length : 0),
+                Mathf.Max(1, waveTwo != null ? waveTwo.Length : 0)
+            });
+
+            SetGroupActive(waveOne, false);
+            SetGroupActive(waveTwo, false);
+            if (boss != null)
+            {
+                boss.SetActive(false);
+                bossHealth = boss.GetComponent<Health>();
             }
 
-            if (enemyHealth == null)
+            SubscribeGroup(waveOne);
+            SubscribeGroup(waveTwo);
+            if (bossHealth != null)
             {
-                var enemy = GameObject.Find("Training Sentinel");
-                if (enemy != null) enemyHealth = enemy.GetComponent<Health>();
-            }
-
-            if (playerCombat == null && playerHealth != null)
-            {
-                playerCombat = playerHealth.GetComponent<PlayerCombat>();
-            }
-
-            if (hud == null)
-            {
-                hud = FindFirstObjectByType<GameHud>();
+                bossHealth.Died += HandleBossDefeated;
             }
 
             if (hud != null)
             {
-                hud.Bind(playerHealth, enemyHealth, playerCombat);
+                hud.Bind(playerHealth, playerCombat, targetSelection, bossHealth);
             }
 
-            if (enemyHealth != null)
+            progress.Start();
+            SetGroupActive(waveOne, true);
+            hud?.SetObjective("第一波：擊敗緋櫻幼獸");
+        }
+
+        public void ConfigureEncounter(
+            Health nextPlayerHealth,
+            PlayerCombat nextPlayerCombat,
+            TargetSelectionController nextTargetSelection,
+            GameHud nextHud,
+            GameObject[] nextWaveOne,
+            GameObject[] nextWaveTwo,
+            GameObject nextBoss)
+        {
+            playerHealth = nextPlayerHealth;
+            playerCombat = nextPlayerCombat;
+            targetSelection = nextTargetSelection;
+            hud = nextHud;
+            waveOne = nextWaveOne;
+            waveTwo = nextWaveTwo;
+            boss = nextBoss;
+        }
+
+        private void SubscribeGroup(GameObject[] group)
+        {
+            if (group == null)
             {
-                enemyHealth.Died += HandleEnemyDefeated;
+                return;
+            }
+
+            foreach (var enemy in group)
+            {
+                var health = enemy != null ? enemy.GetComponent<Health>() : null;
+                if (health == null)
+                {
+                    continue;
+                }
+
+                health.Died += HandleLesserEnemyDefeated;
+                subscribedEnemies.Add(health);
             }
         }
 
-        private void HandleEnemyDefeated()
+        private void HandleLesserEnemyDefeated()
         {
-            if (hud != null)
+            targetSelection?.ClearSelection();
+            switch (progress.NotifyEnemyDefeated())
             {
-                hud.SetCompleted(true);
+                case EncounterProgressChange.WaveAdvanced:
+                    SetGroupActive(waveTwo, true);
+                    hud?.SetObjective("第二波：清除強化緋櫻獸群");
+                    break;
+                case EncounterProgressChange.BossUnlocked:
+                    if (boss != null)
+                    {
+                        boss.SetActive(true);
+                    }
+                    hud?.SetObjective("最終戰：擊敗緋櫻獸");
+                    hud?.SetBossVisible(true);
+                    break;
+            }
+        }
+
+        private void HandleBossDefeated()
+        {
+            targetSelection?.ClearSelection();
+            hud?.SetCompleted(true);
+        }
+
+        private static void SetGroupActive(GameObject[] group, bool active)
+        {
+            if (group == null)
+            {
+                return;
+            }
+
+            foreach (var item in group)
+            {
+                if (item != null)
+                {
+                    item.SetActive(active);
+                }
             }
         }
 
         private void OnDestroy()
         {
-            if (enemyHealth != null)
+            foreach (var health in subscribedEnemies)
             {
-                enemyHealth.Died -= HandleEnemyDefeated;
+                if (health != null)
+                {
+                    health.Died -= HandleLesserEnemyDefeated;
+                }
             }
-        }
 
-        public void ConfigureForPrototype(Health nextPlayerHealth, Health nextEnemyHealth, PlayerCombat nextCombat, GameHud nextHud)
-        {
-            playerHealth = nextPlayerHealth;
-            enemyHealth = nextEnemyHealth;
-            playerCombat = nextCombat;
-            hud = nextHud;
+            if (bossHealth != null)
+            {
+                bossHealth.Died -= HandleBossDefeated;
+            }
         }
     }
 }

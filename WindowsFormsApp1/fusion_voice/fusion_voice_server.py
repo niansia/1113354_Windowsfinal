@@ -83,6 +83,15 @@ def _short_error(error):
         return ""
     return str(error).splitlines()[0][:160]
 
+
+def _write_response_body(writer, body):
+    try:
+        writer.write(body)
+        return True
+    except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError):
+        return False
+
+
 _args = None
 _vosk_models = {}
 _vosk_lock = threading.Lock()
@@ -624,7 +633,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        _write_response_body(self.wfile, body)
 
     def _authorize(self):
         """Return (origin, ok). Foreign web pages are rejected with 403."""

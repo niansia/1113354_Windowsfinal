@@ -37,4 +37,18 @@ public sealed class HealthTests
         Assert.AreEqual(80, health.Current);
         Object.DestroyImmediate(go);
     }
+
+    [Test]
+    public void IncomingDamageMultiplierReducesDamageDuringUltimate()
+    {
+        var go = new GameObject("health");
+        var health = go.AddComponent<Health>();
+        health.SetMaxHealthForTests(100);
+
+        health.SetIncomingDamageMultiplier(0.4f);
+        health.ApplyDamage(25);
+
+        Assert.AreEqual(90, health.Current);
+        Object.DestroyImmediate(go);
+    }
 }
