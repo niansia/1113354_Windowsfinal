@@ -1,0 +1,12 @@
+把系統畫面截圖放進這個資料夾，檔名對應 README.md 裡引用的名稱即可自動顯示：
+
+01_boot.png        開機動畫
+02_login.png       登入畫面
+03_desktop.png     桌面主畫面
+04_app_center.png  應用程式中心
+05_3d_app.png      3D 類應用（詩雲 / 世界文化星球）
+06_ai_app.png      AI 類應用（NeuroFlow / 真偽鑑識中心）
+07_tool_app.png    工程/工具類（電路工作室 / 開發實驗室）
+
+截圖方式：在桌面或 App 畫面按 Win + Shift + S 框選截圖，貼到小畫家或直接存成上面的檔名（PNG）。
+要再多放幾張也可以，記得在 README.md 補上對應的 ![說明](./screenshots/檔名.png)。

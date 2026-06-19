@@ -70,6 +70,7 @@ namespace WindowsFormsApp1
         private Task metroPulseWarmupTask;
         private Task iotNexusWarmupTask;
         private Task veriLensWarmupTask;
+        private Task<bool> finWebWarmupTask;
         private Task voiceServiceWarmupTask;
         private string terminalWorkingDirectoryCache;
         private Font terminalOutputFont;
@@ -382,6 +383,7 @@ namespace WindowsFormsApp1
             WarmMetroPulseEngine();
             WarmIoTNexusEngine();
             WarmVeriLensEngine();
+            WarmFinWebService();
             WarmFusionVoiceService();
 
             Task.Run(delegate
@@ -2825,7 +2827,76 @@ namespace WindowsFormsApp1
             LaunchIntegratedExeApp("wav", "WaveStudio", "WaveStudio", Color.FromArgb(120, 235, 218));
         }
 
-        private async void LaunchFinWeb()
+        private void WarmFinWebService()
+        {
+            if (finWebWarmupTask != null) return;
+            finWebWarmupTask = EnsureFinWebServiceReadyAsync();
+            finWebWarmupTask.ContinueWith(delegate (Task<bool> task)
+            {
+                if (task.IsFaulted && task.Exception != null)
+                {
+                    Debug.WriteLine("[FinWeb] warmup failed: " + task.Exception.GetBaseException().Message);
+                }
+            });
+        }
+
+        private async Task<bool> EnsureFinWebServiceReadyAsync()
+        {
+            string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "FinWeb"));
+            string appPath = appRoot == null ? null : Path.Combine(appRoot, "app.py");
+            if (appPath == null || !File.Exists(appPath))
+            {
+                Debug.WriteLine("[FinWeb] app.py was not found.");
+                return false;
+            }
+
+            bool serverReady = await IsFinWebServerReadyAsync();
+            if (serverReady) return true;
+
+            string python = FindPythonCommand();
+            if (python == null)
+            {
+                Debug.WriteLine("[FinWeb] Python was not found.");
+                return false;
+            }
+
+            if (finWebServerProcess == null || finWebServerProcess.HasExited)
+            {
+                try
+                {
+                    // FinWeb ships with Talisman(force_https=True), which 302-redirects every
+                    // request to https://. The embedded WebView2 (and our readiness probe) talk
+                    // plain HTTP to the dev server, so that redirect leaves the window stuck on
+                    // "服務尚未就緒". We keep IntegratedApps/FinWeb untouched and disable HTTPS
+                    // enforcement here, in the launcher, by patching Talisman before importing app.
+                    var startInfo = new ProcessStartInfo
+                    {
+                        FileName = python,
+                        Arguments = "-c \"import flask_talisman as _t; _o = _t.Talisman.init_app; _t.Talisman.init_app = lambda s, a, **k: _o(s, a, **dict(k, force_https=False)); import app; app.socketio.run(app.app, debug=False, use_reloader=False, host='127.0.0.1', port=5000)\"",
+                        WorkingDirectory = appRoot,
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+                    startInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
+                    startInfo.EnvironmentVariables["PYTHONUNBUFFERED"] = "1";
+                    finWebServerProcess = Process.Start(startInfo);
+                    if (finWebServerProcess != null)
+                    {
+                        try { finWebServerProcess.PriorityClass = ProcessPriorityClass.BelowNormal; } catch { }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("[FinWeb] server launch failed: " + ex.Message);
+                    return false;
+                }
+            }
+
+            return await WaitForFinWebServerAsync();
+        }
+
+        private void LaunchFinWeb()
         {
             Color finWebColor = Color.FromArgb(98, 217, 183);
             string appRoot = FindProjectDirectory(Path.Combine("IntegratedApps", "FinWeb"));
@@ -2837,50 +2908,30 @@ namespace WindowsFormsApp1
                 return;
             }
 
-            bool serverReady = await IsFinWebServerReadyAsync();
-            if (!serverReady)
+            if (FindPythonCommand() == null)
             {
-                string python = FindPythonCommand();
-                if (python == null)
-                {
-                    ShowToast(L("FinWebPythonMissing"), finWebColor);
-                    PostAppLaunchStatus("finweb", "error", L("FinWebPythonMissing"));
-                    return;
-                }
-
-                try
-                {
-                    var startInfo = new ProcessStartInfo
-                    {
-                        FileName = python,
-                        Arguments = "-c \"import app; app.socketio.run(app.app, debug=True, use_reloader=False, host='127.0.0.1', port=5000)\"",
-                        WorkingDirectory = appRoot,
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        WindowStyle = ProcessWindowStyle.Hidden
-                    };
-                    startInfo.EnvironmentVariables["PYTHONUTF8"] = "1";
-                    finWebServerProcess = Process.Start(startInfo);
-                    serverReady = await WaitForFinWebServerAsync();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("[FinWeb] server launch failed: " + ex.Message);
-                    ShowToast(L("FinWebStartFailed"), finWebColor);
-                    PostAppLaunchStatus("finweb", "error", L("FinWebStartFailed"));
-                    return;
-                }
-            }
-
-            if (!serverReady)
-            {
-                ShowToast(L("FinWebNotReady"), finWebColor);
-                PostAppLaunchStatus("finweb", "error", L("FinWebNotReady"));
+                ShowToast(L("FinWebPythonMissing"), finWebColor);
+                PostAppLaunchStatus("finweb", "error", L("FinWebPythonMissing"));
                 return;
             }
 
-            PostAppLaunchStatus("finweb", "open", L("FinWebOpening"));
-            OpenWebAppWindow(L("FinWeb"), "http://127.0.0.1:5000/", finWebColor, ownsCamera: false, kind: "finweb");
+            if (finWebWarmupTask == null || finWebWarmupTask.IsCanceled || finWebWarmupTask.IsFaulted)
+            {
+                finWebWarmupTask = null;
+                WarmFinWebService();
+            }
+
+            Task<bool> finWebReadyTask = finWebWarmupTask ?? EnsureFinWebServiceReadyAsync();
+            PostAppLaunchStatus("finweb", "open", L("FinWebPreparing"));
+            OpenWebAppWindow(
+                L("FinWeb"),
+                "http://127.0.0.1:5000/",
+                finWebColor,
+                ownsCamera: false,
+                kind: "finweb",
+                readyTask: finWebReadyTask,
+                readyMessage: L("FinWebPreparing"),
+                readyErrorMessage: L("FinWebNotReady"));
         }
 
         private async Task<bool> WaitForFinWebServerAsync()
@@ -4717,7 +4768,15 @@ namespace WindowsFormsApp1
             output.ScrollToCaret();
         }
 
-        private async void OpenWebAppWindow(string title, string url, Color color, bool ownsCamera = false, string kind = "webview")
+        private async void OpenWebAppWindow(
+            string title,
+            string url,
+            Color color,
+            bool ownsCamera = false,
+            string kind = "webview",
+            Task<bool> readyTask = null,
+            string readyMessage = null,
+            string readyErrorMessage = null)
         {
             windowOffset = (windowOffset + 28) % 168;
             Rectangle area = AppWorkArea(false);
@@ -4788,7 +4847,7 @@ namespace WindowsFormsApp1
             var loading = new Label
             {
                 Dock = DockStyle.Fill,
-                Text = L("WebSurfaceLoading"),
+                Text = string.IsNullOrEmpty(readyMessage) ? L("WebSurfaceLoading") : readyMessage,
                 ForeColor = muted,
                 BackColor = Color.FromArgb(2, 4, 13),
                 Font = new Font(Font.FontFamily, 12F, FontStyle.Bold),
@@ -4809,13 +4868,7 @@ namespace WindowsFormsApp1
 
             try
             {
-                string userDataFolder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "FusionOS",
-                    "WebView2");
-                Directory.CreateDirectory(userDataFolder);
-
-                var environment = await CoreWebView2Environment.CreateAsync(null, userDataFolder, null);
+                var environment = await GetFusionBrowserEnvironmentAsync();
                 if (webView.IsDisposed)
                 {
                     return;
@@ -4849,6 +4902,20 @@ namespace WindowsFormsApp1
                         loading.Text = string.Format(CultureInfo.InvariantCulture, L("WebSurfaceLoadError"), args.WebErrorStatus);
                     }
                 };
+
+                if (readyTask != null)
+                {
+                    bool isReady = false;
+                    try { isReady = await readyTask; }
+                    catch (Exception ex) { Debug.WriteLine("[Fusion Web] deferred service failed: " + ex.Message); }
+                    if (webView.IsDisposed) return;
+                    if (!isReady)
+                    {
+                        loading.Visible = true;
+                        loading.Text = string.IsNullOrEmpty(readyErrorMessage) ? L("WebSurfaceLoadError") : readyErrorMessage;
+                        return;
+                    }
+                }
 
                 loading.Visible = false;
                 webView.Visible = true;
@@ -5672,6 +5739,7 @@ namespace WindowsFormsApp1
                 case "FinWebStartFailed": return zh ? "FinWeb 服務啟動失敗。" : "FinWeb failed to start.";
                 case "FinWebNotReady": return zh ? "FinWeb 服務尚未就緒。" : "FinWeb is not ready.";
                 case "FinWebOpening": return zh ? "正在開啟 FinWeb。" : "Opening FinWeb.";
+                case "FinWebPreparing": return zh ? "FinWeb 正在背景載入市場與分析模組，視窗會在服務就緒後自動開啟。" : "FinWeb is loading market and analysis modules in the background. This window will open automatically when ready.";
                 case "EnglishFlashcardsDesc": return zh ? "內建英文單字查詢、語音練習、測驗與學習報表。" : "Vocabulary lookup, speech practice, quizzes, and learning reports.";
                 case "MultimediaStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/MultimediaStudio。啟動 AURORA Cinema 多媒體播放器。" : "Integrated app package: IntegratedApps/MultimediaStudio.";
                 case "WaveStudioDesc": return zh ? "內建應用程式套件：IntegratedApps/WaveStudio。啟動 WAV 與音訊播放工具。" : "Integrated app package: IntegratedApps/WaveStudio.";

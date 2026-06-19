@@ -179,6 +179,25 @@ test('registers the untouched FinWeb package as a translated host application', 
   }
 });
 
+test('registers LexTaiwan as a translated offline legal navigator', () => {
+  const legal = getAppById('legal');
+
+  assert.equal(legal?.title, 'LexTaiwan 法律導航');
+  assert.equal(legal?.subtitle, '台灣法規與情境分析');
+  assert.equal(legal?.category, 'data');
+  assert.equal(legal?.launchMode, 'overlay');
+  assert.equal(legal?.featured, true);
+  assert.equal(APP_CENTER_APPS.some((app) => app.id === 'legal'), true);
+
+  for (const key of ['LexTaiwan 法律導航', '台灣法規與情境分析', '用本機可解釋檢索快速整理可能涉及的台灣法規、證據與下一步。']) {
+    const translation = FEATURE_TRANSLATIONS[key];
+    assert.ok(translation, `missing LexTaiwan translation for "${key}"`);
+    for (const lang of ['zh-CN', 'en', 'ja', 'ko'] as const) {
+      assert.ok(translation[lang], `missing ${lang} LexTaiwan translation for "${key}"`);
+    }
+  }
+});
+
 test('wires Global Sports Center into the React overlay shell', () => {
   const repositoryRoot = resolve(process.cwd(), '..');
   const shellSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
@@ -230,6 +249,18 @@ test('wires NeuroFlow AI and its Three.js visualization into the React overlay s
   assert.match(entrySource, /fusionNeuroFlow\.css/);
   assert.match(neuroSource, /NeuralFlow3D/);
   assert.match(neuroSource, /searchPublicKnowledge/);
+});
+
+test('wires LexTaiwan into the React overlay shell and system i18n', () => {
+  const repositoryRoot = resolve(process.cwd(), '..');
+  const shellSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
+  const entrySource = readFileSync(resolve(repositoryRoot, 'Frontend/src/main.tsx'), 'utf8');
+  const i18nSource = readFileSync(resolve(repositoryRoot, 'Frontend/src/i18n/I18nContext.tsx'), 'utf8');
+
+  assert.match(shellSource, /FusionLegalNavigator/);
+  assert.match(shellSource, /overlayApp === 'legal'/);
+  assert.match(entrySource, /fusionLegalNavigator\.css/);
+  assert.match(i18nSource, /LEGAL_TRANSLATIONS/);
 });
 
 test('wires event dossiers, prediction evidence, and player matchups into Sports Center', () => {
@@ -315,6 +346,18 @@ test('wires the FinWeb Flask package into the WinForms host without editing its 
   assert.match(projectSource, /IntegratedApps\\FinWeb\\\*\*\\\*\.\*/);
   assert.match(upstreamSource, /FinWeb-AI\/FinWeb/);
   assert.match(upstreamSource, /ff4c6c1/);
+});
+
+test('prewarms FinWeb and opens a responsive loading window before the Flask cold start completes', () => {
+  const repositoryRoot = resolve(process.cwd(), '..');
+  const hostSource = readFileSync(resolve(repositoryRoot, 'Form1.cs'), 'utf8');
+
+  assert.match(hostSource, /private Task<bool> finWebWarmupTask/);
+  assert.match(hostSource, /WarmFinWebService\(\);/);
+  assert.match(hostSource, /EnsureFinWebServiceReadyAsync\(\)/);
+  assert.match(hostSource, /OpenWebAppWindow\([^;]+finWebReadyTask/s);
+  assert.match(hostSource, /await GetFusionBrowserEnvironmentAsync\(\)/);
+  assert.doesNotMatch(hostSource, /CoreWebView2Environment\.CreateAsync\(null, userDataFolder, null\)[\s\S]{0,500}EnsureCoreWebView2Async\(environment\)/);
 });
 
 test('uses Traditional Chinese source keys for the default app catalog', () => {

@@ -7,6 +7,9 @@ interface FusionDepthBackgroundProps {
   handX: number;
   profile: PerfProfile;
   onFps?: (fps: number) => void;
+  // When false (e.g. a full-screen overlay is open on top), the animation idles so
+  // the compositor doesn't keep re-blurring a moving canvas behind backdrop-filter.
+  active?: boolean;
 }
 
 interface Particle {
@@ -23,14 +26,19 @@ interface Particle {
 // with pointer/gesture parallax. Pure presentation, pointer-events: none, fully
 // cleaned up on unmount. Kept on Canvas-2D (not WebGL/three) to stay light inside
 // the WinForms WebView2 host.
-export const FusionDepthBackground: React.FC<FusionDepthBackgroundProps> = ({ handX, profile, onFps }) => {
+export const FusionDepthBackground: React.FC<FusionDepthBackgroundProps> = ({ handX, profile, onFps, active = true }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const handXRef = useRef(handX);
   const pointerRef = useRef({ x: 0.5, y: 0.5 });
+  const activeRef = useRef(active);
 
   useEffect(() => {
     handXRef.current = handX;
   }, [handX]);
+
+  useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -99,6 +107,14 @@ export const FusionDepthBackground: React.FC<FusionDepthBackgroundProps> = ({ ha
     const reduced = profile.reducedMotion;
 
     const render = (now: number) => {
+      // Idle while hidden behind a full-screen overlay: keep the loop alive so it
+      // resumes instantly, but skip all canvas work so the GPU/compositor is free.
+      if (!activeRef.current) {
+        last = now;
+        raf = requestAnimationFrame(render);
+        return;
+      }
+
       const dt = Math.min(64, now - last);
       last = now;
 
@@ -163,17 +179,24 @@ export const FusionDepthBackground: React.FC<FusionDepthBackgroundProps> = ({ ha
         }
       }
 
-      // particles
+      // particles — additive glow via a faint halo + bright core (two cheap fills).
+      // This replaces per-particle ctx.shadowBlur, whose per-draw gaussian blur was
+      // the dominant cost and made the blurred overlay stutter on hover.
+      const TAU = Math.PI * 2;
+      ctx.globalCompositeOperation = 'lighter';
       for (const p of pts) {
         const alpha = 0.2 + p.z * 0.7;
+        const light = 55 + p.z * 20;
         ctx.beginPath();
-        ctx.arc(p.sx, p.sy, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(${p.hue}, 90%, ${55 + p.z * 20}%, ${alpha.toFixed(3)})`;
-        ctx.shadowBlur = p.z * 10;
-        ctx.shadowColor = `hsla(${p.hue}, 90%, 60%, ${alpha.toFixed(3)})`;
+        ctx.arc(p.sx, p.sy, p.r * 2.6, 0, TAU);
+        ctx.fillStyle = `hsla(${p.hue}, 90%, ${light}%, ${(alpha * 0.12).toFixed(3)})`;
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(p.sx, p.sy, p.r, 0, TAU);
+        ctx.fillStyle = `hsla(${p.hue}, 90%, ${light}%, ${alpha.toFixed(3)})`;
         ctx.fill();
       }
-      ctx.shadowBlur = 0;
+      ctx.globalCompositeOperation = 'source-over';
 
       raf = requestAnimationFrame(render);
     };

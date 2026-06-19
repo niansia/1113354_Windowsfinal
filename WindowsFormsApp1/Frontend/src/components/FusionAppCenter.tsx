@@ -15,6 +15,7 @@ import {
   KeyboardMusic,
   Map,
   Play,
+  Scale,
   Search,
   Sparkles,
   Stethoscope,
@@ -64,7 +65,8 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   game: Gamepad2,
   sports: Trophy,
   medical: Stethoscope,
-  finweb: ChartCandlestick
+  finweb: ChartCandlestick,
+  legal: Scale
 };
 
 const RECENT_KEY = 'fusion-app-center-recent-v1';

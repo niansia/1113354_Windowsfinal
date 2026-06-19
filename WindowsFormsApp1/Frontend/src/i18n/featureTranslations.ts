@@ -75,6 +75,7 @@ export const FEATURE_TRANSLATIONS: Record<string, Entry> = {
   '朗讀': entry('朗读', 'Narration', '朗読', '낭독'),
   '互動星圖': entry('互动星图', 'Interactive star map', 'インタラクティブ星図', '인터랙티브 별 지도'),
   '24 個應用程式': entry('24 个应用程序', '24 applications', '24 個のアプリ', '앱 24개'),
+  '25 個應用程式': entry('25 个应用程序', '25 applications', '25 個のアプリ', '앱 25개'),
   'Fusion 工作區': entry('Fusion 工作区', 'Fusion workspace', 'Fusion ワークスペース', 'Fusion 작업 공간'),
   '查看 Fusion OS 工作區、已連接的儲存空間與系統總覽。': entry('查看 Fusion OS 工作区、已连接的存储空间与系统总览。', 'Review the Fusion OS workspace, connected storage, and system overview.', 'Fusion OS のワークスペース、接続済みストレージ、システム概要を確認します。', 'Fusion OS 작업 공간, 연결된 저장소 및 시스템 개요를 확인합니다.'),
   '本機檔案空間': entry('本机文件空间', 'Local file space', 'ローカルファイル領域', '로컬 파일 공간'),
@@ -149,6 +150,19 @@ export const FEATURE_TRANSLATIONS: Record<string, Entry> = {
   'AI 預測': entry('AI 预测', 'AI forecast', 'AI 予測', 'AI 예측'),
   '策略回測': entry('策略回测', 'Backtesting', '戦略バックテスト', '전략 백테스트'),
   '金融情報': entry('金融情报', 'Market intelligence', '金融情報', '금융 정보'),
+  'LexTaiwan 法律導航': entry('LexTaiwan 法律导航', 'LexTaiwan Legal Navigator', 'LexTaiwan 法律ナビ', 'LexTaiwan 법률 내비게이터'),
+  '台灣法規與情境分析': entry('台湾法规与情境分析', 'Taiwan law and scenario analysis', '台湾法令と状況分析', '대만 법령 및 상황 분석'),
+  '用本機可解釋檢索快速整理可能涉及的台灣法規、證據與下一步。': entry(
+    '使用本机可解释检索，快速整理可能涉及的台湾法规、证据与后续步骤。',
+    'Use explainable on-device retrieval to organize potentially relevant Taiwan laws, evidence, and next steps.',
+    '説明可能なローカル検索で、関連する可能性のある台湾法令、証拠、次の手順を整理します。',
+    '설명 가능한 로컬 검색으로 관련 가능성이 있는 대만 법령, 증거와 다음 단계를 정리합니다.'
+  ),
+  '台灣法律': entry('台湾法律', 'Taiwan law', '台湾法', '대만 법률'),
+  '法規檢索': entry('法规检索', 'Law search', '法令検索', '법령 검색'),
+  '情境分析': entry('情境分析', 'Scenario analysis', '状況分析', '상황 분석'),
+  '離線可用': entry('离线可用', 'Works offline', 'オフライン対応', '오프라인 사용 가능'),
+  '本機法律索引': entry('本机法律索引', 'Local legal index', 'ローカル法令索引', '로컬 법률 색인'),
   '11 個工具': entry('11 个工具', '11 tools', '11 個のツール', '도구 11개'),
   '工程數學': entry('工程数学', 'Engineering math', '工学数学', '공학 수학'),
   '使用工程數學、計算、換算、色彩、文字、安全性、時間與繪圖工具。': entry(

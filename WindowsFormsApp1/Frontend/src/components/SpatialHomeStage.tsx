@@ -29,6 +29,7 @@ import {
   Power,
   RadioTower,
   RotateCcw,
+  Scale,
   Settings,
   Shirt,
   Sparkles,
@@ -60,6 +61,8 @@ import { useI18n } from '../i18n/I18nContext';
 import { useAccount } from '../account/AccountContext';
 import { getPerformanceProfile } from '../utils/performanceProfile';
 import { addHostMessageListener, launchApp, sendMessageToHost } from '../utils/bridge';
+import { playAppCue, startAppAmbient, stopAppAmbient } from '../audio/appSounds';
+import { setMasterLevel } from '../audio/engine';
 import { ACCOUNT_TEXT } from '../settings/settingsText';
 import { formatFusionDate, formatFusionTime } from '../i18n/localeFormatting';
 import { POWER_ACTIONS, toHostSystemAction, type PowerAction } from '../system/powerActions';
@@ -90,6 +93,10 @@ const LazyFusionNeuroFlow = React.lazy(() =>
 
 const LazyFusionNotebook = React.lazy(() =>
   import('./FusionNotebook').then((module) => ({ default: module.FusionNotebook }))
+);
+
+const LazyFusionLegalNavigator = React.lazy(() =>
+  import('./FusionLegalNavigator').then((module) => ({ default: module.FusionLegalNavigator }))
 );
 
 // Running-carousel geometry (must match .fusion-run-track .fusion-module-card in CSS).
@@ -135,6 +142,7 @@ const APP_ICONS: Partial<Record<AppId, LucideIcon>> = {
   medical: Stethoscope,
   signal: RadioTower,
   neuro: BrainCircuit,
+  legal: Scale,
   db: Database,
   web: Globe2,
   game: Gamepad2,
@@ -214,6 +222,9 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
   }, [apps.length, onIndexChange, onQueueChange]);
 
   const launchFusionApp = useCallback((app: FusionApp) => {
+    // Signature "open" cue — fired here so it covers both in-shell overlays and
+    // host-window apps from a single place (no-op for the excluded audio/imported apps).
+    playAppCue(app.id);
     // Native shell workspaces open inside React; external applications keep
     // their stable WinForms launch ids.
     if (
@@ -230,6 +241,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
       app.id === 'medical' ||
       app.id === 'signal' ||
       app.id === 'neuro' ||
+      app.id === 'legal' ||
       app.id === 'notes' ||
       app.id === 'toolbox'
     ) {
@@ -272,6 +284,18 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  // Keep the app-sound master in sync with the FusionOS volume / mute settings.
+  useEffect(() => {
+    setMasterLevel((settings.volume ?? 48) / 100, settings.muted);
+  }, [settings.volume, settings.muted]);
+
+  // Soft ambient bed for immersive overlay apps — starts/stops as the active overlay
+  // changes (and pauses while the OS is sleeping). No-op for apps without a bed.
+  useEffect(() => {
+    startAppAmbient(sleeping ? null : overlayApp);
+    return () => stopAppAmbient();
+  }, [overlayApp, sleeping]);
 
   // Measure the running-carousel viewport so the selected card can be centred.
   useEffect(() => {
@@ -500,7 +524,7 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
 
   return (
     <div className={homeClassName} style={homeStyle} onContextMenu={openDesktopContextMenu}>
-      <FusionDepthBackground handX={handX} profile={profile} />
+      <FusionDepthBackground handX={handX} profile={profile} active={!overlayApp && !sleeping} />
       <div className="fusion-stage-aurora" />
       <div className="fusion-stage-grid" />
 
@@ -936,6 +960,15 @@ export const SpatialHomeStage: React.FC<SpatialHomeStageProps> = ({
             open
             onClose={() => setOverlayApp('tool')}
             accent="#ffb259"
+          />
+        </React.Suspense>
+      )}
+      {overlayApp === 'legal' && (
+        <React.Suspense fallback={null}>
+          <LazyFusionLegalNavigator
+            open
+            onClose={() => setOverlayApp('tool')}
+            accent="#69d4c5"
           />
         </React.Suspense>
       )}

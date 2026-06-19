@@ -61,7 +61,7 @@ export const FUSION_APPS: FusionApp[] = [
     color: '#ff6a9e',
     category: 'system',
     tags: ['啟動器', '應用程式', '入口'],
-    status: '24 個應用程式',
+    status: '25 個應用程式',
     launchMode: 'overlay',
     featured: true
   },
@@ -302,6 +302,19 @@ export const FUSION_APPS: FusionApp[] = [
     tags: ['股票', '加密貨幣', 'AI 預測', '策略回測'],
     status: '金融情報',
     launchMode: 'host',
+    featured: true
+  },
+  {
+    id: 'legal',
+    title: 'LexTaiwan 法律導航',
+    subtitle: '台灣法規與情境分析',
+    description: '用本機可解釋檢索快速整理可能涉及的台灣法規、證據與下一步。',
+    glyph: 'LAW',
+    color: '#69d4c5',
+    category: 'data',
+    tags: ['台灣法律', '法規檢索', '情境分析', '離線可用'],
+    status: '本機法律索引',
+    launchMode: 'overlay',
     featured: true
   },
   {

@@ -146,6 +146,22 @@ const neuroText_js_1 = require("../src/neuro/neuroText.js");
         }
     }
 });
+(0, node_test_1.default)('registers LexTaiwan as a translated offline legal navigator', () => {
+    const legal = (0, fusionApps_js_1.getAppById)('legal');
+    strict_1.default.equal(legal?.title, 'LexTaiwan 法律導航');
+    strict_1.default.equal(legal?.subtitle, '台灣法規與情境分析');
+    strict_1.default.equal(legal?.category, 'data');
+    strict_1.default.equal(legal?.launchMode, 'overlay');
+    strict_1.default.equal(legal?.featured, true);
+    strict_1.default.equal(fusionApps_js_1.APP_CENTER_APPS.some((app) => app.id === 'legal'), true);
+    for (const key of ['LexTaiwan 法律導航', '台灣法規與情境分析', '用本機可解釋檢索快速整理可能涉及的台灣法規、證據與下一步。']) {
+        const translation = featureTranslations_js_1.FEATURE_TRANSLATIONS[key];
+        strict_1.default.ok(translation, `missing LexTaiwan translation for "${key}"`);
+        for (const lang of ['zh-CN', 'en', 'ja', 'ko']) {
+            strict_1.default.ok(translation[lang], `missing ${lang} LexTaiwan translation for "${key}"`);
+        }
+    }
+});
 (0, node_test_1.default)('wires Global Sports Center into the React overlay shell', () => {
     const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
     const shellSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
@@ -188,6 +204,16 @@ const neuroText_js_1 = require("../src/neuro/neuroText.js");
     strict_1.default.match(entrySource, /fusionNeuroFlow\.css/);
     strict_1.default.match(neuroSource, /NeuralFlow3D/);
     strict_1.default.match(neuroSource, /searchPublicKnowledge/);
+});
+(0, node_test_1.default)('wires LexTaiwan into the React overlay shell and system i18n', () => {
+    const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
+    const shellSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/components/SpatialHomeStage.tsx'), 'utf8');
+    const entrySource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/main.tsx'), 'utf8');
+    const i18nSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Frontend/src/i18n/I18nContext.tsx'), 'utf8');
+    strict_1.default.match(shellSource, /FusionLegalNavigator/);
+    strict_1.default.match(shellSource, /overlayApp === 'legal'/);
+    strict_1.default.match(entrySource, /fusionLegalNavigator\.css/);
+    strict_1.default.match(i18nSource, /LEGAL_TRANSLATIONS/);
 });
 (0, node_test_1.default)('wires event dossiers, prediction evidence, and player matchups into Sports Center', () => {
     const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
@@ -265,6 +291,16 @@ const neuroText_js_1 = require("../src/neuro/neuroText.js");
     strict_1.default.match(projectSource, /IntegratedApps\\FinWeb\\\*\*\\\*\.\*/);
     strict_1.default.match(upstreamSource, /FinWeb-AI\/FinWeb/);
     strict_1.default.match(upstreamSource, /ff4c6c1/);
+});
+(0, node_test_1.default)('prewarms FinWeb and opens a responsive loading window before the Flask cold start completes', () => {
+    const repositoryRoot = (0, node_path_1.resolve)(process.cwd(), '..');
+    const hostSource = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(repositoryRoot, 'Form1.cs'), 'utf8');
+    strict_1.default.match(hostSource, /private Task<bool> finWebWarmupTask/);
+    strict_1.default.match(hostSource, /WarmFinWebService\(\);/);
+    strict_1.default.match(hostSource, /EnsureFinWebServiceReadyAsync\(\)/);
+    strict_1.default.match(hostSource, /OpenWebAppWindow\([^;]+finWebReadyTask/s);
+    strict_1.default.match(hostSource, /await GetFusionBrowserEnvironmentAsync\(\)/);
+    strict_1.default.doesNotMatch(hostSource, /CoreWebView2Environment\.CreateAsync\(null, userDataFolder, null\)[\s\S]{0,500}EnsureCoreWebView2Async\(environment\)/);
 });
 (0, node_test_1.default)('uses Traditional Chinese source keys for the default app catalog', () => {
     strict_1.default.equal((0, fusionApps_js_1.getAppById)('pc')?.title, '本機');

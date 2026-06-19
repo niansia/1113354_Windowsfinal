@@ -9,68 +9,7 @@
 // playUnlockSound(): a tiny two-note confirmation right after a correct password
 // (always allowed — the submit click is the user gesture).
 
-let ctx: AudioContext | null = null;
-
-function ensureCtx(): AudioContext | null {
-  try {
-    if (!ctx) {
-      const AC = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AC) return null;
-      ctx = new AC();
-    }
-    if (ctx.state === 'suspended') void ctx.resume();
-    return ctx;
-  } catch {
-    return null;
-  }
-}
-
-// one soft bell partial-stack through a lowpass, gentle attack, long ring-out
-function bell(ac: AudioContext, dest: AudioNode, freq: number, t: number, dur: number, gain: number) {
-  const out = ac.createGain();
-  const lp = ac.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.value = Math.min(5200, freq * 5);
-  lp.Q.value = 0.5;
-  out.connect(lp).connect(dest);
-  const partials: Array<[number, number]> = [[1, 1], [2.0, 0.34], [2.99, 0.12], [4.1, 0.05]];
-  for (const [mult, amp] of partials) {
-    const o = ac.createOscillator();
-    o.type = 'sine';
-    o.frequency.value = freq * mult;
-    const og = ac.createGain();
-    og.gain.value = amp;
-    o.connect(og).connect(out);
-    o.start(t);
-    o.stop(t + dur + 0.1);
-  }
-  out.gain.setValueAtTime(0.0001, t);
-  out.gain.linearRampToValueAtTime(gain, t + 0.025);
-  out.gain.exponentialRampToValueAtTime(0.0006, t + dur);
-}
-
-// a quiet airy pad that swells under the bells and breathes back out
-function pad(ac: AudioContext, dest: AudioNode, freq: number, t: number, dur: number, gain: number) {
-  const out = ac.createGain();
-  const lp = ac.createBiquadFilter();
-  lp.type = 'lowpass';
-  lp.frequency.value = 1400;
-  out.connect(lp).connect(dest);
-  for (const [mult, amp] of [[1, 1], [1.5, 0.4], [2, 0.3]] as Array<[number, number]>) {
-    const o = ac.createOscillator();
-    o.type = 'triangle';
-    o.frequency.value = freq * mult;
-    o.detune.value = (mult - 1) * 4;
-    const og = ac.createGain();
-    og.gain.value = amp;
-    o.connect(og).connect(out);
-    o.start(t);
-    o.stop(t + dur + 0.1);
-  }
-  out.gain.setValueAtTime(0.0001, t);
-  out.gain.linearRampToValueAtTime(gain, t + dur * 0.4);
-  out.gain.exponentialRampToValueAtTime(0.0006, t + dur);
-}
+import { ensureCtx, bell, pad } from './engine';
 
 function makeBus(ac: AudioContext): AudioNode {
   const master = ac.createGain();
