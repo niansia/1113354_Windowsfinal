@@ -18,3 +18,15 @@
 .vs/
 .DS_Store
 Thumbs.db
+
+# Node / Vite
+WindowsFormsApp1/Frontend/node_modules/
+WindowsFormsApp1/Frontend/.vite/
+WindowsFormsApp1/Frontend/dist/
+
+# Edge / browser profile
+WindowsFormsApp1/manual_work/edge-profile/
+
+# SQLite database
+WindowsFormsApp1/IntegratedApps/FinWeb/instance/*.db*
+WindowsFormsApp1/IntegratedApps/Finweb/instance/*.db*
